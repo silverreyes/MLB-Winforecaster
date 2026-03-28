@@ -1,6 +1,6 @@
 """Tests for Kalshi market data loader (DATA-06).
 
-Tests the Kalshi dual-endpoint loader: fetch_kalshi_markets(),
+Tests the Kalshi single-endpoint loader: fetch_kalshi_markets(),
 _is_mlb_game_winner(), _parse_market_result(), deduplication, and caching.
 """
 
@@ -45,17 +45,6 @@ SAMPLE_API_RESPONSE = {
     "cursor": None,
 }
 
-# Cutoff response
-SAMPLE_CUTOFF_RESPONSE = {
-    "market_settled_ts": "2025-06-01T00:00:00Z",
-}
-
-# Empty response (for historical endpoint returning no markets)
-EMPTY_API_RESPONSE = {
-    "markets": [],
-    "cursor": None,
-}
-
 
 def _make_mock_response(json_data):
     """Create a mock requests.Response with the given JSON payload."""
@@ -65,18 +54,14 @@ def _make_mock_response(json_data):
     return mock_resp
 
 
-def _setup_dual_endpoint_mock(mock_get):
-    """Set up mock to handle the 3-call sequence: cutoff, live markets, historical markets.
+def _setup_mock(mock_get):
+    """Set up mock for the single live-endpoint call sequence.
 
     The implementation calls:
-    1. GET /historical/cutoff -> cutoff timestamp
-    2. GET /markets (live, with series_ticker) -> settled markets
-    3. GET /historical/markets (no series_ticker filter) -> empty (filtered client-side)
+    1. GET /markets (live, with series_ticker=KXMLB) -> settled markets
     """
     mock_get.side_effect = [
-        _make_mock_response(SAMPLE_CUTOFF_RESPONSE),   # cutoff
         _make_mock_response(SAMPLE_API_RESPONSE),       # live endpoint
-        _make_mock_response(EMPTY_API_RESPONSE),        # historical endpoint
     ]
 
 
@@ -84,7 +69,7 @@ def _setup_dual_endpoint_mock(mock_get):
 @patch("src.data.kalshi.requests.get")
 def test_fetch_kalshi_markets_returns_dataframe(mock_get, mock_kalshi_cache_dir, mock_cache_dir):
     """fetch_kalshi_markets() returns a pandas DataFrame."""
-    _setup_dual_endpoint_mock(mock_get)
+    _setup_mock(mock_get)
     result = kalshi.fetch_kalshi_markets()
     assert isinstance(result, pd.DataFrame)
 
@@ -94,7 +79,7 @@ def test_fetch_kalshi_markets_returns_dataframe(mock_get, mock_kalshi_cache_dir,
 def test_kalshi_has_required_columns(mock_get, mock_kalshi_cache_dir, mock_cache_dir):
     """Result has required columns: date, home_team, away_team, kalshi_yes_price,
     kalshi_no_price, result, market_ticker."""
-    _setup_dual_endpoint_mock(mock_get)
+    _setup_mock(mock_get)
     result = kalshi.fetch_kalshi_markets()
     required = [
         "date", "home_team", "away_team",
@@ -109,7 +94,7 @@ def test_kalshi_has_required_columns(mock_get, mock_kalshi_cache_dir, mock_cache
 @patch("src.data.kalshi.requests.get")
 def test_kalshi_prices_are_floats(mock_get, mock_kalshi_cache_dir, mock_cache_dir):
     """Price columns (kalshi_yes_price, kalshi_no_price) are numeric floats."""
-    _setup_dual_endpoint_mock(mock_get)
+    _setup_mock(mock_get)
     result = kalshi.fetch_kalshi_markets()
     assert pd.api.types.is_float_dtype(result["kalshi_yes_price"]), \
         "kalshi_yes_price should be float"
@@ -123,7 +108,7 @@ def test_kalshi_teams_are_normalized(mock_get, mock_kalshi_cache_dir, mock_cache
     """Team values are canonical 3-letter codes from team_mappings."""
     from src.data.team_mappings import TEAM_MAP
 
-    _setup_dual_endpoint_mock(mock_get)
+    _setup_mock(mock_get)
     result = kalshi.fetch_kalshi_markets()
     canonical_codes = set(TEAM_MAP.values())
     for _, row in result.iterrows():
@@ -141,7 +126,7 @@ def test_kalshi_caches_to_parquet(mock_get, mock_kalshi_cache_dir, mock_cache_di
     """After fetch, cached Kalshi data exists."""
     from src.data.cache import is_cached
 
-    _setup_dual_endpoint_mock(mock_get)
+    _setup_mock(mock_get)
     kalshi.fetch_kalshi_markets()
     assert is_cached("kalshi_game_winners")
 
@@ -191,16 +176,11 @@ def test_is_mlb_game_winner_fallback_title():
 @patch("src.data.kalshi.CACHE_DIR")
 @patch("src.data.kalshi.requests.get")
 def test_kalshi_deduplication_by_ticker(mock_get, mock_kalshi_cache_dir, mock_cache_dir):
-    """Markets appearing in both live and historical endpoints are deduplicated by ticker."""
-    # Both endpoints return the same market -- should only appear once
+    """Duplicate tickers within a single-endpoint response are deduplicated."""
+    # Live endpoint returns the same market twice -- should only appear once
     mock_get.side_effect = [
-        _make_mock_response(SAMPLE_CUTOFF_RESPONSE),
         _make_mock_response({
-            "markets": [SAMPLE_MARKET_SETTLED],
-            "cursor": None,
-        }),
-        _make_mock_response({
-            "markets": [SAMPLE_MARKET_SETTLED],  # duplicate
+            "markets": [SAMPLE_MARKET_SETTLED, SAMPLE_MARKET_SETTLED],  # duplicate ticker
             "cursor": None,
         }),
     ]

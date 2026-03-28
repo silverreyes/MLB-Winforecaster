@@ -1,4 +1,4 @@
-"""Kalshi settled MLB game-winner market loader with dual-endpoint pagination."""
+"""Kalshi settled MLB game-winner market loader (live endpoint only)."""
 import logging
 import os
 import re
@@ -24,18 +24,6 @@ def _get_headers() -> dict:
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
     return headers
-
-
-def _get_historical_cutoff() -> str:
-    """Get the timestamp boundary between live and historical data.
-    Returns ISO timestamp string."""
-    resp = requests.get(
-        f"{BASE_URL}/historical/cutoff",
-        headers=_get_headers(),
-        timeout=15,
-    )
-    resp.raise_for_status()
-    return resp.json()["market_settled_ts"]
 
 
 def _paginate_endpoint(endpoint: str, params: dict) -> list:
@@ -191,7 +179,7 @@ def _parse_market(market: dict) -> dict:
 
 
 def fetch_kalshi_markets(max_age_hours: float = 24) -> pd.DataFrame:
-    """Fetch all settled Kalshi MLB game-winner markets from both endpoints.
+    """Fetch all settled Kalshi MLB game-winner markets from the live endpoint.
 
     Unlike per-season pybaseball files (immutable once a season ends), this file
     grows throughout the 2025 season and must be periodically refreshed.
@@ -201,9 +189,8 @@ def fetch_kalshi_markets(max_age_hours: float = 24) -> pd.DataFrame:
                        Default 24h. Set to 0 to force re-fetch; float('inf') to
                        always use cache regardless of age.
 
-    Queries BOTH:
-    1. GET /markets?status=settled&series_ticker=KXMLB (recent settled markets)
-    2. GET /historical/markets (archived -- NO series_ticker, filtered client-side)
+    Queries ONLY the live endpoint:
+    GET /markets?status=settled&series_ticker=KXMLB
 
     Returns DataFrame with columns:
     date, home_team, away_team, kalshi_yes_price, kalshi_no_price, result, market_ticker
@@ -224,40 +211,33 @@ def fetch_kalshi_markets(max_age_hours: float = 24) -> pd.DataFrame:
         else:
             return read_cached(key)
 
-    # Step 1: Get cutoff timestamp to understand live vs historical partition boundary.
-    # Markets settled BEFORE cutoff are ONLY in GET /historical/markets.
-    # Markets settled AFTER cutoff are in GET /markets (with series_ticker support).
-    try:
-        cutoff_ts = _get_historical_cutoff()
-        print(f"Historical cutoff: {cutoff_ts}")
-    except Exception as e:
-        cutoff_ts = None  # Query both; deduplication handles any overlap
-        print(f"Could not fetch cutoff timestamp ({e}), querying both endpoints")
+    # NOTE: Historical endpoint (/historical/markets) intentionally disabled.
+    # The historical endpoint has no server-side series_ticker filter -- it paginates
+    # ALL of Kalshi's archived markets across every category (politics, crypto, etc.),
+    # making it unbounded and impractical (19+ minutes observed in testing).
+    # The live endpoint is sufficient because the historical cutoff (2025-12-28) is
+    # AFTER the 2025 MLB season ended -- all 2025 MLB settled markets are returned here.
+    # To re-enable: add a max_pages guard (e.g., max_pages=5) and filter by
+    # min_date >= first Kalshi MLB market date before calling historical endpoint.
 
-    # Step 2: Fetch recent settled markets from live endpoint (supports series_ticker)
+    # Fetch settled MLB markets from live endpoint (supports series_ticker filter)
     recent = _paginate_endpoint("markets", {
         "status": "settled",
         "series_ticker": "KXMLB",
     })
     print(f"Live endpoint: {len(recent)} markets fetched")
 
-    # Step 3: Fetch historical markets (settled before cutoff -- no series_ticker filter)
-    # Filter client-side since historical endpoint does not support series_ticker
-    historical = _paginate_endpoint("historical/markets", {})
-    historical_mlb = [m for m in historical if _is_mlb_game_winner(m)]
-    print(f"Historical endpoint: {len(historical)} total, {len(historical_mlb)} MLB game-winner")
-
-    # Step 4: Combine and deduplicate by ticker
-    all_markets = recent + historical_mlb
+    # Deduplicate by ticker (safety guard for future-proofing if endpoint
+    # ever returns overlapping results across pages)
     seen_tickers = set()
     unique_markets = []
-    for m in all_markets:
+    for m in recent:
         ticker = m.get("ticker", "")
         if ticker and ticker not in seen_tickers:
             seen_tickers.add(ticker)
             unique_markets.append(m)
 
-    # Step 5: Parse into standard format
+    # Parse into standard format
     parsed = [_parse_market(m) for m in unique_markets]
     df = pd.DataFrame(parsed)
 
