@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-01-PLAN.md
+stopped_at: Completed 01-02-PLAN.md
 last_updated: "2026-03-28T21:27:59.358Z"
-last_activity: 2026-03-28 -- Completed 01-01-PLAN.md
+last_activity: 2026-03-28 -- Completed 01-02-PLAN.md
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
-  percent: 0
+  completed_plans: 2
+  percent: 67
 ---
 
 # Project State
@@ -26,18 +26,18 @@ See: .planning/PROJECT.md (updated 2026-03-28)
 ## Current Position
 
 Phase: 1 of 4 (Data Ingestion and Raw Cache)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: Executing
-Last activity: 2026-03-28 -- Completed 01-01-PLAN.md
+Last activity: 2026-03-28 -- Completed 01-02-PLAN.md
 
-Progress: [###.......] 33%
+Progress: [######....] 67%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 9min
-- Total execution time: 0.15 hours
+- Total plans completed: 2
+- Average duration: 6min
+- Total execution time: 0.20 hours
 
 **By Phase:**
 
@@ -51,6 +51,7 @@ Progress: [###.......] 33%
 
 *Updated after each plan completion*
 | Phase 01 P01 | 9min | 3 tasks | 17 files |
+| Phase 01 P02 | 3min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -65,6 +66,8 @@ Recent decisions affecting current work:
 - [Phase 01]: Upgraded pyarrow from 14.0.2 to >=15.0.0 due to numpy 2.x incompatibility
 - [Phase 01]: Anchored /data/ in .gitignore to avoid matching src/data/
 - [Phase 01]: Created full cache.py in Task 1 because verification required importable functions
+- [Phase 01 P02]: Import aliases match test mock targets for clean patching (pybaseball_team_batting, etc.)
+- [Phase 01 P02]: sp_stats cache key includes _mings{min_gs} suffix to prevent stale data across filter thresholds
 
 ### Pending Todos
 
@@ -79,6 +82,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-28T21:27:59.355Z
-Stopped at: Completed 01-01-PLAN.md
+Last session: 2026-03-28T21:33:07Z
+Stopped at: Completed 01-02-PLAN.md
 Resume file: None

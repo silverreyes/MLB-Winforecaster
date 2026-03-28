@@ -9,11 +9,11 @@ Requirements for initial release. Each maps to a roadmap phase.
 
 ### Data Ingestion
 
-- [ ] **DATA-01**: User can fetch MLB game schedules and confirmed starting pitcher assignments from MLB Stats API
-- [ ] **DATA-02**: User can ingest historical team batting statistics (wOBA, OPS, OBP, SLG) from pybaseball / FanGraphs
-- [ ] **DATA-03**: User can ingest historical starting pitcher statistics (FIP, xFIP, K%, BB%, WHIP) from pybaseball / FanGraphs
-- [ ] **DATA-04**: User can ingest Statcast metrics (xwOBA, pitch velocity, whiff rate) from pybaseball / Baseball Savant
-- [ ] **DATA-05**: All raw data is cached locally as Parquet files to prevent repeated scraping across development sessions
+- [x] **DATA-01**: User can fetch MLB game schedules and confirmed starting pitcher assignments from MLB Stats API
+- [x] **DATA-02**: User can ingest historical team batting statistics (wOBA, OPS, OBP, SLG) from pybaseball / FanGraphs
+- [x] **DATA-03**: User can ingest historical starting pitcher statistics (FIP, xFIP, K%, BB%, WHIP) from pybaseball / FanGraphs
+- [x] **DATA-04**: User can ingest Statcast metrics (xwOBA, pitch velocity, whiff rate) from pybaseball / Baseball Savant
+- [x] **DATA-05**: All raw data is cached locally as Parquet files to prevent repeated scraping across development sessions
 - [ ] **DATA-06**: User can fetch all available resolved individual game-winner market prices from Kalshi API (coverage confirmed from 2025-04-16 onward); used as a partial benchmark only — not a full backtest dataset
 
 ### Feature Engineering
