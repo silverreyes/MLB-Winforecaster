@@ -13,14 +13,14 @@ requires:
     plan: 02
     provides: "fetch_schedule, fetch_team_batting, fetch_sp_stats, fetch_statcast_pitcher, fetch_statcast_batter"
 provides:
-  - "fetch_kalshi_markets() -- Kalshi settled MLB game-winner market loader (live endpoint only, ~30 markets)"
+  - "fetch_kalshi_markets() -- Kalshi per-game MLB winner loader (KXMLBGAME series, ticker-based parsing, 2,237 unique games, Apr 2025-present)"
   - "5 ingestion notebooks (01-05) covering all DATA requirements with cache validation"
 affects: [02-feature-engineering, 04-kalshi-market-comparison]
 
 # Tech tracking
 tech-stack:
   added: [requests, kalshi-api-v2]
-  patterns: [single-endpoint with server-side series_ticker filter, cursor-based pagination, staleness-aware cache refresh, title-based team parsing with fallback]
+  patterns: [single-endpoint with server-side series_ticker filter, cursor-based pagination, staleness-aware cache refresh, ticker-based team parsing (KXMLBGAME format), home-YES dedup to one row per game]
 
 key-files:
   created:
@@ -35,10 +35,13 @@ key-files:
 
 key-decisions:
   - "Disabled historical endpoint (/historical/markets) -- no server-side series_ticker filter causes unbounded pagination across all Kalshi categories (19+ min observed). Historical cutoff (2025-12-28) is after 2025 MLB season, so live endpoint returns all MLB settled markets."
-  - "Live endpoint returns ~30 settled MLB markets via status=settled&series_ticker=KXMLB -- sparse coverage, user should verify season scope during notebook re-run"
-  - "Retained ticker-based dedup as safety guard even though single-endpoint makes it unlikely to produce duplicates"
-  - "Phase 4 blocker documented: last_price_dollars is settlement closing price, not pre-game opening price (look-ahead bias for benchmark)"
-  - "Team parsing is best-effort from title/subtitle patterns; raw title/subtitle columns kept for manual resolution"
+  - "Discovered KXMLB (championship futures, 30 markets) is wrong series; KXMLBGAME is the per-game winner series (confirmed from web UI URL)"
+  - "KXMLBGAME: 4,474 raw markets, 2,237 unique games after home-YES dedup, Apr 2025-present, home win rate 53.5%"
+  - "Ticker-based team parsing: KXMLBGAME-25APR151905NYYBOS-BOS -> away=NYY, home=BOS. Title text is identical for both sides of a game -- only the ticker suffix disambiguates."
+  - "Deduplicate to one row per game keeping HOME TEAM YES market: kalshi_yes_price = P(home wins), aligns with model's home/away treatment"
+  - "Ticker edge cases handled: optional HHMM, doubleheader suffixes (G2 and bare digit), abstract playoff markers (NLHS/NLLS/ALHS/ALLS pass through, drop silently at join)"
+  - "Added Kalshi-specific team codes to team_mappings: KAN->KCR, FLA->MIA, ATH->OAK (Las Vegas Athletics)"
+  - "Phase 4 blocker documented in STATE.md: last_price_dollars is settlement closing price, not pre-game opening price (look-ahead bias)"
 
 patterns-established:
   - "Kalshi API: query live endpoint with series_ticker filter; avoid historical endpoint unless max_pages guard is added"
@@ -58,17 +61,18 @@ completed: 2026-03-28
 
 ## Performance
 
-- **Duration:** 53 min (split across two sessions -- Tasks 1-2 in first session, fix + Task 3 in second)
+- **Duration:** ~3 hours total (Tasks 1-2, checkpoint discovery iterations, rewrite, approval)
 - **Started:** 2026-03-28T21:38:49Z
-- **Completed:** 2026-03-28T22:31:56Z
-- **Tasks:** 3 (2 auto + 1 checkpoint converted to auto-fix)
-- **Files modified:** 7
+- **Completed:** 2026-03-28 (checkpoint approved)
+- **Tasks:** 3 (2 auto + 1 human-verify checkpoint with multiple discovery iterations)
+- **Files modified:** 9 (inc. team_mappings.py, diagnostic scripts)
 
 ## Accomplishments
-- Implemented Kalshi settled market loader with cursor-based pagination, dollar-string price parsing, title-based team extraction, and staleness-aware caching
-- Disabled unbounded historical endpoint that caused 19-minute hang; live endpoint with server-side series_ticker filter returns all 2025 MLB markets in seconds
+- Implemented Kalshi per-game winner loader using KXMLBGAME series with ticker-based team parsing and home-YES deduplication (1 row per game)
+- Discovered via API diagnostic that KXMLB (the planned series) is championship futures -- correct series is KXMLBGAME (confirmed from web UI URL structure)
+- Disabled unbounded historical endpoint that caused 19-minute hang; KXMLBGAME live endpoint returns 4,474 markets (2,237 games) in seconds
 - Created five Jupyter ingestion notebooks covering MLB schedule, team batting, SP stats, Statcast, and Kalshi data with coverage validation and cache verification cells
-- All 47 tests pass across the entire test suite with zero regressions
+- All 56 tests pass across the entire test suite with zero regressions
 
 ## Task Commits
 
@@ -76,11 +80,15 @@ Each task was committed atomically:
 
 1. **Task 1: Kalshi settled market loader** - `eb78d6b` (feat)
 2. **Task 2: Five ingestion notebooks** - `07dcf2b` (feat)
-3. **Task 3 fix: Disable unbounded historical endpoint** - `7e0c3ae` (fix)
+3. **Task 3 checkpoint iterations:**
+   - `7e0c3ae` fix: disable unbounded historical endpoint
+   - `4b40cc5` fix: correct series ticker KXMLB -> KXMLBGAME
+   - `ce4ba2f` feat: ticker-based parsing + home-YES dedup rewrite
 
 ## Files Created/Modified
-- `src/data/kalshi.py` - Kalshi settled MLB game-winner market loader with fetch_kalshi_markets(), _paginate_endpoint(), _is_mlb_game_winner(), _parse_market_result(), _parse_teams_from_title()
-- `tests/test_kalshi.py` - 12 tests covering DataFrame output, required columns, float prices, team normalization, caching, voided market handling, MLB game-winner detection, ticker dedup, and settlement parsing
+- `src/data/kalshi.py` - KXMLBGAME per-game loader with _parse_ticker(), _parse_market(), _to_game_row(), _safe_normalize(), home-YES dedup; _parse_teams_from_title() removed (title is identical for both sides of a game)
+- `src/data/team_mappings.py` - Added KAN, FLA, ATH Kalshi-specific codes
+- `tests/test_kalshi.py` - 21 tests covering _parse_ticker() variants, dedup, schema, prices, team normalization, caching, voided market handling, and MLB game-winner detection
 - `notebooks/01_mlb_schedule.ipynb` - MLB schedule ingestion for 2015-2024 with game count and team coverage validation
 - `notebooks/02_team_batting.ipynb` - Team batting stats ingestion with wOBA/OPS/OBP/SLG display and 2020 short-season flag
 - `notebooks/03_sp_stats.ipynb` - Starting pitcher stats ingestion with FIP/xFIP/K%/BB%/WHIP display and starter count validation
@@ -88,39 +96,47 @@ Each task was committed atomically:
 - `notebooks/05_kalshi_ingestion.ipynb` - Kalshi market ingestion with explicit 2025-03-27 to 2025-04-15 coverage gap reporting and price distribution display
 
 ## Decisions Made
-- **Disabled historical endpoint:** The Kalshi `/historical/markets` endpoint has no `series_ticker` filter, causing it to paginate ALL archived markets across every category (politics, crypto, weather, etc.). This resulted in a 19+ minute hang during testing. Since the historical cutoff timestamp is `2025-12-28T00:00:00Z` (after the 2025 MLB season ended), all 2025 MLB settled markets are available via the live endpoint. The historical endpoint code was removed entirely rather than guarded with max_pages, because there is currently no Kalshi MLB data from before 2025.
-- **Sparse coverage noted:** Live endpoint returns approximately 30 settled markets. This is expected for a new Kalshi product (2025 season only), but user should verify scope during notebook re-run.
-- **Phase 4 blocker documented in code:** `last_price_dollars` is the settlement closing price, not a pre-game opening price. Using it as the Kalshi benchmark introduces look-ahead bias. Investigation needed before Phase 4 planning.
+- **KXMLB is the wrong series:** The planned `series_ticker=KXMLB` returns only 30 markets — season-long championship futures ("Will the Yankees win the World Series?"), one per team. The correct series for per-game winner markets is `KXMLBGAME`, confirmed from web UI URL: `/markets/kxmlbgame/professional-baseball-game/kxmlbgame-26mar291410laahou`.
+- **Ticker-based parsing required:** Both markets for a game share an identical title ("New York Y vs Boston Winner?"). The team information is only unambiguous from the ticker suffix (`-BOS` vs `-NYY`). `_parse_teams_from_title()` removed; `_parse_ticker()` added.
+- **Home-YES dedup:** Each game produces two raw markets (one per team). Keeping the home team's YES market as canonical aligns `kalshi_yes_price` with the model's home/away framing and produces one clean row per game.
+- **Disabled historical endpoint:** `/historical/markets` has no `series_ticker` filter; 19+ minute hang observed. KXMLBGAME live endpoint returns all 4,474 markets (2,237 games) immediately.
+- **Phase 4 blocker:** `last_price_dollars` is settlement closing price, not pre-game opening price. Documented in STATE.md `### Blockers/Concerns`.
 
 ## Deviations from Plan
 
 ### Auto-fixed Issues
 
-**1. [Rule 1 - Bug] Disabled unbounded historical endpoint pagination**
-- **Found during:** Task 3 (end-to-end verification checkpoint -- converted to fix)
-- **Issue:** `fetch_kalshi_markets()` called `_paginate_endpoint("historical/markets", {})` with no filters. The historical endpoint lacks server-side `series_ticker` support, so it paginated ALL Kalshi markets across every category. This caused a 19+ minute hang in testing.
-- **Fix:** Removed `_get_historical_cutoff()` function and historical endpoint call entirely. The live endpoint (`GET /markets?status=settled&series_ticker=KXMLB`) returns all 2025 MLB settled markets because the historical cutoff (2025-12-28) is after the MLB season ended. Updated tests to use single-endpoint mock sequence.
-- **Files modified:** src/data/kalshi.py, tests/test_kalshi.py
-- **Verification:** `pytest tests/ -v` -- all 47 tests pass
-- **Committed in:** 7e0c3ae
+**1. [Bug] Historical endpoint hang (19 min) → disabled**
+- `7e0c3ae` fix(01-03): disable unbounded historical endpoint
+
+**2. [Wrong series] KXMLB is championship futures → switched to KXMLBGAME**
+- `4b40cc5` fix(data): correct Kalshi series ticker KXMLB -> KXMLBGAME
+- API diagnostic (`check_kalshi_api.py`, `check_kalshi_coverage.py`) confirmed KXMLB returns only 30 championship futures; KXMLBGAME is the per-game series
+
+**3. [Architecture] Title-based team parsing impossible → ticker-based rewrite**
+- `ce4ba2f` feat(data): ticker-based parsing + home-YES dedup
+- Both sides of a game share identical titles; team is only unambiguous from ticker suffix
+- Additional edge cases: optional HHMM, doubleheader suffixes (G2 / bare digit), abstract playoff markers, ATH team code (Las Vegas Athletics)
 
 ---
 
-**Total deviations:** 1 auto-fixed (1 bug fix)
-**Impact on plan:** Historical endpoint was impractical for MLB-specific queries. Single-endpoint approach is correct and sufficient for all 2025 MLB data. No data loss -- all settled markets are accessible via the live endpoint.
+**Total deviations:** 3 (all fixed during checkpoint verification)
+**Impact:** Kalshi loader is substantially different from original design but correct. Coverage improved from 30 championship futures to 2,237 real game outcomes.
 
 ## Issues Encountered
-- Historical endpoint hang (19 minutes) discovered during first attempt at Task 3 verification. Root cause: no server-side filtering means client must download ALL Kalshi markets. Fix applied in continuation session.
+- Historical endpoint hang (19 minutes): no server-side filtering → unbounded pagination across all Kalshi categories
+- KXMLB series mismatch: originally planned series returns only championship futures, not per-game markets; identified via API diagnostic scripts
+- Ticker format complexity: three edge cases (no-HHMM, G2/bare-digit doubleheader suffix, abstract playoff markers) surfaced during live fetch
 
 ## User Setup Required
 None - no external service configuration required. Kalshi API is public for settled market data (no API key needed).
 
 ## Next Phase Readiness
-- All Phase 1 data loaders are complete and tested (schedule, team batting, SP stats, Statcast, Kalshi)
-- All five ingestion notebooks are ready for user execution
-- Phase 2 FeatureBuilder can import all loaders from src/data/
-- Phase 4 Kalshi comparison will need pre-game price investigation (documented blocker)
-- **User action needed:** Re-run `notebooks/05_kalshi_ingestion.ipynb` to confirm the ~30 markets load correctly and verify season date coverage
+- All Phase 1 data loaders complete and tested: schedule, team batting, SP stats, Statcast, Kalshi (56 tests)
+- All five ingestion notebooks ready for execution
+- Phase 2 FeatureBuilder can import all loaders from `src/data/`
+- **Phase 4 blocker tracked in STATE.md:** `last_price_dollars` is closing price, not pre-game price; must investigate Kalshi candlestick API before Phase 4 planning
+- `check_kalshi_coverage.py` and `check_kalshi_api.py` at repo root serve as ongoing API diagnostic tools
 
 ## Self-Check: PASSED
 

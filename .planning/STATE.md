@@ -69,9 +69,10 @@ Recent decisions affecting current work:
 - [Phase 01]: Created full cache.py in Task 1 because verification required importable functions
 - [Phase 01 P02]: Import aliases match test mock targets for clean patching (pybaseball_team_batting, etc.)
 - [Phase 01 P02]: sp_stats cache key includes _mings{min_gs} suffix to prevent stale data across filter thresholds
-- [Phase 01 P03]: Disabled Kalshi historical endpoint -- no series_ticker filter causes unbounded pagination (19+ min). Live endpoint sufficient because cutoff (2025-12-28) is after 2025 MLB season.
-- [Phase 01 P03]: Live KXMLB endpoint returns ~30 settled markets -- sparse coverage, user to verify scope during notebook re-run
-- [Phase 01 P03]: last_price_dollars is settlement closing price, not pre-game opening price -- Phase 4 blocker for look-ahead-free benchmark
+- [Phase 01 P03]: Disabled Kalshi historical endpoint -- no series_ticker filter causes unbounded pagination (19+ min). KXMLBGAME live endpoint returns all 4,474 raw markets (2,237 games) in seconds.
+- [Phase 01 P03]: KXMLB (championship futures, 30 markets) is wrong series -- correct series is KXMLBGAME (confirmed from web UI URL). Coverage: 2,237 unique games, Apr 2025-present, home win rate 53.5%.
+- [Phase 01 P03]: Ticker-based team parsing -- both sides of a game share identical title text; team unambiguous only from ticker suffix (KXMLBGAME-25APR15NYYBOS-BOS -> home=BOS, away=NYY). One row per game via home-YES dedup.
+- [Phase 01 P03]: last_price_dollars is settlement closing price, not pre-game opening price -- Phase 4 blocker documented in Blockers/Concerns
 
 ### Pending Todos
 
