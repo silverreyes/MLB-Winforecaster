@@ -14,7 +14,7 @@ Requirements for initial release. Each maps to a roadmap phase.
 - [ ] **DATA-03**: User can ingest historical starting pitcher statistics (FIP, xFIP, K%, BB%, WHIP) from pybaseball / FanGraphs
 - [ ] **DATA-04**: User can ingest Statcast metrics (xwOBA, pitch velocity, whiff rate) from pybaseball / Baseball Savant
 - [ ] **DATA-05**: All raw data is cached locally as Parquet files to prevent repeated scraping across development sessions
-- [ ] **DATA-06**: User can fetch historical resolved MLB game-winner market prices from Kalshi API for backtesting evaluation
+- [ ] **DATA-06**: User can fetch all available resolved individual game-winner market prices from Kalshi API (coverage confirmed from 2025-04-16 onward); used as a partial benchmark only — not a full backtest dataset
 
 ### Feature Engineering
 
@@ -43,8 +43,8 @@ Requirements for initial release. Each maps to a roadmap phase.
 
 ### Kalshi Market Integration
 
-- [ ] **MARKET-01**: Kalshi historical resolved prices are joined to the feature matrix for all games within the backtesting window where Kalshi data is available, enabling model-vs-market comparison
-- [ ] **MARKET-02**: Each model's Brier score is benchmarked against the Kalshi implied probability Brier score on the same games within the backtesting window
+- [ ] **MARKET-01**: Kalshi resolved prices are joined to the feature matrix for 2025 season games where individual game-winner market data is available (partial coverage from 2025-04-16 onward)
+- [ ] **MARKET-02**: Each model's Brier score is benchmarked against the Kalshi implied probability Brier score on the same 2025 season games — explicitly treated as a partial benchmark, not a full backtest comparison
 - [ ] **MARKET-03**: Edge analysis identifies individual games where model probability diverges from Kalshi opening price by a meaningful margin
 - [ ] **MARKET-04**: Profitability analysis is fee-adjusted (Kalshi fee structure applied) before any model edge is reported
 

@@ -23,7 +23,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Goal**: User can retrieve all raw data sources needed for the forecasting system, stored locally so development never re-scrapes
 **Depends on**: Nothing (first phase)
 **Requirements**: DATA-01, DATA-02, DATA-03, DATA-04, DATA-05, DATA-06
-**Pre-flight**: DATA-06 (Kalshi historical ingestion) depends on Kalshi having sufficient resolved MLB game-winner markets. Manually verify via the Kalshi API that historical MLB game-winner contracts exist at adequate volume before Phase 1 begins. If coverage is thin, scope or defer DATA-06 before building the ingestion module around it.
+**Pre-flight**: ✓ Kalshi API verified (2026-03-28). 13,659 MLB game-winner markets found via api.elections.kalshi.com. Coverage starts 2025-04-16 — confirmed limited to 2025 season. DATA-06 scoped accordingly: pull available individual game-winner markets as a partial benchmark only. Primary backtest uses 2015–2024 pybaseball data; Kalshi comparison is a secondary evaluation track covering 2025 only.
 **Success Criteria** (what must be TRUE):
   1. User can run a notebook cell to fetch the current MLB schedule with confirmed starting pitchers for any given date
   2. User can run a notebook cell to retrieve historical team batting stats (wOBA, OPS, OBP, SLG) and starting pitcher stats (FIP, xFIP, K%, BB%, WHIP) for any season in the backtest window
@@ -69,14 +69,15 @@ Plans:
 - [ ] 03-02: TBD
 
 ### Phase 4: Kalshi Market Comparison and Edge Analysis
-**Goal**: User can evaluate whether any model outperforms Kalshi market prices on calibration, and identify specific games where meaningful model-vs-market edges exist after fees
+**Goal**: User can evaluate whether any model outperforms Kalshi market prices on calibration for 2025 season games, and identify specific games where meaningful model-vs-market edges exist after fees
 **Depends on**: Phase 3
 **Requirements**: MARKET-01, MARKET-02, MARKET-03, MARKET-04
+**Note**: Two-track evaluation — primary backtest covers 2015–2024 (pybaseball only); Kalshi comparison is a separate secondary track covering 2025 season games only (data available from 2025-04-16). Results must be reported separately and never conflated.
 **Success Criteria** (what must be TRUE):
-  1. User can view the feature matrix with Kalshi historical implied probabilities joined for all games where Kalshi data is available within the backtest window
-  2. User can compare each model's Brier score against the Kalshi implied probability Brier score on the same subset of games
+  1. User can view the feature matrix with Kalshi implied probabilities joined for 2025 season games where individual game-winner market data is available
+  2. User can compare each model's Brier score against the Kalshi implied probability Brier score on the same 2025 games — reported as a partial benchmark distinct from the full 2015–2024 backtest
   3. User can view an edge analysis identifying individual games where model probability diverges from Kalshi opening price by a meaningful margin
-  4. User can view profitability analysis with Kalshi fee structure applied -- no edge is reported without fee adjustment
+  4. User can view profitability analysis with Kalshi fee structure applied — no edge is reported without fee adjustment
 **Plans**: TBD
 
 Plans:
