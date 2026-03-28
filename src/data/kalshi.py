@@ -58,8 +58,8 @@ def _paginate_endpoint(endpoint: str, params: dict) -> list:
 def _is_mlb_game_winner(market: dict) -> bool:
     """Check if a market is an MLB individual game-winner market based on ticker/title."""
     ticker = (market.get("ticker") or "").upper()
-    # KXMLB is the confirmed MLB game-winner series ticker prefix -- primary indicator
-    if "KXMLB" in ticker:
+    # KXMLBGAME is the confirmed per-game MLB market series ticker -- primary indicator
+    if "KXMLBGAME" in ticker:
         return True
     # Fallback: title-based detection for markets not carrying KXMLB prefix
     # Check for MLB + game-action keywords; avoids inverted string logic
@@ -190,7 +190,7 @@ def fetch_kalshi_markets(max_age_hours: float = 24) -> pd.DataFrame:
                        always use cache regardless of age.
 
     Queries ONLY the live endpoint:
-    GET /markets?status=settled&series_ticker=KXMLB
+    GET /markets?status=settled&series_ticker=KXMLBGAME
 
     Returns DataFrame with columns:
     date, home_team, away_team, kalshi_yes_price, kalshi_no_price, result, market_ticker
@@ -220,10 +220,13 @@ def fetch_kalshi_markets(max_age_hours: float = 24) -> pd.DataFrame:
     # To re-enable: add a max_pages guard (e.g., max_pages=5) and filter by
     # min_date >= first Kalshi MLB market date before calling historical endpoint.
 
-    # Fetch settled MLB markets from live endpoint (supports series_ticker filter)
+    # Fetch settled per-game MLB markets from live endpoint.
+    # KXMLBGAME is the correct series ticker for individual game-winner markets
+    # (confirmed from Kalshi web UI URL: /markets/kxmlbgame/professional-baseball-game/...).
+    # KXMLB is the championship futures series (30 season-long markets only) -- wrong series.
     recent = _paginate_endpoint("markets", {
         "status": "settled",
-        "series_ticker": "KXMLB",
+        "series_ticker": "KXMLBGAME",
     })
     print(f"Live endpoint: {len(recent)} markets fetched")
 

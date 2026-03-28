@@ -14,7 +14,7 @@ kalshi = pytest.importorskip("src.data.kalshi")
 
 # Sample market data mimicking Kalshi API response
 SAMPLE_MARKET_SETTLED = {
-    "ticker": "KXMLB-25MAR28-NYYBOS",
+    "ticker": "KXMLBGAME-25MAR281905NYYBOS",
     "title": "Will the Yankees beat the Red Sox?",
     "subtitle": "MLB Regular Season",
     "status": "settled",
@@ -27,7 +27,7 @@ SAMPLE_MARKET_SETTLED = {
 }
 
 SAMPLE_MARKET_VOIDED = {
-    "ticker": "KXMLB-25MAR29-LADSFG",
+    "ticker": "KXMLBGAME-25MAR291830LADSFG",
     "title": "Will the Dodgers beat the Giants?",
     "subtitle": "MLB Regular Season",
     "status": "settled",
@@ -144,9 +144,9 @@ def test_kalshi_voided_market_result_is_none():
 
 
 def test_is_mlb_game_winner_kxmlb_ticker():
-    """KXMLB prefix is the primary positive indicator for MLB game-winner markets."""
+    """KXMLBGAME prefix is the primary positive indicator for MLB game-winner markets."""
     market = {
-        "ticker": "KXMLB-25-NYYBOS",
+        "ticker": "KXMLBGAME-25APR151905NYYBOS",
         "title": "",
         "subtitle": "",
     }
@@ -164,7 +164,7 @@ def test_is_mlb_game_winner_rejects_non_mlb():
 
 
 def test_is_mlb_game_winner_fallback_title():
-    """Fallback title matching works when ticker doesn't have KXMLB prefix."""
+    """Fallback title matching works when ticker doesn't have KXMLBGAME prefix."""
     market = {
         "ticker": "UNKNOWN-123",
         "title": "Will the Yankees beat the Red Sox?",
