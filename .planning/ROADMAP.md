@@ -12,7 +12,7 @@ This roadmap delivers a pre-game MLB win probability forecasting system through 
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Data Ingestion and Raw Cache** - Fetch MLB schedules, historical stats, Statcast metrics, and Kalshi prices into local Parquet storage
+- [x] **Phase 1: Data Ingestion and Raw Cache** - Fetch MLB schedules, historical stats, Statcast metrics, and Kalshi prices into local Parquet storage
 - [ ] **Phase 2: Feature Engineering and Feature Store** - Build temporally-safe differential features from raw data into a single game-level feature matrix
 - [ ] **Phase 3: Model Training and Backtesting** - Train three calibrated models and evaluate via walk-forward backtesting with Brier score and calibration analysis
 - [ ] **Phase 4: Kalshi Market Comparison and Edge Analysis** - Benchmark model predictions against Kalshi implied probabilities and identify fee-adjusted edges
@@ -34,9 +34,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans:** 3 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Project scaffolding, cache infrastructure, team mappings, and test stubs
-- [ ] 01-02-PLAN.md — pybaseball loaders (team batting, SP stats, Statcast) and MLB schedule loader
-- [ ] 01-03-PLAN.md — Kalshi market loader and all five ingestion notebooks
+- [x] 01-01-PLAN.md — Project scaffolding, cache infrastructure, team mappings, and test stubs
+- [x] 01-02-PLAN.md — pybaseball loaders (team batting, SP stats, Statcast) and MLB schedule loader
+- [x] 01-03-PLAN.md — Kalshi market loader and all five ingestion notebooks
 
 ### Phase 2: Feature Engineering and Feature Store
 **Goal**: User has a single, trusted feature matrix where every game is one row with all differential features, outcome label, and Kalshi implied probability -- with verified temporal safety
@@ -91,7 +91,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Data Ingestion and Raw Cache | 0/3 | Planning complete | - |
+| 1. Data Ingestion and Raw Cache | 3/3 | Complete | 2026-03-28 |
 | 2. Feature Engineering and Feature Store | 0/TBD | Not started | - |
 | 3. Model Training and Backtesting | 0/TBD | Not started | - |
 | 4. Kalshi Market Comparison and Edge Analysis | 0/TBD | Not started | - |
