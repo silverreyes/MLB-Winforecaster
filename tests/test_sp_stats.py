@@ -70,9 +70,9 @@ def test_sp_stats_2020_has_shortened_flag(mock_pitching, mock_cache_dir):
 
 @patch("src.data.sp_stats.pybaseball_pitching_stats")
 def test_sp_stats_caches_to_parquet(mock_pitching, mock_cache_dir):
-    """After fetch, is_cached('sp_stats_2023') returns True."""
+    """After fetch, is_cached('sp_stats_2023_mings1') returns True."""
     from src.data.cache import is_cached
 
     mock_pitching.return_value = SAMPLE_PITCHING_DATA.copy()
     sp_stats.fetch_sp_stats(2023)
-    assert is_cached("sp_stats_2023")
+    assert is_cached("sp_stats_2023_mings1")
