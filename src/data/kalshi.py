@@ -1,4 +1,14 @@
-"""Kalshi settled MLB game-winner market loader (live endpoint only)."""
+"""Kalshi settled MLB per-game winner market loader.
+
+Fetches individual game-winner markets from the KXMLBGAME series and
+deduplicates to one row per game, keeping the HOME TEAM's YES market as the
+canonical probability signal. This aligns kalshi_yes_price with the model's
+home/away treatment: kalshi_yes_price = P(home wins) per Kalshi market.
+
+Series: KXMLBGAME (per-game)  vs  KXMLB (season-long championship futures — wrong series)
+Endpoint: GET /markets?status=settled&series_ticker=KXMLBGAME
+Coverage: Apr 2025-present (~2,236 games, two raw markets each)
+"""
 import logging
 import os
 import re
@@ -15,6 +25,26 @@ logger = logging.getLogger(__name__)
 
 BASE_URL = "https://api.elections.kalshi.com/trade-api/v2"
 RATE_LIMIT_DELAY = 0.1  # 100ms between requests (stays under 20 req/sec Basic tier)
+
+# Month abbreviation → zero-padded number (Kalshi ticker month format)
+_MONTH_MAP = {
+    "JAN": "01", "FEB": "02", "MAR": "03", "APR": "04",
+    "MAY": "05", "JUN": "06", "JUL": "07", "AUG": "08",
+    "SEP": "09", "OCT": "10", "NOV": "11", "DEC": "12",
+}
+
+# Parses the game-id portion of a KXMLBGAME ticker.
+# Format: {YY}{MON}{DD}[{HHMM}]{AWAYCODE}{HOMECODE}[G{N}]
+# HHMM is present for most regular-season games but absent for many
+# playoff and some regular-season games — made optional with (?:\d{4})?.
+# G{N} is a doubleheader suffix (G2 = second game) stripped before team split.
+# Examples:
+#   25APR161905NYYBOS  →  date=2025-04-16, time=19:05, teams=NYYBOS
+#   25OCT31LADTOR      →  date=2025-10-31, no time,    teams=LADTOR
+#   25SEP16ATLWSHG2    →  date=2025-09-16, no time,    teams=ATLWSH (G2 stripped)
+_GAME_ID_RE = re.compile(
+    r"^(\d{2})(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)(\d{2})(?:\d{4})?(.+)$"
+)
 
 
 def _get_headers() -> dict:
@@ -55,14 +85,81 @@ def _paginate_endpoint(endpoint: str, params: dict) -> list:
     return all_markets
 
 
+def _parse_ticker(ticker: str) -> dict:
+    """Parse a KXMLBGAME ticker into game components.
+
+    Ticker format: KXMLBGAME-{YY}{MON}{DD}{HHMM}{AWAYCODE}{HOMECODE}-{YESTEAM}
+    Examples:
+        KXMLBGAME-26MAR281420WSHCHC-CHC  →  WSH @ CHC, YES = CHC (home)
+        KXMLBGAME-25APR151905NYYBOS-NYY  →  NYY @ BOS, YES = NYY (away)
+
+    The YES team (ticker suffix) anchors the team-code split within the
+    concatenated {AWAY}{HOME} string:
+      - If teams_combined starts with yes_team → yes_team is away, remainder is home
+      - If teams_combined ends with yes_team   → yes_team is home, remainder is away
+
+    Returns dict with: date, game_id, away_code, home_code, yes_team
+    Returns empty dict on parse failure (logged as warning).
+    """
+    # Split: ['KXMLBGAME', '{game_id}', '{yes_team}']
+    parts = ticker.split("-", 2)
+    if len(parts) != 3 or parts[0].upper() != "KXMLBGAME":
+        return {}
+
+    game_id = parts[1]   # e.g. '26MAR281420WSHCHC'
+    yes_team = parts[2].upper()  # e.g. 'CHC'
+
+    m = _GAME_ID_RE.match(game_id)
+    if not m:
+        logger.warning("Could not parse game_id from ticker %r", ticker)
+        return {}
+
+    year_2d, mon, day, teams_combined = m.groups()
+    date_str = f"20{year_2d}-{_MONTH_MAP[mon]}-{day}"
+
+    # Strip doubleheader/game-number suffix before splitting team codes.
+    # Kalshi uses two formats: "ATLWSHG2" (explicit G prefix) and "MINATL2"
+    # (bare digit). Pattern G?\d+ covers both without affecting alphabetic codes.
+    t = re.sub(r"G?\d+$", "", teams_combined.upper())
+
+    # Anchor split on yes_team
+    if t.startswith(yes_team):
+        away_code = yes_team
+        home_code = t[len(yes_team):]
+    elif t.endswith(yes_team):
+        home_code = yes_team
+        away_code = t[: len(t) - len(yes_team)]
+    else:
+        logger.warning(
+            "Cannot split teams from ticker %r (teams=%r, yes_team=%r)",
+            ticker, t, yes_team,
+        )
+        return {}
+
+    if not away_code or not home_code:
+        logger.warning("Empty team code in ticker %r (away=%r, home=%r)", ticker, away_code, home_code)
+        return {}
+
+    return {
+        "date": date_str,
+        "game_id": game_id,
+        "away_code": away_code,
+        "home_code": home_code,
+        "yes_team": yes_team,
+    }
+
+
 def _is_mlb_game_winner(market: dict) -> bool:
-    """Check if a market is an MLB individual game-winner market based on ticker/title."""
+    """Check if a market is a KXMLBGAME per-game MLB winner market.
+
+    Primary check: KXMLBGAME series ticker prefix (server-side filtered in
+    fetch_kalshi_markets, so this is a defensive guard only).
+    Fallback: title-based detection for any markets not carrying the prefix.
+    """
     ticker = (market.get("ticker") or "").upper()
-    # KXMLBGAME is the confirmed per-game MLB market series ticker -- primary indicator
     if "KXMLBGAME" in ticker:
         return True
-    # Fallback: title-based detection for markets not carrying KXMLB prefix
-    # Check for MLB + game-action keywords; avoids inverted string logic
+    # Fallback: title-based detection
     title = (market.get("title") or "").upper()
     subtitle = (market.get("subtitle") or "").upper()
     combined = title + subtitle
@@ -76,130 +173,126 @@ def _parse_market_result(market: dict):
 
     Returns:
         "YES" if the yes-side won (settlement >= 0.5),
-        "NO" if the no-side won (settlement < 0.5),
-        None if voided/postponed (empty settlement_value_dollars).
+        "NO"  if the no-side won  (settlement < 0.5),
+        None  if voided/postponed (empty settlement_value_dollars).
+
+    NOTE: Do NOT silently code missing settlement as "NO" — voided/postponed
+    games must be excluded from win-probability training, not mislabeled.
     """
-    # settlement_value_dollars: "1" = YES won, "0" = NO won, "" = voided/unresolved
-    # Explicit None for unresolved markets (postponed games, voids) -- do NOT
-    # silently code missing settlement as "NO" which would corrupt the win labels.
     settlement_str = (market.get("settlement_value_dollars") or "").strip()
     if not settlement_str:
-        result = None  # Voided/postponed -- exclude from win-probability training
-    elif float(settlement_str) >= 0.5:
-        result = "YES"
-    else:
-        result = "NO"
-    return result
+        return None   # Voided/postponed
+    return "YES" if float(settlement_str) >= 0.5 else "NO"
 
 
-def _parse_teams_from_title(title: str, subtitle: str) -> tuple:
-    """Best-effort team extraction from Kalshi market title/subtitle.
+def _parse_market(market: dict) -> dict | None:
+    """Parse a raw KXMLBGAME market dict into an intermediate record.
 
-    Common patterns:
-    - "Will the Yankees beat the Red Sox?"
-    - "Yankees vs Red Sox"
-
-    Returns:
-        (home_team, away_team) as raw strings (pre-normalization), or (None, None)
-        if unparseable. Note: Kalshi titles typically frame the question as
-        "Will {TeamA} beat {TeamB}?" where TeamA is often the favored or home team,
-        but this is not guaranteed. We assign the first team as away and second as
-        home following the "visitor @ home" convention, but this is best-effort.
+    Returns a dict with:
+        date, game_id, away_code, home_code, yes_team, is_home_yes,
+        kalshi_yes_price, kalshi_no_price, result, market_ticker
+    Returns None if the ticker cannot be parsed (logged as warning).
     """
-    # Pattern 1: "Will the {TeamA} beat the {TeamB}?"
-    match = re.search(
-        r"[Ww]ill\s+(?:the\s+)?(.+?)\s+(?:beat|defeat)\s+(?:the\s+)?(.+?)[\?\.]",
-        title,
-    )
-    if match:
-        team_a = match.group(1).strip()
-        team_b = match.group(2).strip()
-        # In "Will A beat B?" framing, A is typically away, B is home
-        return team_b, team_a
+    ticker = market.get("ticker", "")
+    parsed = _parse_ticker(ticker)
+    if not parsed:
+        return None
 
-    # Pattern 2: "{TeamA} vs {TeamB}" in title or subtitle
-    combined = title + " " + subtitle
-    match = re.search(
-        r"(.+?)\s+(?:vs\.?|versus)\s+(.+?)(?:\s*[\?\.\-]|$)",
-        combined,
-        re.IGNORECASE,
-    )
-    if match:
-        team_a = match.group(1).strip()
-        team_b = match.group(2).strip()
-        return team_b, team_a
-
-    logger.warning("Could not parse teams from title: %r", title)
-    return None, None
-
-
-def _parse_market(market: dict) -> dict:
-    """Parse a raw Kalshi market dict into our standard format.
-    Returns dict with: date, home_team, away_team, kalshi_yes_price, kalshi_no_price,
-                       result, market_ticker, title, subtitle"""
-    # Parse date from close_time or expiration_time
-    date_str = None
-    for field in ["close_time", "expected_expiration_time", "expiration_time"]:
-        val = market.get(field)
-        if val:
-            # ISO format: "2025-07-15T23:59:59Z"
-            date_str = val[:10]  # Extract YYYY-MM-DD
-            break
-
-    # Parse prices -- dollar-denominated strings (Pitfall 8)
-    # PHASE 4 BLOCKER: last_price_dollars is the CLOSING price (at market settlement),
-    # NOT the pre-game opening price. Using it for benchmark comparison introduces
-    # look-ahead bias -- the market already knows the outcome by settlement.
-    # TODO: Investigate Kalshi API for pre-game price (e.g., candlestick/trade history
-    # endpoint for the price at game start time). If unavailable via API, document
-    # clearly and use the closing price with an explicit look-ahead bias caveat.
-    # This must be resolved before Phase 4 benchmark evaluation is meaningful.
+    # PHASE 4 BLOCKER: last_price_dollars is the CLOSING price at market
+    # settlement, NOT the pre-game opening price. Using it as a benchmark
+    # introduces look-ahead bias — the price already reflects the outcome.
+    # Resolve before Phase 4 evaluation: investigate candlestick/trade history
+    # endpoint for pre-game price, or document the bias caveat explicitly.
     yes_price = float(market.get("last_price_dollars", "0") or "0")
-    no_price = 1.0 - yes_price if yes_price > 0 else 0.0
-
-    # Parse settlement result
-    result = _parse_market_result(market)
-
-    # Parse teams from title
-    title = market.get("title", "")
-    subtitle = market.get("subtitle", "")
-    home_team, away_team = _parse_teams_from_title(title, subtitle)
+    no_price = round(1.0 - yes_price, 4) if yes_price > 0 else 0.0
 
     return {
-        "date": date_str,
-        "home_team": home_team,
-        "away_team": away_team,
+        "date": parsed["date"],
+        "game_id": parsed["game_id"],
+        "away_code": parsed["away_code"],
+        "home_code": parsed["home_code"],
+        "yes_team": parsed["yes_team"],
+        "is_home_yes": parsed["yes_team"] == parsed["home_code"],
         "kalshi_yes_price": yes_price,
         "kalshi_no_price": no_price,
-        "result": result,
-        "market_ticker": market.get("ticker", ""),
-        "title": title,  # Keep for debugging/manual team resolution
-        "subtitle": subtitle,
+        "result": _parse_market_result(market),
+        "market_ticker": ticker,
+    }
+
+
+def _safe_normalize(code: str) -> str:
+    """Normalize a Kalshi team code, returning the raw code on failure.
+
+    normalize_team() raises ValueError for unknown codes. This wrapper
+    catches that so abstract playoff markers (NLHS, NLLS, ALHS, ALLS) and
+    any future unknown Kalshi codes pass through as-is instead of crashing.
+    Those rows will fail to join real game data in later phases, which is
+    the correct silent-drop behaviour for abstract playoff series markers.
+    """
+    try:
+        result = normalize_team(code)
+        return result if result else code
+    except ValueError:
+        logger.debug("Unknown Kalshi team code %r — using raw code", code)
+        return code
+
+
+def _to_game_row(home_market: dict) -> dict:
+    """Convert a home-team YES market record into the final output schema.
+
+    Input is a record where is_home_yes=True, so:
+        kalshi_yes_price = P(home team wins)
+        result = "YES" if home team won, "NO" if away team won, None if voided
+
+    Normalises raw Kalshi team codes to canonical 3-letter codes via team_mappings.
+    Falls back to the raw code for unknown codes (e.g. abstract playoff markers).
+    """
+    home_team = _safe_normalize(home_market["home_code"])
+    away_team = _safe_normalize(home_market["away_code"])
+    return {
+        "date": home_market["date"],
+        "home_team": home_team,
+        "away_team": away_team,
+        "kalshi_yes_price": home_market["kalshi_yes_price"],
+        "kalshi_no_price": home_market["kalshi_no_price"],
+        "result": home_market["result"],
+        "market_ticker": home_market["market_ticker"],
     }
 
 
 def fetch_kalshi_markets(max_age_hours: float = 24) -> pd.DataFrame:
-    """Fetch all settled Kalshi MLB game-winner markets from the live endpoint.
+    """Fetch all settled Kalshi MLB per-game winner markets.
 
-    Unlike per-season pybaseball files (immutable once a season ends), this file
-    grows throughout the 2025 season and must be periodically refreshed.
+    Queries: GET /markets?status=settled&series_ticker=KXMLBGAME
+
+    Each MLB game produces TWO Kalshi markets (one per team). This function
+    deduplicates to ONE row per game by keeping the HOME TEAM's YES market as
+    the canonical probability signal:
+        kalshi_yes_price  = P(home wins)   per Kalshi closing price
+        kalshi_no_price   = P(away wins)   = 1 - kalshi_yes_price
+        result            = "YES" if home won, "NO" if away won, None if voided
+
+    NOTE: Historical endpoint (/historical/markets) intentionally disabled.
+    That endpoint has no server-side series_ticker filter and paginates ALL
+    Kalshi markets across every category — unbounded (19+ minutes in testing).
+    The live endpoint covers the full KXMLBGAME catalog (4,472 markets,
+    Apr 2025–present). To re-enable: add a max_pages guard and a min_date
+    filter anchored to the first KXMLBGAME market date.
 
     Args:
-        max_age_hours: Re-fetch if cached file is older than this many hours.
-                       Default 24h. Set to 0 to force re-fetch; float('inf') to
-                       always use cache regardless of age.
+        max_age_hours: Re-fetch if cached file is older than this (default 24h).
+                       Set 0 to force re-fetch; float('inf') to always use cache.
 
-    Queries ONLY the live endpoint:
-    GET /markets?status=settled&series_ticker=KXMLBGAME
-
-    Returns DataFrame with columns:
-    date, home_team, away_team, kalshi_yes_price, kalshi_no_price, result, market_ticker
+    Returns:
+        DataFrame sorted by date with columns:
+        date, home_team, away_team, kalshi_yes_price, kalshi_no_price,
+        result, market_ticker
     """
     key = "kalshi_game_winners"
     parquet_path = "kalshi/kalshi_game_winners.parquet"
 
-    # Staleness check: Kalshi file grows as 2025 season progresses; re-fetch if stale.
-    # Unlike pybaseball files, this is NOT a permanent cache -- it needs periodic refresh.
+    # Staleness check — unlike pybaseball per-season files this cache grows
+    # throughout the active season and must be periodically refreshed.
     if is_cached(key):
         manifest = load_manifest()
         fetch_date_str = manifest[key].get("fetch_date", "")
@@ -211,49 +304,43 @@ def fetch_kalshi_markets(max_age_hours: float = 24) -> pd.DataFrame:
         else:
             return read_cached(key)
 
-    # NOTE: Historical endpoint (/historical/markets) intentionally disabled.
-    # The historical endpoint has no server-side series_ticker filter -- it paginates
-    # ALL of Kalshi's archived markets across every category (politics, crypto, etc.),
-    # making it unbounded and impractical (19+ minutes observed in testing).
-    # The live endpoint is sufficient because the historical cutoff (2025-12-28) is
-    # AFTER the 2025 MLB season ended -- all 2025 MLB settled markets are returned here.
-    # To re-enable: add a max_pages guard (e.g., max_pages=5) and filter by
-    # min_date >= first Kalshi MLB market date before calling historical endpoint.
-
-    # Fetch settled per-game MLB markets from live endpoint.
-    # KXMLBGAME is the correct series ticker for individual game-winner markets
-    # (confirmed from Kalshi web UI URL: /markets/kxmlbgame/professional-baseball-game/...).
-    # KXMLB is the championship futures series (30 season-long markets only) -- wrong series.
-    recent = _paginate_endpoint("markets", {
+    # Step 1: Fetch all settled per-game markets (server-side filtered by series)
+    raw = _paginate_endpoint("markets", {
         "status": "settled",
         "series_ticker": "KXMLBGAME",
     })
-    print(f"Live endpoint: {len(recent)} markets fetched")
+    print(f"KXMLBGAME: {len(raw)} raw markets fetched")
 
-    # Deduplicate by ticker (safety guard for future-proofing if endpoint
-    # ever returns overlapping results across pages)
-    seen_tickers = set()
-    unique_markets = []
-    for m in recent:
-        ticker = m.get("ticker", "")
-        if ticker and ticker not in seen_tickers:
-            seen_tickers.add(ticker)
-            unique_markets.append(m)
+    # Step 2: Parse — drop markets with unparseable tickers
+    parsed = []
+    for m in raw:
+        r = _parse_market(m)
+        if r is not None:
+            parsed.append(r)
+    dropped = len(raw) - len(parsed)
+    if dropped:
+        logger.warning("%d markets dropped (unparseable tickers)", dropped)
+    print(f"  {len(parsed)} parsed, {dropped} dropped")
 
-    # Parse into standard format
-    parsed = [_parse_market(m) for m in unique_markets]
-    df = pd.DataFrame(parsed)
+    # Step 3: Keep only home-team YES markets (one per game).
+    # Deduplicate by game_id to guard against pagination overlap (same market
+    # on multiple pages) or any other source of duplicate raw markets.
+    seen_game_ids: set = set()
+    home_markets = []
+    for p in parsed:
+        if p["is_home_yes"] and p["game_id"] not in seen_game_ids:
+            seen_game_ids.add(p["game_id"])
+            home_markets.append(p)
+    print(f"  {len(home_markets)} unique games (home-YES + game_id dedup)")
 
-    # Normalize team names where parseable
-    if "home_team" in df.columns:
-        df["home_team"] = df["home_team"].apply(
-            lambda x: normalize_team(x) if pd.notna(x) and x else x
-        )
-    if "away_team" in df.columns:
-        df["away_team"] = df["away_team"].apply(
-            lambda x: normalize_team(x) if pd.notna(x) and x else x
-        )
+    # Step 4: Build output DataFrame
+    rows = [_to_game_row(m) for m in home_markets]
+    df = pd.DataFrame(rows)
 
-    # Cache as single file (not per-season -- Kalshi data is 2025 only)
+    if df.empty:
+        logger.warning("No KXMLBGAME markets found — returning empty DataFrame")
+        return df
+
+    df = df.sort_values("date").reset_index(drop=True)
     save_to_cache(df, key, parquet_path, season=2025)
     return df

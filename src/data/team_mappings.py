@@ -61,6 +61,10 @@ TEAM_MAP = {
     # Angels (old abbreviation)
     "ANA": "LAA",
     "CAL": "LAA",
+    # Kalshi ticker-specific codes (KXMLBGAME series uses these internally)
+    "KAN": "KCR",   # Kansas City (Kalshi uses KAN, not KC)
+    "FLA": "MIA",   # Miami/Florida (Kalshi uses FLA, old Marlins name)
+    "ATH": "OAK",   # Las Vegas Athletics (rebranded from Oakland in 2025)
 
     # === Full team names (MLB Stats API format) ===
     "Arizona Diamondbacks": "ARI",
