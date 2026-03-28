@@ -71,6 +71,7 @@ None yet.
 - [Research]: pandas must stay at 2.2.x (not 3.0) due to pybaseball incompatibility with PyArrow string dtypes
 - [Research]: Kalshi historical data only available from 2025 -- Phase 4 comparison limited to ~1 season
 - [Research]: 2020 60-game season may need exclusion or era-flagging -- decision needed during Phase 1
+- [Phase 4 Blocker]: `fetch_kalshi_markets()` stores `last_price_dollars` (settlement closing price). Phase 4 benchmark requires PRE-GAME market price to avoid look-ahead bias. Must investigate Kalshi candlestick/trade-history API before Phase 4 planning. See `<known_issues>` block in `01-03-PLAN.md`.
 
 ## Session Continuity
 
