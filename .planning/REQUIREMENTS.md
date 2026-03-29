@@ -10,14 +10,14 @@
 
 - [x] **SP-01**: FeatureBuilder fixes two bugs in `_add_advanced_features()`: (1) pybaseball statcast returns `'last_name, first_name'` as a single merged column — the join must split on `", "` and reverse to "First Last"; (2) xwOBA column in Baseball Savant output is `'est_woba'` not `'xwoba'`. Both bugs caused 100% NaN for `xwoba_diff` in v1.
 - [x] **SP-02**: System builds `mlb_player_id → fangraphs_id` cross-reference (via pybaseball `playerid_lookup()` or Chadwick Bureau register) for ID-based SP name matching; eliminates ~17% NaN rate from MLB Stats API vs FanGraphs name format mismatches.
-- [ ] **SP-03**: FeatureBuilder converts all season-aggregate SP stats to season-to-date rolling (cumsum + shift(1) per pitcher per season); v1 used full-season FanGraphs totals as game-level features, meaning a June game saw September stats — temporal leakage that must be eliminated before any retraining.
-- [ ] **SP-04**: FeatureBuilder computes `sp_k_bb_pct_diff` (K-BB% differential) and removes `sp_k_pct_diff`; K-BB% explains 17.92% of future RA9 variance vs under 10% for K% alone.
-- [ ] **SP-05**: FeatureBuilder computes `sp_whip_diff` differential; WHIP provides independent signal from the FIP family.
-- [ ] **SP-06**: FeatureBuilder computes `sp_era_diff` (season-to-date ERA differential, sourced from per-game rolling after SP-03 conversion).
+- [x] **SP-03**: FeatureBuilder converts all season-aggregate SP stats to season-to-date rolling (cumsum + shift(1) per pitcher per season); v1 used full-season FanGraphs totals as game-level features, meaning a June game saw September stats — temporal leakage that must be eliminated before any retraining.
+- [x] **SP-04**: FeatureBuilder computes `sp_k_bb_pct_diff` (K-BB% differential) and removes `sp_k_pct_diff`; K-BB% explains 17.92% of future RA9 variance vs under 10% for K% alone.
+- [x] **SP-05**: FeatureBuilder computes `sp_whip_diff` differential; WHIP provides independent signal from the FIP family.
+- [x] **SP-06**: FeatureBuilder computes `sp_era_diff` (season-to-date ERA differential, sourced from per-game rolling after SP-03 conversion).
 - [x] **SP-07**: FeatureBuilder computes `sp_recent_fip_diff` (30-day rolling FIP from MLB Stats API game logs; K/BB/HR/IP per start aggregated over trailing 30 calendar days with shift(1)).
 - [x] **SP-08**: FeatureBuilder computes `sp_pitch_count_last_diff` (pitch count in SP's most recent start; impute NaN first start with league-average 93 pitches) and `sp_days_rest_diff` (integer days rest, capped at 7).
 - [ ] **SP-09**: `feature_sets.py` defines three named constants: `TEAM_ONLY_FEATURE_COLS` (pre-lineup feature set, team stats only), `SP_ENHANCED_FEATURE_COLS` (full set including all new SP columns), and `V1_FULL_FEATURE_COLS` (v1 feature set preserved for apples-to-apples backtest comparison).
-- [ ] **SP-10**: FeatureBuilder handles SP cold-start: uses previous-season aggregate stats as prior for first start of season; imputes league-average values for rookies and mid-season call-ups.
+- [x] **SP-10**: FeatureBuilder handles SP cold-start: uses previous-season aggregate stats as prior for first start of season; imputes league-average values for rookies and mid-season call-ups.
 - [ ] **SP-11**: Feature store saved as `feature_store_v2.parquet` (versioned separately from `feature_store_v1.parquet`; v1 file preserved unchanged).
 - [ ] **SP-12**: Temporal safety test suite extended to all new SP columns; each column must change game-to-game within a season per pitcher (no constant values that would indicate a season-level lookup instead of a rolling one).
 
@@ -120,14 +120,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | SP-01 | Phase 5 | Complete |
 | SP-02 | Phase 5 | Complete |
-| SP-03 | Phase 5 | Pending |
-| SP-04 | Phase 5 | Pending |
-| SP-05 | Phase 5 | Pending |
-| SP-06 | Phase 5 | Pending |
+| SP-03 | Phase 5 | Complete |
+| SP-04 | Phase 5 | Complete |
+| SP-05 | Phase 5 | Complete |
+| SP-06 | Phase 5 | Complete |
 | SP-07 | Phase 5 | Complete |
 | SP-08 | Phase 5 | Complete |
 | SP-09 | Phase 5 | Pending |
-| SP-10 | Phase 5 | Pending |
+| SP-10 | Phase 5 | Complete |
 | SP-11 | Phase 5 | Pending |
 | SP-12 | Phase 5 | Pending |
 | MDL-01 | Phase 6 | Pending |

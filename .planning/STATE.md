@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Live Platform
 status: executing
-last_updated: "2026-03-29T20:27:27.000Z"
-last_activity: 2026-03-29 -- Completed 05-02 (extended game log v2 + FIP + pitch count)
+last_updated: "2026-03-29T20:46:32.000Z"
+last_activity: 2026-03-29 -- Completed 05-03 (season-to-date rolling SP features + cold-start)
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 4
-  completed_plans: 2
-  percent: 10
+  completed_plans: 3
+  percent: 15
 ---
 
 # Project State
@@ -25,11 +25,11 @@ See: .planning/PROJECT.md (updated 2026-03-29 -- v2.0 milestone started)
 ## Current Position
 
 Phase: 5 of 9 (SP Feature Integration)
-Plan: 2 of 4 in current phase
+Plan: 3 of 4 in current phase
 Status: Executing
-Last activity: 2026-03-29 -- Completed 05-02 (extended game log v2 + FIP + pitch count)
+Last activity: 2026-03-29 -- Completed 05-03 (season-to-date rolling SP features + cold-start)
 
-Progress: [====......] 10%
+Progress: [=====.....] 15%
 
 ## Performance Metrics
 
@@ -42,7 +42,7 @@ Progress: [====......] 10%
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 5 (SP Feature Integration) | 2/4 | 11min | 5.5min |
+| 5 (SP Feature Integration) | 3/4 | 20min | 6.7min |
 
 **Recent Trend (v1.0):**
 - Last 5 plans: 34min, 5min, 10min, 5min, 5min
@@ -68,6 +68,10 @@ Recent decisions affecting current work:
 - [05-02]: Versioned cache key (pitcher_game_log_v2_) prevents stale 3-column cache reuse
 - [05-02]: Raw FIP formula (no cFIP constant) -- cancels in home-away differentials
 - [05-02]: Cold-start imputation: 93 pitches (league avg), 7 days rest cap
+- [05-03]: Season-to-date ERA and K-BB rate use cumsum+shift(1) from v2 game logs (temporally safe)
+- [05-03]: WHIP/SIERA kept from FanGraphs season-level (hits not in game log v2)
+- [05-03]: Cold-start cascade: rolling -> prev-season FanGraphs -> league-average constants
+- [05-03]: K-BB rate per 9 IP: ((cumK - cumBB) * 9) / cumIP -- scale cancels in differentials
 
 ### Pending Todos
 
@@ -83,5 +87,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-29
-Stopped at: Completed 05-02-PLAN.md (extended game log v2 + FIP + pitch count)
+Stopped at: Completed 05-03-PLAN.md (season-to-date rolling SP features + cold-start)
 Resume file: None
