@@ -15,7 +15,6 @@ Train three probability-calibrated models (logistic regression, random forest, X
 
 ### Walk-forward split design
 - Expanding window: each fold trains on all seasons up to N-2, calibrates on season N-1, predicts season N
-- Test years: 2019–2024 (first fold: train 2015–2018, calibrate on 2018, predict 2019... wait — see calibration section)
 - Fold structure: train 2015..N-2 → calibrate on N-1 → test on N, for N = 2019..2024
 - 2020 season: include in training sets only — never used as a test year (60-game season, Brier score would be statistically unreliable). 2020 games contribute training signal but are not reported as a standalone fold result.
 - Early-season games (games 1–9 per team per season, where `rolling_ops_diff` is NaN): drop from both training and test sets entirely. Consistent with Phase 2's NaN-means-not-available policy. No imputation.
@@ -25,6 +24,7 @@ Train three probability-calibrated models (logistic regression, random forest, X
 - Per-fold pipeline: train base model on seasons 1..N-2 → fit isotonic calibrator on season N-1 → evaluate calibrated model on season N
 - Calibration is re-run per fold — each fold has its own independently calibrated model. Never fit calibration once on full training set.
 - Isotonic chosen over sigmoid: a full season (~1,100–1,200 games) provides enough calibration data for isotonic to outperform Platt scaling
+- **2020 calibration season constraint**: when 2020 is the calibration season (2021 test fold), it has ~891 games after NaN-row drops (60-game season). Isotonic calibration still works at that size. Implementation must not hardcode any game count assumption (no `assert len(cal_df) > 1000`, no fixed bin counts derived from expected game count). All calibration logic must be data-length-agnostic.
 
 ### Notebook & code structure
 - Model and backtest logic in `src/models/` — follow Phase 1/2 pattern of thin notebooks calling importable modules
@@ -101,7 +101,15 @@ No ADRs or design docs. Requirements fully captured in REQUIREMENTS.md and decis
 ## Specific Ideas
 
 - The fold structure means test years 2019–2024 but 2020 is skipped as a test year. Effective test folds: 2019, 2021, 2022, 2023, 2024 — 5 folds reported in the comparison notebook.
-- Calibration season N-1 is always skipped as a test year within each fold. For the 2019 fold: train 2015–2017, calibrate 2018, test 2019. For 2020 fold: skip (2020 not a test year). For 2021 fold: train 2015–2019, calibrate 2020, test 2021 (2020 is used as calibration data even though it's a short season — acceptable for calibration).
+- Fold map (explicit):
+  - 2019 fold: train 2015–2017, calibrate 2018, test 2019
+  - 2020: skipped as test year (not a fold)
+  - 2021 fold: train 2015–2019, calibrate 2020, test 2021
+  - 2022 fold: train 2015–2020, calibrate 2021, test 2022
+  - 2023 fold: train 2015–2021, calibrate 2022, test 2023
+  - 2024 fold: train 2015–2022, calibrate 2023, test 2024
+- 5 reported folds total (2019, 2021, 2022, 2023, 2024).
+- The 2021 fold's calibration set is 2020 (~891 games after NaN drops). The backtest loop must not have hardcoded game count checks or assumptions that break on a shorter calibration season.
 
 </specifics>
 
