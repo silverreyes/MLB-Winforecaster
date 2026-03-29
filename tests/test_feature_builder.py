@@ -194,8 +194,8 @@ def _make_statcast_pitcher(season):
     })
 
 
-def _make_sp_recent_form_bulk(game_dates, season):
-    """Create synthetic SP recent form data matching pitching_stats_range output."""
+def _make_sp_recent_form_bulk(game_dates, season, sp_names=None):
+    """Create synthetic SP recent form data matching MLB Stats API output."""
     result = {}
     for date in sorted(set(game_dates)):
         result[date] = pd.DataFrame({

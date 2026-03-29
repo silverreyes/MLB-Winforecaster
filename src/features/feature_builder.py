@@ -471,8 +471,14 @@ class FeatureBuilder:
         for season in self.seasons:
             season_games = df[df["season"] == season]
             game_dates = season_games["game_date"].dt.strftime("%Y-%m-%d").unique().tolist()
+            # Pass probable-starter names so the loader only fetches game logs
+            # for pitchers who actually start games (not all ~300 roster pitchers).
+            season_sps = (
+                set(season_games["home_probable_pitcher"].dropna())
+                | set(season_games["away_probable_pitcher"].dropna())
+            )
             if game_dates:
-                bulk_results = fetch_sp_recent_form_bulk(game_dates, season)
+                bulk_results = fetch_sp_recent_form_bulk(game_dates, season, sp_names=season_sps)
                 for date_str, form_df in bulk_results.items():
                     if form_df is not None and not form_df.empty and "Name" in form_df.columns:
                         for _, row in form_df.iterrows():

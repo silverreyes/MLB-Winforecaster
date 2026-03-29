@@ -150,7 +150,7 @@ def _make_statcast_leakage(season):
     })
 
 
-def _make_sp_form_bulk_leakage(game_dates, season):
+def _make_sp_form_bulk_leakage(game_dates, season, sp_names=None):
     """SP recent form for leakage tests."""
     result = {}
     for date in sorted(set(game_dates)):
