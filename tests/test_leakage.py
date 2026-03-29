@@ -360,3 +360,199 @@ def test_early_season_nan():
     non_nan_count = df["rolling_ops_diff"].notna().sum()
     assert all_nan_count > 0, "Expected at least some NaN rolling values"
     # With 15 game logs and shift(1)+min_periods=10, at most 5 per team can be non-NaN
+
+
+# ---------------------------------------------------------------------------
+# SP temporal safety tests (SP-03, SP-12)
+# ---------------------------------------------------------------------------
+
+
+def _make_schedule_sp_temporal(season, n_games=8):
+    """Create a focused schedule for SP temporal safety testing.
+
+    8 games, all with the same pitcher matchups to make assertions easy:
+    Pitcher A (home) vs Pitcher B (away).
+    """
+    rows = []
+    for i in range(n_games):
+        game_date = f"{season}-05-{(i * 2 + 1):02d}"  # May 01, 03, 05, 07, 09, 11, 13, 15
+        rows.append({
+            "game_id": 500000 + season * 100 + i,
+            "game_date": game_date,
+            "home_team": "NYY", "away_team": "BOS",
+            "home_probable_pitcher": "Pitcher A",
+            "away_probable_pitcher": "Pitcher B",
+            "home_score": 5, "away_score": 3,
+            "winning_team": "NYY", "losing_team": "BOS",
+            "status": "Final",
+            "is_shortened_season": False, "season_games": 162,
+            "season": season,
+        })
+    return pd.DataFrame(rows)
+
+
+def _make_pitcher_game_log_v2_temporal(player_id, season):
+    """Game log v2 for temporal safety tests.
+
+    Pitcher A (1001):
+        Game 1 (May 01): IP=6, ER=3, K=5, BB=2
+        Game 2 (May 03): IP=7, ER=1, K=8, BB=1
+        Game 3 (May 05): IP=5, ER=4, K=4, BB=3
+        Game 4 (May 07): IP=6, ER=2, K=7, BB=1
+        Game 5 (May 09): IP=7, ER=1, K=9, BB=0
+        Game 6 (May 11): IP=5, ER=3, K=5, BB=2
+        Game 7 (May 13): IP=6, ER=2, K=6, BB=2
+        Game 8 (May 15): IP=7, ER=0, K=10, BB=1
+
+    Pitcher B (1002):
+        Game 1 (May 01): IP=5, ER=4, K=4, BB=3
+        Game 2 (May 03): IP=6, ER=2, K=6, BB=2
+        Game 3 (May 05): IP=4, ER=5, K=3, BB=4
+        Game 4 (May 07): IP=5, ER=3, K=5, BB=3
+        Game 5 (May 09): IP=6, ER=2, K=7, BB=2
+        Game 6 (May 11): IP=4, ER=4, K=4, BB=3
+        Game 7 (May 13): IP=5, ER=3, K=5, BB=2
+        Game 8 (May 15): IP=6, ER=1, K=8, BB=1
+    """
+    if player_id == 1001:
+        return pd.DataFrame({
+            "date": pd.to_datetime([
+                f"{season}-05-01", f"{season}-05-03", f"{season}-05-05",
+                f"{season}-05-07", f"{season}-05-09", f"{season}-05-11",
+                f"{season}-05-13", f"{season}-05-15",
+            ]),
+            "innings_pitched": [6.0, 7.0, 5.0, 6.0, 7.0, 5.0, 6.0, 7.0],
+            "earned_runs":     [3,   1,   4,   2,   1,   3,   2,   0],
+            "strikeouts":      [5,   8,   4,   7,   9,   5,   6,   10],
+            "base_on_balls":   [2,   1,   3,   1,   0,   2,   2,   1],
+            "home_runs":       [1,   0,   1,   1,   0,   1,   0,   0],
+            "number_of_pitches": [95, 100, 88, 92, 105, 90, 94, 108],
+            "games_started":   [1,   1,   1,   1,   1,   1,   1,   1],
+        })
+    elif player_id == 1002:
+        return pd.DataFrame({
+            "date": pd.to_datetime([
+                f"{season}-05-01", f"{season}-05-03", f"{season}-05-05",
+                f"{season}-05-07", f"{season}-05-09", f"{season}-05-11",
+                f"{season}-05-13", f"{season}-05-15",
+            ]),
+            "innings_pitched": [5.0, 6.0, 4.0, 5.0, 6.0, 4.0, 5.0, 6.0],
+            "earned_runs":     [4,   2,   5,   3,   2,   4,   3,   1],
+            "strikeouts":      [4,   6,   3,   5,   7,   4,   5,   8],
+            "base_on_balls":   [3,   2,   4,   3,   2,   3,   2,   1],
+            "home_runs":       [2,   1,   2,   1,   1,   2,   1,   0],
+            "number_of_pitches": [88, 95, 80, 90, 98, 82, 88, 100],
+            "games_started":   [1,   1,   1,   1,   1,   1,   1,   1],
+        })
+    return pd.DataFrame(columns=[
+        "date", "innings_pitched", "earned_runs", "strikeouts",
+        "base_on_balls", "home_runs", "number_of_pitches", "games_started",
+    ])
+
+
+def _build_sp_temporal(seasons, schedule_fn=None):
+    """Build features for SP temporal safety tests."""
+    sched_fn = schedule_fn or _make_schedule_sp_temporal
+    with patch("src.features.feature_builder.fetch_schedule", side_effect=sched_fn), \
+         patch("src.features.feature_builder.fetch_sp_stats", side_effect=_make_sp_stats_leakage), \
+         patch("src.features.feature_builder.fetch_team_batting", side_effect=_make_team_batting_leakage), \
+         patch("src.features.feature_builder.fetch_team_game_log", side_effect=_make_game_logs_leakage), \
+         patch("src.features.feature_builder.fetch_statcast_pitcher", side_effect=_make_statcast_leakage), \
+         patch("src.features.feature_builder.fetch_kalshi_markets", side_effect=_make_kalshi_leakage), \
+         patch("src.features.feature_builder.fetch_sp_recent_form_bulk", side_effect=_make_sp_form_bulk_leakage), \
+         patch("src.features.feature_builder._get_pitcher_id_map", side_effect=_make_pitcher_id_map_leakage), \
+         patch("src.features.feature_builder._fetch_pitcher_game_log_v2", side_effect=_make_pitcher_game_log_v2_temporal):
+        fb = FeatureBuilder(seasons=seasons)
+        return fb.build()
+
+
+def test_sp_std_no_leakage():
+    """SP-03, SP-12: Season-to-date SP features vary game-to-game (not constant).
+
+    If sp_era_diff is constant for all games of a pitcher within a season,
+    that indicates the old season-aggregate lookup is still in use (leakage).
+    With cumsum+shift(1), each game sees a different cumulative stat.
+    """
+    df = _build_sp_temporal([2022])
+    df = df.sort_values("game_date").reset_index(drop=True)
+
+    # All games have the same pitcher matchup (Pitcher A vs Pitcher B),
+    # so sp_era_diff should vary game-to-game as cumulative stats evolve.
+    era_diff_values = df["sp_era_diff"].dropna().values
+    assert len(era_diff_values) >= 3, (
+        f"Expected at least 3 non-NaN sp_era_diff values, got {len(era_diff_values)}"
+    )
+    # Standard deviation should be > 0 (values change game-to-game)
+    std = np.std(era_diff_values)
+    assert std > 0, (
+        f"sp_era_diff is constant across all games (std={std}). "
+        "This indicates season-aggregate leakage, not game-to-game rolling."
+    )
+
+    # Also check K-BB% diff varies
+    k_bb_diff_values = df["sp_k_bb_pct_diff"].dropna().values
+    if len(k_bb_diff_values) >= 3:
+        k_bb_std = np.std(k_bb_diff_values)
+        assert k_bb_std > 0, (
+            f"sp_k_bb_pct_diff is constant across all games (std={k_bb_std}). "
+            "This indicates season-aggregate leakage."
+        )
+
+
+def test_sp_temporal_safety():
+    """SP-12: Verify shift(1) prevents current-game data from leaking into features.
+
+    Build mock data for Pitcher A with 4 starts:
+        Game 1 (May 01): IP=6, ER=3, K=5, BB=2
+        Game 2 (May 03): IP=7, ER=1, K=8, BB=1
+        Game 3 (May 05): IP=5, ER=4, K=4, BB=3
+        Game 4 (May 07): IP=6, ER=2, K=7, BB=1
+
+    Verify shift(1) behavior for Pitcher A's std_era:
+        Game 1: std_era = NaN -> cold-start fallback
+        Game 2: std_era = (3*9)/6 = 4.50  (only Game 1 data)
+        Game 3: std_era = ((3+1)*9)/(6+7) = 36/13 = 2.769  (Games 1-2 data)
+        Game 4: std_era = ((3+1+4)*9)/(6+7+5) = 72/18 = 4.00  (Games 1-3 data)
+
+    Key assertion: Game 2's stat MUST NOT include Game 2's own data.
+    """
+    df = _build_sp_temporal([2024])
+    df = df.sort_values("game_date").reset_index(drop=True)
+
+    # Extract home SP ERA values. Since the home pitcher is always Pitcher A
+    # and away is Pitcher B, we can compute expected values.
+    # We need the home SP's std_era component of sp_era_diff.
+    # sp_era_diff = home_sp_std_era - away_sp_std_era
+    # To isolate, we also compute expected away SP std_era.
+
+    # Pitcher A cumulative stats with shift(1):
+    # Game 1: prev = NaN (cold start: ERA=3.00 from FanGraphs mock)
+    # Game 2: prev cum_er=3, prev cum_ip=6 -> std_era = 27/6 = 4.50
+    # Game 3: prev cum_er=4, prev cum_ip=13 -> std_era = 36/13 = 2.769
+    # Game 4: prev cum_er=8, prev cum_ip=18 -> std_era = 72/18 = 4.00
+
+    # Pitcher B cumulative stats with shift(1):
+    # Game 1: prev = NaN (cold start: ERA=4.00 from FanGraphs mock)
+    # Game 2: prev cum_er=4, prev cum_ip=5 -> std_era = 36/5 = 7.20
+    # Game 3: prev cum_er=6, prev cum_ip=11 -> std_era = 54/11 = 4.909
+    # Game 4: prev cum_er=11, prev cum_ip=15 -> std_era = 99/15 = 6.60
+
+    expected_era_diffs = {
+        # Game 1: cold-start A (3.00) - cold-start B (4.00) = -1.00
+        pd.Timestamp("2024-05-01"): 3.00 - 4.00,
+        # Game 2: 4.50 - 7.20 = -2.70
+        pd.Timestamp("2024-05-03"): 4.50 - 7.20,
+        # Game 3: 2.769 - 4.909 = -2.140
+        pd.Timestamp("2024-05-05"): (36 / 13) - (54 / 11),
+        # Game 4: 4.00 - 6.60 = -2.60
+        pd.Timestamp("2024-05-07"): 4.00 - 6.60,
+    }
+
+    for game_date, expected_diff in expected_era_diffs.items():
+        game_row = df[df["game_date"] == game_date]
+        if len(game_row) > 0:
+            actual = game_row.iloc[0]["sp_era_diff"]
+            assert actual == pytest.approx(expected_diff, abs=0.05), (
+                f"Game {game_date.date()}: expected sp_era_diff ~ {expected_diff:.3f} "
+                f"but got {actual:.3f}. Shift(1) may not be working correctly."
+            )

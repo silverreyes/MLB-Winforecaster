@@ -729,3 +729,218 @@ def test_xwoba_fix():
         assert row["xwoba_diff"] == pytest.approx(-0.010, abs=0.001), (
             f"Expected xwoba_diff ~ -0.010 but got {row['xwoba_diff']}"
         )
+
+
+# ---------------------------------------------------------------------------
+# SP-03/SP-04/SP-05/SP-06/SP-10 tests (season-to-date rolling, cold-start)
+# ---------------------------------------------------------------------------
+
+
+def test_k_bb_pct_diff():
+    """SP-04: sp_k_bb_pct_diff is present and sp_k_pct_diff is removed.
+
+    Mock v2 game logs with varying K and BB per game.
+    After cumsum + shift(1), games after the first start should have non-NaN values.
+    """
+    with patch("src.features.feature_builder.fetch_schedule", side_effect=_mock_fetch_schedule), \
+         patch("src.features.feature_builder.fetch_sp_stats", side_effect=_mock_fetch_sp_stats), \
+         patch("src.features.feature_builder.fetch_team_batting", side_effect=_mock_fetch_team_batting), \
+         patch("src.features.feature_builder.fetch_team_game_log", side_effect=_mock_fetch_team_game_log), \
+         patch("src.features.feature_builder.fetch_statcast_pitcher", side_effect=_mock_fetch_statcast_pitcher), \
+         patch("src.features.feature_builder.fetch_kalshi_markets", side_effect=_mock_fetch_kalshi_markets), \
+         patch("src.features.feature_builder.fetch_sp_recent_form_bulk", side_effect=_make_sp_recent_form_bulk), \
+         patch("src.features.feature_builder._get_pitcher_id_map", side_effect=_make_pitcher_id_map), \
+         patch("src.features.feature_builder._fetch_pitcher_game_log_v2", side_effect=_make_pitcher_game_log_v2):
+        fb = FeatureBuilder(seasons=[2022])
+        df = fb.build()
+
+    assert "sp_k_bb_pct_diff" in df.columns
+    assert "sp_k_pct_diff" not in df.columns
+    # Games after the first start for both pitchers should have non-NaN
+    assert df["sp_k_bb_pct_diff"].notna().any(), (
+        "sp_k_bb_pct_diff is all NaN -- season-to-date rolling K-BB not working"
+    )
+
+
+def test_whip_diff():
+    """SP-05: sp_whip_diff is computed from FanGraphs season-level WHIP."""
+    with patch("src.features.feature_builder.fetch_schedule", side_effect=_mock_fetch_schedule), \
+         patch("src.features.feature_builder.fetch_sp_stats", side_effect=_mock_fetch_sp_stats), \
+         patch("src.features.feature_builder.fetch_team_batting", side_effect=_mock_fetch_team_batting), \
+         patch("src.features.feature_builder.fetch_team_game_log", side_effect=_mock_fetch_team_game_log), \
+         patch("src.features.feature_builder.fetch_statcast_pitcher", side_effect=_mock_fetch_statcast_pitcher), \
+         patch("src.features.feature_builder.fetch_kalshi_markets", side_effect=_mock_fetch_kalshi_markets), \
+         patch("src.features.feature_builder.fetch_sp_recent_form_bulk", side_effect=_make_sp_recent_form_bulk), \
+         patch("src.features.feature_builder._get_pitcher_id_map", side_effect=_make_pitcher_id_map), \
+         patch("src.features.feature_builder._fetch_pitcher_game_log_v2", side_effect=_make_pitcher_game_log_v2):
+        fb = FeatureBuilder(seasons=[2022])
+        df = fb.build()
+
+    assert "sp_whip_diff" in df.columns
+    assert df["sp_whip_diff"].notna().any()
+    # Pitcher A (WHIP=1.10) vs Pitcher B (WHIP=1.25) when NYY is home:
+    # sp_whip_diff = 1.10 - 1.25 = -0.15
+    nyy_home = df[(df["home_team"] == "NYY") &
+                  (df["home_probable_pitcher"] == "Pitcher A") &
+                  (df["away_probable_pitcher"] == "Pitcher B")]
+    if len(nyy_home) > 0:
+        row = nyy_home.iloc[0]
+        assert row["sp_whip_diff"] == pytest.approx(-0.15, abs=0.01)
+
+
+def test_era_diff():
+    """SP-03: sp_era_diff uses season-to-date rolling via cumsum + shift(1).
+
+    Pitcher A (1001) game log:
+        Game 1 (May 01): IP=6, ER=2
+        Game 2 (May 03): IP=7, ER=1
+        Game 3 (May 05): IP=5, ER=3
+    After shift(1):
+        Game 1: std_era = NaN (cold-start -> prev_season or league_avg)
+        Game 2: std_era = (2*9)/6 = 3.00
+        Game 3: std_era = ((2+1)*9)/(6+7) = 27/13 = 2.077
+
+    Pitcher B (1002) game log:
+        Game 1 (May 01): IP=5, ER=3
+        Game 2 (May 03): IP=6, ER=2
+        Game 3 (May 05): IP=4, ER=4
+    After shift(1):
+        Game 1: std_era = NaN (cold-start)
+        Game 2: std_era = (3*9)/5 = 5.40
+        Game 3: std_era = ((3+2)*9)/(5+6) = 45/11 = 4.091
+
+    On game 3 (May 05): NYY home with Pitcher A vs BOS away with Pitcher B
+    sp_era_diff = 2.077 - 4.091 = -2.014
+    """
+    with patch("src.features.feature_builder.fetch_schedule", side_effect=_mock_fetch_schedule), \
+         patch("src.features.feature_builder.fetch_sp_stats", side_effect=_mock_fetch_sp_stats), \
+         patch("src.features.feature_builder.fetch_team_batting", side_effect=_mock_fetch_team_batting), \
+         patch("src.features.feature_builder.fetch_team_game_log", side_effect=_mock_fetch_team_game_log), \
+         patch("src.features.feature_builder.fetch_statcast_pitcher", side_effect=_mock_fetch_statcast_pitcher), \
+         patch("src.features.feature_builder.fetch_kalshi_markets", side_effect=_mock_fetch_kalshi_markets), \
+         patch("src.features.feature_builder.fetch_sp_recent_form_bulk", side_effect=_make_sp_recent_form_bulk), \
+         patch("src.features.feature_builder._get_pitcher_id_map", side_effect=_make_pitcher_id_map), \
+         patch("src.features.feature_builder._fetch_pitcher_game_log_v2", side_effect=_make_pitcher_game_log_v2):
+        fb = FeatureBuilder(seasons=[2022])
+        df = fb.build()
+
+    assert "sp_era_diff" in df.columns
+    # Game 3 of the schedule (index 2): May 05, NYY home, Pitcher A vs Pitcher B
+    game_3 = df[(df["game_date"] == pd.Timestamp("2022-05-05")) &
+                (df["home_team"] == "NYY")]
+    if len(game_3) > 0:
+        row = game_3.iloc[0]
+        expected_a_era = (2 * 9) / 6 + (1 * 9) / 6  # cumsum approach: (2+1)*9 / (6+7) = 2.077
+        expected_a_era = (3 * 9) / 13  # = 2.077
+        expected_b_era = (5 * 9) / 11  # = 4.091
+        expected_diff = expected_a_era - expected_b_era  # = -2.014
+        assert row["sp_era_diff"] == pytest.approx(expected_diff, abs=0.05), (
+            f"Expected sp_era_diff ~ {expected_diff:.3f} but got {row['sp_era_diff']}"
+        )
+
+
+def test_cold_start():
+    """SP-10: Cold-start uses previous-season FanGraphs stats, then league-average.
+
+    For the first game of a season, shift(1) produces NaN. The cold-start
+    fallback should use previous-season stats from fetch_sp_stats(season-1).
+    For pitchers with no previous-season data, use LEAGUE_AVG_ERA (4.25).
+    """
+    # Custom schedule: 2 seasons, just 2 games each
+    def _make_cold_start_schedule(season):
+        rows = [{
+            "game_id": 400000 + season * 10 + 0,
+            "game_date": f"{season}-04-01",
+            "home_team": "NYY", "away_team": "BOS",
+            "home_probable_pitcher": "Pitcher A",
+            "away_probable_pitcher": "Pitcher B",
+            "home_score": 5, "away_score": 3,
+            "winning_team": "NYY", "losing_team": "BOS",
+            "status": "Final",
+            "is_shortened_season": False, "season_games": 162,
+            "season": season,
+        }, {
+            "game_id": 400000 + season * 10 + 1,
+            "game_date": f"{season}-04-05",
+            "home_team": "NYY", "away_team": "BOS",
+            "home_probable_pitcher": "Pitcher A",
+            "away_probable_pitcher": "Rookie X",
+            "home_score": 4, "away_score": 2,
+            "winning_team": "NYY", "losing_team": "BOS",
+            "status": "Final",
+            "is_shortened_season": False, "season_games": 162,
+            "season": season,
+        }]
+        return pd.DataFrame(rows)
+
+    # Custom game log v2: Pitcher A has 1 start in April for each season
+    def _cold_start_game_log_v2(player_id, season):
+        if player_id == 1001:  # Pitcher A
+            return pd.DataFrame({
+                "date": pd.to_datetime([f"{season}-04-01", f"{season}-04-05"]),
+                "innings_pitched": [6.0, 7.0],
+                "earned_runs": [2, 1],
+                "strikeouts": [7, 8],
+                "base_on_balls": [2, 1],
+                "home_runs": [1, 0],
+                "number_of_pitches": [95, 100],
+                "games_started": [1, 1],
+            })
+        if player_id == 1002:  # Pitcher B
+            return pd.DataFrame({
+                "date": pd.to_datetime([f"{season}-04-01"]),
+                "innings_pitched": [5.0],
+                "earned_runs": [3],
+                "strikeouts": [5],
+                "base_on_balls": [3],
+                "home_runs": [1],
+                "number_of_pitches": [90],
+                "games_started": [1],
+            })
+        # Rookie X has no game log data at all
+        return pd.DataFrame(columns=[
+            "date", "innings_pitched", "earned_runs", "strikeouts",
+            "base_on_balls", "home_runs", "number_of_pitches", "games_started",
+        ])
+
+    def _cold_start_id_map(season):
+        return {"Pitcher A": 1001, "Pitcher B": 1002, "Rookie X": 9999}
+
+    with patch("src.features.feature_builder.fetch_schedule", side_effect=_make_cold_start_schedule), \
+         patch("src.features.feature_builder.fetch_sp_stats", side_effect=_mock_fetch_sp_stats), \
+         patch("src.features.feature_builder.fetch_team_batting", side_effect=_mock_fetch_team_batting), \
+         patch("src.features.feature_builder.fetch_team_game_log", side_effect=_mock_fetch_team_game_log), \
+         patch("src.features.feature_builder.fetch_statcast_pitcher", side_effect=_mock_fetch_statcast_pitcher), \
+         patch("src.features.feature_builder.fetch_kalshi_markets", side_effect=_mock_fetch_kalshi_markets), \
+         patch("src.features.feature_builder.fetch_sp_recent_form_bulk", side_effect=_make_sp_recent_form_bulk), \
+         patch("src.features.feature_builder._get_pitcher_id_map", side_effect=_cold_start_id_map), \
+         patch("src.features.feature_builder._fetch_pitcher_game_log_v2", side_effect=_cold_start_game_log_v2):
+        fb = FeatureBuilder(seasons=[2023, 2024])
+        df = fb.build()
+
+    # All games should have non-NaN sp_era_diff (cold-start fills in)
+    assert df["sp_era_diff"].notna().all(), (
+        "sp_era_diff has NaN -- cold-start fallback not working"
+    )
+
+    # Game 2 of 2024 (Apr 5): Pitcher A vs Rookie X
+    # Pitcher A's 2nd game in 2024: std_era from game 1 = (2*9)/6 = 3.00
+    # Rookie X: no game log, no prev season -> LEAGUE_AVG_ERA = 4.25
+    game_2_2024 = df[(df["game_date"] == pd.Timestamp("2024-04-05")) &
+                     (df["home_probable_pitcher"] == "Pitcher A") &
+                     (df["away_probable_pitcher"] == "Rookie X")]
+    if len(game_2_2024) > 0:
+        row = game_2_2024.iloc[0]
+        from src.features.feature_builder import LEAGUE_AVG_ERA
+        # Home: Pitcher A std_era = 3.00, Away: Rookie X = LEAGUE_AVG_ERA (4.25)
+        assert row["sp_era_diff"] == pytest.approx(3.00 - LEAGUE_AVG_ERA, abs=0.05), (
+            f"Expected sp_era_diff ~ {3.00 - LEAGUE_AVG_ERA:.3f} but got {row['sp_era_diff']}"
+        )
+
+
+def test_feature_set_constants():
+    """Wave 0 stub: feature set constants exist (implemented in Plan 04)."""
+    from src.models.feature_sets import FULL_FEATURE_COLS
+    # Stub: at minimum the existing constants exist
+    assert isinstance(FULL_FEATURE_COLS, list)
+    assert len(FULL_FEATURE_COLS) > 0
