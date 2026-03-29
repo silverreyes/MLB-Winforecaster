@@ -80,10 +80,11 @@ Plans:
   2. User can compare each model's Brier score against the Kalshi implied probability Brier score on the same 2025 games — reported as a partial benchmark distinct from the full 2015–2024 backtest
   3. User can view an edge analysis identifying individual games where model probability diverges from Kalshi opening price by a meaningful margin
   4. User can view profitability analysis with Kalshi fee structure applied — no edge is reported without fee adjustment
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 04-01: TBD
+- [ ] 04-01-PLAN.md — Library code: predict_2025 fold runner, Kalshi open price fetcher, edge/fee analysis module, and comprehensive tests
+- [ ] 04-02-PLAN.md — Kalshi comparison notebook (11) and edge analysis notebook (12) with user verification
 
 ## Progress
 
@@ -95,4 +96,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | 1. Data Ingestion and Raw Cache | 3/3 | Complete | 2026-03-28 |
 | 2. Feature Engineering and Feature Store | 3/3 | Complete | 2026-03-29 |
 | 3. Model Training and Backtesting | 2/2 | Complete | 2026-03-29 |
-| 4. Kalshi Market Comparison and Edge Analysis | 0/TBD | Not started | - |
+| 4. Kalshi Market Comparison and Edge Analysis | 0/2 | Not started | - |
