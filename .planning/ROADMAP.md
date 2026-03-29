@@ -64,11 +64,11 @@ Plans:
   3. User can view per-model, per-season, and aggregate Brier scores in a comparison notebook
   4. User can view calibration curves (reliability diagrams) for each model showing where they are over- or underconfident
   5. User can view a side-by-side model comparison notebook presenting LR vs RF vs XGBoost on Brier score, calibration, and per-season accuracy
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
+- [ ] 03-01-PLAN.md — Model training library: feature sets, model factories (LR/RF/XGBoost), isotonic calibration, walk-forward backtest loop, evaluation utilities, and test suites
+- [ ] 03-02-PLAN.md — Training notebook (09) and comparison notebook (10) with user verification checkpoint
 
 ### Phase 4: Kalshi Market Comparison and Edge Analysis
 **Goal**: User can evaluate whether any model outperforms Kalshi market prices on calibration for 2025 season games, and identify specific games where meaningful model-vs-market edges exist after fees
@@ -94,5 +94,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. Data Ingestion and Raw Cache | 3/3 | Complete | 2026-03-28 |
 | 2. Feature Engineering and Feature Store | 3/3 | Complete | 2026-03-29 |
-| 3. Model Training and Backtesting | 0/TBD | Not started | - |
+| 3. Model Training and Backtesting | 0/2 | Planning complete | - |
 | 4. Kalshi Market Comparison and Edge Analysis | 0/TBD | Not started | - |
