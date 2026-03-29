@@ -136,3 +136,101 @@ def test_calibration_curve_output():
     assert isinstance(mean_predicted, np.ndarray), "mean_predicted must be ndarray"
     assert len(fraction_positive) == len(mean_predicted), "Arrays must have same length"
     assert len(fraction_positive) <= n_bins, f"Length must be <= {n_bins}"
+
+
+# ===========================================================================
+# predict_2025 — unit tests (MARKET-02)
+# ===========================================================================
+
+from src.models.predict import predict_2025, TRAIN_SEASONS, CAL_SEASON, TEST_SEASON
+
+
+def test_predict_2025_constants():
+    """Verify 2025 fold configuration constants."""
+    assert TRAIN_SEASONS == list(range(2015, 2024))
+    assert CAL_SEASON == 2024
+    assert TEST_SEASON == 2025
+
+
+@pytest.fixture
+def synthetic_feature_matrix():
+    """Create synthetic feature matrix spanning seasons 2015-2025.
+
+    Generates 100 rows per season (1100 total) with core features
+    and metadata columns matching the real feature matrix schema.
+    """
+    rng = np.random.RandomState(42)
+    rows = []
+    for season in range(2015, 2026):
+        for i in range(100):
+            row = {
+                "season": season,
+                "game_date": pd.Timestamp(f"{season}-06-{(i % 28) + 1:02d}"),
+                "home_team": "NYY",
+                "away_team": "BOS",
+                "home_win": rng.randint(0, 2),
+                "rolling_ops_diff": rng.normal(0, 0.05),
+                "sp_fip_diff": rng.normal(0, 0.5),
+                "sp_xfip_diff": rng.normal(0, 0.5),
+                "sp_k_pct_diff": rng.normal(0, 0.03),
+                "sp_siera_diff": rng.normal(0, 0.5),
+                "team_woba_diff": rng.normal(0, 0.02),
+                "team_ops_diff": rng.normal(0, 0.03),
+                "pyth_win_pct_diff": rng.normal(0, 0.05),
+                "bullpen_era_diff": rng.normal(0, 0.5),
+                "bullpen_fip_diff": rng.normal(0, 0.5),
+                "is_home": 1,
+                "park_factor": 1.0 + rng.normal(0, 0.05),
+                "log5_home_wp": 0.5 + rng.normal(0, 0.05),
+            }
+            rows.append(row)
+    # Set first 10 rows of each season to NaN rolling_ops_diff (warmup)
+    df = pd.DataFrame(rows)
+    for season in range(2015, 2026):
+        mask = df["season"] == season
+        idx = df[mask].index[:10]
+        df.loc[idx, "rolling_ops_diff"] = np.nan
+    return df
+
+
+def test_predict_2025_schema(synthetic_feature_matrix):
+    """MARKET-02: predict_2025 output has correct column schema."""
+    result = predict_2025(synthetic_feature_matrix)
+    expected_cols = {
+        "game_date", "home_team", "away_team", "season", "home_win",
+        "model_name", "feature_set", "fold_test_year", "prob_calibrated", "prob_raw",
+    }
+    assert set(result.columns) == expected_cols
+
+
+def test_predict_2025_core_feature_set(synthetic_feature_matrix):
+    """MARKET-02: All rows use core feature set (xwoba_diff excluded)."""
+    result = predict_2025(synthetic_feature_matrix)
+    assert (result["feature_set"] == "core").all()
+
+
+def test_predict_2025_fold_year(synthetic_feature_matrix):
+    """MARKET-02: All rows have fold_test_year=2025."""
+    result = predict_2025(synthetic_feature_matrix)
+    assert (result["fold_test_year"] == 2025).all()
+
+
+def test_predict_2025_three_models(synthetic_feature_matrix):
+    """MARKET-02: Output contains predictions from all 3 models."""
+    result = predict_2025(synthetic_feature_matrix)
+    assert set(result["model_name"].unique()) == {"lr", "rf", "xgb"}
+
+
+def test_predict_2025_probs_valid(synthetic_feature_matrix):
+    """MARKET-02: All probabilities are in [0, 1]."""
+    result = predict_2025(synthetic_feature_matrix)
+    assert (result["prob_calibrated"] >= 0).all()
+    assert (result["prob_calibrated"] <= 1).all()
+    assert (result["prob_raw"] >= 0).all()
+    assert (result["prob_raw"] <= 1).all()
+
+
+def test_predict_2025_season_only_2025(synthetic_feature_matrix):
+    """MARKET-02: Only season 2025 appears in output (no train/cal leakage)."""
+    result = predict_2025(synthetic_feature_matrix)
+    assert (result["season"] == 2025).all()

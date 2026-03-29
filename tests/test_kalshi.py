@@ -288,3 +288,92 @@ def test_kalshi_within_response_dedup(mock_get, mock_kalshi_cache_dir, mock_cach
     # the home_markets filter already reduces to 1 row per game since duplicate tickers
     # produce identical game_id. The test confirms no double-counting.
     assert len(result) == 1
+
+
+# ===========================================================================
+# fetch_kalshi_open_prices — unit tests (MARKET-01)
+# ===========================================================================
+
+SAMPLE_CANDLESTICK_RESPONSE = {
+    "markets": [
+        {
+            "market_ticker": "KXMLBGAME-25APR151905NYYBOS-BOS",
+            "candlesticks": [
+                {
+                    "end_period_ts": 1744862400,
+                    "price": {
+                        "open_dollars": "0.5500",
+                        "close_dollars": "0.9900",
+                        "high_dollars": "0.9900",
+                        "low_dollars": "0.3800",
+                    },
+                    "volume_fp": "19972.00",
+                }
+            ],
+        }
+    ]
+}
+
+SAMPLE_CANDLESTICK_NO_DATA = {
+    "markets": [
+        {
+            "market_ticker": "KXMLBGAME-25APR161830CHCSD-SD",
+            "candlesticks": [],
+        }
+    ]
+}
+
+
+@patch("src.data.kalshi.CACHE_DIR")
+@patch("src.data.kalshi.requests.get")
+def test_fetch_open_prices_adds_column(mock_get, mock_kalshi_cache_dir, mock_cache_dir):
+    """MARKET-01: fetch_kalshi_open_prices adds kalshi_open_price column."""
+    mock_get.return_value = _make_mock_response(SAMPLE_CANDLESTICK_RESPONSE)
+    df = pd.DataFrame({
+        "date": ["2025-04-15"],
+        "market_ticker": ["KXMLBGAME-25APR151905NYYBOS-BOS"],
+        "home_team": ["BOS"],
+        "away_team": ["NYY"],
+    })
+    result = kalshi.fetch_kalshi_open_prices(df)
+    assert "kalshi_open_price" in result.columns
+
+
+@patch("src.data.kalshi.CACHE_DIR")
+@patch("src.data.kalshi.requests.get")
+def test_fetch_open_prices_correct_value(mock_get, mock_kalshi_cache_dir, mock_cache_dir):
+    """MARKET-01: open_dollars 0.5500 maps to kalshi_open_price 0.55."""
+    mock_get.return_value = _make_mock_response(SAMPLE_CANDLESTICK_RESPONSE)
+    df = pd.DataFrame({
+        "date": ["2025-04-15"],
+        "market_ticker": ["KXMLBGAME-25APR151905NYYBOS-BOS"],
+        "home_team": ["BOS"],
+        "away_team": ["NYY"],
+    })
+    result = kalshi.fetch_kalshi_open_prices(df)
+    assert result.iloc[0]["kalshi_open_price"] == pytest.approx(0.55, abs=0.001)
+
+
+@patch("src.data.kalshi.CACHE_DIR")
+@patch("src.data.kalshi.requests.get")
+def test_fetch_open_prices_nan_when_no_candle(mock_get, mock_kalshi_cache_dir, mock_cache_dir):
+    """MARKET-01: Markets with no candlestick data get NaN open price."""
+    mock_get.return_value = _make_mock_response(SAMPLE_CANDLESTICK_NO_DATA)
+    df = pd.DataFrame({
+        "date": ["2025-04-16"],
+        "market_ticker": ["KXMLBGAME-25APR161830CHCSD-SD"],
+        "home_team": ["SD"],
+        "away_team": ["CHC"],
+    })
+    result = kalshi.fetch_kalshi_open_prices(df)
+    assert pd.isna(result.iloc[0]["kalshi_open_price"])
+
+
+@patch("src.data.kalshi.CACHE_DIR")
+@patch("src.data.kalshi.requests.get")
+def test_fetch_open_prices_empty_df(mock_get, mock_kalshi_cache_dir, mock_cache_dir):
+    """Edge case: empty DataFrame returns empty DataFrame with kalshi_open_price column."""
+    df = pd.DataFrame(columns=["date", "market_ticker", "home_team", "away_team"])
+    result = kalshi.fetch_kalshi_open_prices(df)
+    assert "kalshi_open_price" in result.columns
+    assert len(result) == 0
