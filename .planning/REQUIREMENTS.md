@@ -29,16 +29,16 @@ Requirements for initial release. Each maps to a roadmap phase.
 
 ### Modeling
 
-- [ ] **MODEL-01**: Logistic regression model trains on the feature matrix as an interpretable baseline and calibration anchor
-- [ ] **MODEL-02**: Random forest model trains on the feature matrix as an ensemble comparison benchmark
-- [ ] **MODEL-03**: XGBoost gradient boosting model trains with aggressive regularization (max_depth 3-5, early stopping on temporal validation) to prevent overfitting on ~12K game dataset
-- [ ] **MODEL-04**: All three models are probability-calibrated using temperature scaling via scikit-learn `CalibratedClassifierCV`
+- [x] **MODEL-01**: Logistic regression model trains on the feature matrix as an interpretable baseline and calibration anchor
+- [x] **MODEL-02**: Random forest model trains on the feature matrix as an ensemble comparison benchmark
+- [x] **MODEL-03**: XGBoost gradient boosting model trains with aggressive regularization (max_depth 3-5, early stopping on temporal validation) to prevent overfitting on ~12K game dataset
+- [x] **MODEL-04**: All three models are probability-calibrated using temperature scaling via scikit-learn `CalibratedClassifierCV`
 
 ### Backtesting & Evaluation
 
-- [ ] **EVAL-01**: All three models are evaluated via walk-forward backtesting (train on seasons 1..N, predict season N+1; no random splits)
-- [ ] **EVAL-02**: Brier score is computed per model, per season, and in aggregate across all backtest seasons
-- [ ] **EVAL-03**: Calibration curves (reliability diagrams) are generated per model to visualize over/underconfidence
+- [x] **EVAL-01**: All three models are evaluated via walk-forward backtesting (train on seasons 1..N, predict season N+1; no random splits)
+- [x] **EVAL-02**: Brier score is computed per model, per season, and in aggregate across all backtest seasons
+- [x] **EVAL-03**: Calibration curves (reliability diagrams) are generated per model to visualize over/underconfidence
 - [ ] **EVAL-04**: Model comparison notebook presents LR vs RF vs XGBoost side-by-side on Brier score, calibration, and per-season accuracy
 
 ### Kalshi Market Integration
@@ -98,13 +98,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FEAT-06 | Phase 2 | Complete |
 | FEAT-07 | Phase 2 | Complete |
 | FEAT-08 | Phase 2 | Complete |
-| MODEL-01 | Phase 3 | Pending |
-| MODEL-02 | Phase 3 | Pending |
-| MODEL-03 | Phase 3 | Pending |
-| MODEL-04 | Phase 3 | Pending |
-| EVAL-01 | Phase 3 | Pending |
-| EVAL-02 | Phase 3 | Pending |
-| EVAL-03 | Phase 3 | Pending |
+| MODEL-01 | Phase 3 | Complete |
+| MODEL-02 | Phase 3 | Complete |
+| MODEL-03 | Phase 3 | Complete |
+| MODEL-04 | Phase 3 | Complete |
+| EVAL-01 | Phase 3 | Complete |
+| EVAL-02 | Phase 3 | Complete |
+| EVAL-03 | Phase 3 | Complete |
 | EVAL-04 | Phase 3 | Pending |
 | MARKET-01 | Phase 4 | Pending |
 | MARKET-02 | Phase 4 | Pending |
