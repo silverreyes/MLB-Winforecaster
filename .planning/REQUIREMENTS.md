@@ -25,7 +25,7 @@ Requirements for initial release. Each maps to a roadmap phase.
 - [x] **FEAT-05**: FeatureBuilder includes home/away indicator and 3-year rolling park run factor
 - [x] **FEAT-06**: FeatureBuilder computes differentiator features: SIERA differential, xwOBA differential, SP recent form (last 3 starts), Log5 win probability, bullpen FIP differential
 - [x] **FEAT-07**: All rolling features enforce temporal safety via `shift(1)` and `as_of_date` parameter; unit tests verify no look-ahead leakage
-- [ ] **FEAT-08**: Feature store outputs a single Parquet file with one row per historical game (all features, outcome label, Kalshi implied probability where available)
+- [x] **FEAT-08**: Feature store outputs a single Parquet file with one row per historical game (all features, outcome label, Kalshi implied probability where available)
 
 ### Modeling
 
@@ -97,7 +97,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FEAT-05 | Phase 2 | Complete |
 | FEAT-06 | Phase 2 | Complete |
 | FEAT-07 | Phase 2 | Complete |
-| FEAT-08 | Phase 2 | Pending |
+| FEAT-08 | Phase 2 | Complete |
 | MODEL-01 | Phase 3 | Pending |
 | MODEL-02 | Phase 3 | Pending |
 | MODEL-03 | Phase 3 | Pending |

@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-03-29T03:52:00Z"
-last_activity: 2026-03-29 -- Completed 02-02-PLAN.md
+stopped_at: Completed 02-03-PLAN.md (Phase 2 complete)
+last_updated: "2026-03-29T04:33:00Z"
+last_activity: 2026-03-29 -- Completed 02-03-PLAN.md (Phase 2 complete)
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 6
-  completed_plans: 5
-  percent: 83
+  completed_plans: 6
+  percent: 100
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-28)
 
 **Core value:** Produce well-calibrated win probability estimates that can be rigorously compared against Kalshi market prices, surfacing where models agree, disagree, and where edges may exist.
-**Current focus:** Phase 2 - Feature Engineering and Feature Store
+**Current focus:** Phase 2 complete -- ready for Phase 3 planning
 
 ## Current Position
 
-Phase: 2 of 4 (Feature Engineering and Feature Store)
-Plan: 2 of 3 in current phase (02-02 complete)
-Status: Executing Phase 2 -- Plan 02 complete, Plan 03 next
-Last activity: 2026-03-29 -- Completed 02-02-PLAN.md
+Phase: 2 of 4 (Feature Engineering and Feature Store) -- COMPLETE
+Plan: 3 of 3 in current phase (02-03 complete, Phase 2 done)
+Status: Phase 2 complete -- ready for Phase 3 (Model Training and Backtesting)
+Last activity: 2026-03-29 -- Completed 02-03-PLAN.md (Phase 2 complete)
 
-Progress: [########--] 83% (5/6 plans overall)
+Progress: [##########] 100% (6/6 plans overall through Phase 2)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
-- Average duration: 15min
-- Total execution time: 1.27 hours
+- Total plans completed: 6
+- Average duration: 17min
+- Total execution time: 1.83 hours
 
 **By Phase:**
 
@@ -55,6 +55,7 @@ Progress: [########--] 83% (5/6 plans overall)
 | Phase 01 P03 | 53min | 3 tasks | 7 files |
 | Phase 02 P01 | 4min | 3 tasks | 6 files |
 | Phase 02 P02 | 7min | 2 tasks | 4 files |
+| Phase 02 P03 | 34min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -83,6 +84,8 @@ Recent decisions affecting current work:
 - [Phase 02 P02]: Log5 win probability derived from game-by-game cumulative win% with shift(1), not season-level W-L aggregate
 - [Phase 02 P02]: Pythagorean win% uses schedule-derived runs (home_score/away_score per team per season)
 - [Phase 02 P02]: Statcast xwOBA joined via first_name + last_name concatenation to match schedule pitcher names
+- [Phase 02 P03]: Replaced pybaseball BRef scraper with MLB Stats API (statsapi) for team game logs -- BRef now behind Cloudflare JS-challenge (HTTP 403)
+- [Phase 02 P03]: OPS column resolution in _add_rolling_features() uses lowercase 'ops' with fallback to uppercase and obp+slg computation for backward compatibility
 
 ### Pending Todos
 
@@ -97,6 +100,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-29T03:52:00Z
-Stopped at: Completed 02-02-PLAN.md
-Resume file: .planning/phases/02-feature-engineering-and-feature-store/02-03-PLAN.md
+Last session: 2026-03-29T04:33:00Z
+Stopped at: Completed 02-03-PLAN.md (Phase 2 complete)
+Resume file: Phase 3 planning needed (Model Training and Backtesting)

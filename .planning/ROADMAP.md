@@ -13,7 +13,7 @@ This roadmap delivers a pre-game MLB win probability forecasting system through 
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Data Ingestion and Raw Cache** - Fetch MLB schedules, historical stats, Statcast metrics, and Kalshi prices into local Parquet storage
-- [ ] **Phase 2: Feature Engineering and Feature Store** - Build temporally-safe differential features from raw data into a single game-level feature matrix
+- [x] **Phase 2: Feature Engineering and Feature Store** - Build temporally-safe differential features from raw data into a single game-level feature matrix
 - [ ] **Phase 3: Model Training and Backtesting** - Train three calibrated models and evaluate via walk-forward backtesting with Brier score and calibration analysis
 - [ ] **Phase 4: Kalshi Market Comparison and Edge Analysis** - Benchmark model predictions against Kalshi implied probabilities and identify fee-adjusted edges
 
@@ -50,9 +50,9 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Sabermetric formulas, per-game batting log loader, and Wave 0 test stubs
-- [ ] 02-02-PLAN.md — FeatureBuilder class with all differential feature methods and full test suite
-- [ ] 02-03-PLAN.md — Ingestion, build, and exploration notebooks producing feature_matrix.parquet
+- [x] 02-01-PLAN.md — Sabermetric formulas, per-game batting log loader, and Wave 0 test stubs
+- [x] 02-02-PLAN.md — FeatureBuilder class with all differential feature methods and full test suite
+- [x] 02-03-PLAN.md — Ingestion, build, and exploration notebooks producing feature_matrix.parquet
 
 ### Phase 3: Model Training and Backtesting
 **Goal**: User can compare three trained, calibrated models on Brier score and calibration quality across multiple seasons of walk-forward backtesting
@@ -93,6 +93,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Data Ingestion and Raw Cache | 3/3 | Complete | 2026-03-28 |
-| 2. Feature Engineering and Feature Store | 0/3 | Planned | - |
+| 2. Feature Engineering and Feature Store | 3/3 | Complete | 2026-03-29 |
 | 3. Model Training and Backtesting | 0/TBD | Not started | - |
 | 4. Kalshi Market Comparison and Edge Analysis | 0/TBD | Not started | - |
