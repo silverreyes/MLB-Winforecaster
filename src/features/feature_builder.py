@@ -31,8 +31,9 @@ from src.features.formulas import (
     pythagorean_win_pct,
     get_park_factor,
 )
+from src.data.sp_id_bridge import build_mlb_to_fg_bridge, strip_accents, MANUAL_OVERRIDES
 from src.features.game_logs import fetch_team_game_log
-from src.features.sp_recent_form import fetch_sp_recent_form_bulk
+from src.features.sp_recent_form import fetch_sp_recent_form_bulk, _get_pitcher_id_map
 
 logger = logging.getLogger(__name__)
 
@@ -117,28 +118,135 @@ class FeatureBuilder:
         df["home_win"] = (df["winning_team"] == df["home_team"]).astype(int)
         return df
 
+    def _resolve_sp_stats(
+        self,
+        season: int,
+        pitcher_name: str,
+        sp_lookup: dict[tuple[int, str], dict],
+        fg_id_to_stats: dict[int, dict],
+        bridge: dict[int, int],
+        pitcher_id_map: dict[str, int],
+        fg_name_lookup: dict[str, dict],
+    ) -> dict:
+        """Resolve SP stats via multi-tier lookup chain.
+
+        1. Exact name match in sp_lookup
+        2. Manual override name, then retry sp_lookup
+        3. Accent-stripped name match in sp_lookup
+        4. ID bridge: pitcher_name -> MLB ID -> FG ID -> fg_id_to_stats
+        5. Accent-stripped name in fg_name_lookup
+
+        Returns stats dict or empty dict.
+        """
+        # Tier 1: exact name match
+        stats = sp_lookup.get((season, pitcher_name))
+        if stats:
+            return stats
+
+        # Tier 2: manual override
+        override_name = MANUAL_OVERRIDES.get(pitcher_name)
+        if override_name:
+            stats = sp_lookup.get((season, override_name))
+            if stats:
+                return stats
+
+        # Tier 3: accent-stripped name match
+        stripped = strip_accents(pitcher_name)
+        if stripped != pitcher_name:
+            stats = sp_lookup.get((season, stripped))
+            if stats:
+                return stats
+
+        # Tier 4: ID bridge (name -> MLB ID -> FG ID -> stats)
+        mlb_id = pitcher_id_map.get(pitcher_name)
+        if mlb_id is not None:
+            fg_id = bridge.get(mlb_id)
+            if fg_id is not None:
+                stats = fg_id_to_stats.get(fg_id)
+                if stats:
+                    return stats
+
+        # Tier 5: accent-stripped name in fg_name_lookup
+        fg_stats = fg_name_lookup.get(strip_accents(pitcher_name).lower())
+        if fg_stats:
+            return fg_stats
+
+        return {}
+
     def _add_sp_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """Add starting pitcher differential features (FEAT-01, FEAT-06 partial).
 
         Features: sp_fip_diff, sp_xfip_diff, sp_k_pct_diff, sp_siera_diff
+
+        Uses multi-tier name resolution:
+        1. Exact FanGraphs name match
+        2. Manual override (MANUAL_OVERRIDES dict)
+        3. Accent-stripped name match
+        4. ID bridge (Chadwick register + MLB Stats API -> FG ID -> stats)
         """
         logger.info("Adding SP features...")
 
         # Build per-season pitcher lookup: {(season, pitcher_name): {stat: value}}
         sp_lookup: dict[tuple[int, str], dict] = {}
+        # Also build per-season auxiliary lookups for ID bridge
+        season_fg_id_to_stats: dict[int, dict[int, dict]] = {}
+        season_bridge: dict[int, dict[int, int]] = {}
+        season_pitcher_id_map: dict[int, dict[str, int]] = {}
+        season_fg_name_lookup: dict[int, dict[str, dict]] = {}
+
         for season in self.seasons:
             sp_df = fetch_sp_stats(season, min_gs=1)
+
+            # Primary lookup by exact name
             for _, row in sp_df.iterrows():
                 name = row["Name"]
-                sp_lookup[(season, name)] = {
+                stats = {
                     "FIP": row.get("FIP"),
                     "xFIP": row.get("xFIP"),
                     "K%": row.get("K%"),
                     "SIERA": row.get("SIERA"),
                     "ERA": row.get("ERA"),
                 }
+                sp_lookup[(season, name)] = stats
 
-        # Map pitcher stats
+            # Build FG ID -> stats lookup
+            fg_id_to_stats: dict[int, dict] = {}
+            fg_name_lookup: dict[str, dict] = {}
+            for _, row in sp_df.iterrows():
+                idfg = row.get("IDfg")
+                stats = {
+                    "FIP": row.get("FIP"),
+                    "xFIP": row.get("xFIP"),
+                    "K%": row.get("K%"),
+                    "SIERA": row.get("SIERA"),
+                    "ERA": row.get("ERA"),
+                }
+                if idfg is not None and pd.notna(idfg):
+                    fg_id_to_stats[int(idfg)] = stats
+                name = row.get("Name", "")
+                if name:
+                    fg_name_lookup[strip_accents(str(name)).lower()] = stats
+
+            season_fg_id_to_stats[season] = fg_id_to_stats
+            season_fg_name_lookup[season] = fg_name_lookup
+
+            # Build ID bridge and pitcher_id_map for this season
+            try:
+                pitcher_id_map = _get_pitcher_id_map(season)
+            except Exception as e:
+                logger.debug("Could not load pitcher_id_map for %d: %s", season, e)
+                pitcher_id_map = {}
+
+            try:
+                bridge = build_mlb_to_fg_bridge(season, sp_df, pitcher_id_map=pitcher_id_map)
+            except Exception as e:
+                logger.debug("Could not build ID bridge for %d: %s", season, e)
+                bridge = {}
+
+            season_bridge[season] = bridge
+            season_pitcher_id_map[season] = pitcher_id_map
+
+        # Map pitcher stats using multi-tier resolution
         for prefix, pitcher_col in [("home_sp", "home_probable_pitcher"),
                                      ("away_sp", "away_probable_pitcher")]:
             for stat, col_name in [("FIP", f"{prefix}_fip"),
@@ -146,8 +254,14 @@ class FeatureBuilder:
                                     ("K%", f"{prefix}_k_pct"),
                                     ("SIERA", f"{prefix}_siera")]:
                 df[col_name] = df.apply(
-                    lambda r, s=stat, pc=pitcher_col: sp_lookup.get(
-                        (r["season"], r[pc]), {}
+                    lambda r, s=stat, pc=pitcher_col: self._resolve_sp_stats(
+                        r["season"],
+                        r[pc],
+                        sp_lookup,
+                        season_fg_id_to_stats.get(r["season"], {}),
+                        season_bridge.get(r["season"], {}),
+                        season_pitcher_id_map.get(r["season"], {}),
+                        season_fg_name_lookup.get(r["season"], {}),
                     ).get(s),
                     axis=1,
                 )
@@ -435,22 +549,22 @@ class FeatureBuilder:
         for season in self.seasons:
             try:
                 sc_df = fetch_statcast_pitcher(season)
-                # Statcast uses last_name, first_name format
-                # Build "First Last" name to match schedule pitcher names
-                if "last_name" in sc_df.columns and "first_name" in sc_df.columns:
+                # Baseball Savant returns a single merged column 'last_name, first_name'
+                # xwOBA column is 'est_woba' (not 'xwoba')
+                name_col = "last_name, first_name"
+                xwoba_col = "est_woba"
+                if name_col in sc_df.columns and xwoba_col in sc_df.columns:
                     for _, row in sc_df.iterrows():
-                        first = str(row.get("first_name", "")).strip()
-                        last = str(row.get("last_name", "")).strip()
-                        # Handle comma-separated "Last, First" format too
-                        name = f"{first} {last}" if first and last else ""
-                        if name and "xwoba" in row.index:
-                            xwoba_lookup[(season, name)] = row["xwoba"]
-                elif "Name" in sc_df.columns:
-                    for _, row in sc_df.iterrows():
-                        name = row["Name"]
-                        xwoba_col = "xwOBA" if "xwOBA" in row.index else "xwoba"
-                        if xwoba_col in row.index:
-                            xwoba_lookup[(season, name)] = row[xwoba_col]
+                        raw_name = str(row[name_col]).strip()
+                        # Format: "Webb, Logan" -> "Logan Webb"
+                        if ", " in raw_name:
+                            parts = raw_name.split(", ", 1)
+                            name = f"{parts[1]} {parts[0]}"
+                        else:
+                            name = raw_name
+                        xwoba_val = row[xwoba_col]
+                        if pd.notna(xwoba_val):
+                            xwoba_lookup[(season, name)] = float(xwoba_val)
             except Exception as e:
                 logger.debug(f"No Statcast data for season {season}: {e}")
 
