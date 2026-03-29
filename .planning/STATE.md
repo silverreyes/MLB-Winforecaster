@@ -1,36 +1,35 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: completed
-stopped_at: Completed 04-02-PLAN.md (v1 milestone complete)
-last_updated: "2026-03-29T17:00:29.748Z"
-last_activity: 2026-03-29 -- Completed 04-02-PLAN.md (Phase 4 notebooks)
+milestone: v2.0
+milestone_name: Live Platform
+status: planning
+last_updated: "2026-03-29T00:00:00.000Z"
+last_activity: 2026-03-29 -- Milestone v2.0 started
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 10
-  completed_plans: 10
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-29 after v1.0 milestone)
+See: .planning/PROJECT.md (updated 2026-03-29 — v2.0 milestone started)
 
 **Core value:** Produce well-calibrated win probability estimates that can be rigorously compared against Kalshi market prices, surfacing where models agree, disagree, and where edges may exist.
-**Current focus:** v1.0 shipped. Next: `/gsd:new-milestone` for v2 (live prediction pipeline + advanced features)
+**Current focus:** v2.0 — defining requirements and roadmap
 
 ## Current Position
 
-Phase: 4 of 4 (Kalshi Market Comparison and Edge Analysis)
-Plan: 2 of 2 in current phase (all complete)
-Status: v1 milestone complete -- all 22 requirements satisfied
-Last activity: 2026-03-29 -- Completed 04-02-PLAN.md (Phase 4 notebooks)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-29 — Milestone v2.0 started
 
-Progress: [==========] 100% (10/10 plans overall)
+Progress: [..........] 0%
 
 ## Performance Metrics
 

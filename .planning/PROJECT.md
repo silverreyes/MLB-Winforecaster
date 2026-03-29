@@ -10,6 +10,17 @@ A pre-game MLB win probability forecasting system that predicts game outcomes da
 
 Produce well-calibrated win probability estimates that can be rigorously compared against Kalshi market prices, surfacing where models agree, disagree, and where edges may exist.
 
+## Current Milestone: v2.0 — Live Platform
+
+**Goal:** Integrate starting pitcher features into all three models and deploy a live prediction dashboard with twice-daily pipeline, Kalshi edge display, and browser change notifications.
+
+**Target features:**
+- Track 1: SP feature matrix (ERA, FIP, xFIP, K/BB, workload, splits) + full model retrain (2015–2024)
+- Track 2: Live dashboard at mlbforecaster.silverreyes.net (React + FastAPI + Postgres + Docker, dark/amber aesthetic)
+- Twice-daily pipeline — pre-lineup (10am ET, team-only) + post-lineup (1pm ET, with pitcher features)
+- Portfolio page at silverreyes.net/mlb-winforecaster (Astro SSR integration)
+- Kalshi edge comparison and browser change notifications on dashboard
+
 ## Requirements
 
 ### Validated
@@ -33,18 +44,25 @@ Produce well-calibrated win probability estimates that can be rigorously compare
 - ✓ Edge analysis: |model_prob - kalshi_open_price| > configurable threshold → BUY_YES/BUY_NO signal — v1.0
 - ✓ Fee-adjusted P&L: KALSHI_FEE_RATE=0.07 on profits only; no edge reported without fee adjustment — v1.0
 
-### Active (v2 candidates)
+### Active (v2.0)
 
-- [ ] **LIVE-01**: Daily prediction notebook fetches today's schedule, builds features, outputs win probabilities for all games
-- [ ] **LIVE-02**: Daily notebook shows model probability vs current Kalshi live price side-by-side
-- [ ] **LIVE-03**: Pipeline handles SP uncertainty gracefully (fallback logic when starters are TBD or scratched)
-- [ ] **ADVF-01**: Cold-start blending — regression-to-mean for early-season stats using FanGraphs stabilization points
-- [ ] **ADVF-02**: Weather features (temperature, wind direction/speed) as additional predictors
-- [ ] **ADVF-03**: Bullpen fatigue tracking (per-pitcher game log; flags heavy usage in prior 2 days)
-- [ ] **ADVF-04**: Travel distance penalty (distance traveled for away team in prior 24 hours)
-- [ ] **ADVF-05**: Elo rating system for team strength tracking (updated after each game)
-- [ ] **ADVF-06**: Steamer/ZiPS projection blending for early-season predictions
-- [ ] **ADVF-07**: Fix xwOBA feature pipeline (statcast returns 'last_name, first_name' merged column; xwOBA column is 'est_woba' not 'xwoba')
+**Track 1 — Pitcher Features & Model Retrain**
+- [ ] **SP-01**: Historical SP stats acquired for 2015–2024 (ERA, FIP, xFIP, K%, BB%, WHIP, home/away splits) — data source TBD (pybaseball reliability is an open investigation)
+- [ ] **SP-02**: SP feature matrix integrated into FeatureBuilder and feature store (one row per game, both teams' starters)
+- [ ] **SP-03**: All three models (LR, RF, XGBoost) retrained with SP features; walk-forward backtest regenerated
+- [ ] **SP-04**: ADVF-07 fixed — xwOBA column pipeline corrected (est_woba, last_name,first_name join)
+
+**Track 2 — Live Dashboard & Deployment**
+- [ ] **PIPE-01**: Daily prediction pipeline runs twice daily (10am ET pre-lineup, team-only; 1pm ET post-lineup, with SP features)
+- [ ] **PIPE-02**: Pipeline stores both prediction versions per game in Postgres with timestamps
+- [ ] **PIPE-03**: SP uncertainty handled gracefully — fallback to team-only prediction with uncertainty flag when starters unconfirmed or scratched
+- [ ] **DASH-01**: Live dashboard at mlbforecaster.silverreyes.net — React frontend, dark cinematic + amber aesthetic
+- [ ] **DASH-02**: Dashboard displays today's games with pre-lineup and post-lineup prediction versions side-by-side
+- [ ] **DASH-03**: Kalshi live price comparison and edge signal displayed per game
+- [ ] **DASH-04**: Browser change notifications — client-side timestamp polling, no push/email
+- [ ] **INFRA-01**: Docker Compose stack deployed on Hostinger KVM 2 (FastAPI + worker + Postgres on port 8082)
+- [ ] **INFRA-02**: Host Nginx reverse proxy config for mlbforecaster.silverreyes.net + Certbot SSL cert
+- [ ] **PORT-01**: Portfolio page at silverreyes.net/mlb-winforecaster integrated into Astro SSR site
 
 ### Out of Scope
 
@@ -102,4 +120,4 @@ Produce well-calibrated win probability estimates that can be rigorously compare
 | Fee-on-profits-only formula | Kalshi charges 7% fee on winning trades, not on the stake; losses are full stake with no fee | ✓ Good — accurately reflects Kalshi fee structure |
 
 ---
-*Last updated: 2026-03-29 after v1.0 milestone*
+*Last updated: 2026-03-29 — v2.0 milestone started*
