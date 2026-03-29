@@ -2,15 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Live Platform
-status: executing
-last_updated: "2026-03-29T20:46:32.000Z"
-last_activity: 2026-03-29 -- Completed 05-03 (season-to-date rolling SP features + cold-start)
+status: completed
+stopped_at: Completed 05-04-PLAN.md (SP feature integration capstone - Phase 5 complete)
+last_updated: "2026-03-29T23:12:25.797Z"
+last_activity: 2026-03-29 -- Completed 05-04 (SP feature integration capstone - Phase 5 complete)
 progress:
   total_phases: 5
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 4
-  completed_plans: 3
-  percent: 15
+  completed_plans: 4
+  percent: 20
 ---
 
 # Project State
@@ -24,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-03-29 -- v2.0 milestone started)
 
 ## Current Position
 
-Phase: 5 of 9 (SP Feature Integration)
-Plan: 3 of 4 in current phase
-Status: Executing
-Last activity: 2026-03-29 -- Completed 05-03 (season-to-date rolling SP features + cold-start)
+Phase: 5 of 9 (SP Feature Integration) -- COMPLETE
+Plan: 4 of 4 in current phase (phase complete)
+Status: Phase 5 complete, ready for Phase 6
+Last activity: 2026-03-29 -- Completed 05-04 (SP feature integration capstone - Phase 5 complete)
 
-Progress: [=====.....] 15%
+Progress: [==........] 20%
 
 ## Performance Metrics
 
@@ -42,13 +43,14 @@ Progress: [=====.....] 15%
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 5 (SP Feature Integration) | 3/4 | 20min | 6.7min |
+| 5 (SP Feature Integration) | 4/4 | 32min | 8min |
 
 **Recent Trend (v1.0):**
 - Last 5 plans: 34min, 5min, 10min, 5min, 5min
 - Trend: Stable
 
 *Updated after each plan completion*
+| Phase 05 P04 | 12min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -72,6 +74,11 @@ Recent decisions affecting current work:
 - [05-03]: WHIP/SIERA kept from FanGraphs season-level (hits not in game log v2)
 - [05-03]: Cold-start cascade: rolling -> prev-season FanGraphs -> league-average constants
 - [05-03]: K-BB rate per 9 IP: ((cumK - cumBB) * 9) / cumIP -- scale cancels in differentials
+- [05-04]: Three named feature set constants: TEAM_ONLY (9 cols), SP_ENHANCED (20 cols), V1_FULL (14 cols, backward compat)
+- [05-04]: xwoba_diff included in SP_ENHANCED despite v1 NaN bug -- fixed in v2 via corrected Statcast schema
+- [05-04]: sp_k_pct_diff replaced by sp_k_bb_pct_diff in v2 SP_ENHANCED set
+- [05-04]: build_and_save_v2 is a FeatureBuilder method (not standalone) for consistency
+- [Phase 05]: Three named feature set constants: TEAM_ONLY (9 cols), SP_ENHANCED (20 cols), V1_FULL (14 cols)
 
 ### Pending Todos
 
@@ -86,6 +93,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-29
-Stopped at: Completed 05-03-PLAN.md (season-to-date rolling SP features + cold-start)
+Last session: 2026-03-29T23:12:17.438Z
+Stopped at: Completed 05-04-PLAN.md (SP feature integration capstone - Phase 5 complete)
 Resume file: None

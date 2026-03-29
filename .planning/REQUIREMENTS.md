@@ -16,10 +16,10 @@
 - [x] **SP-06**: FeatureBuilder computes `sp_era_diff` (season-to-date ERA differential, sourced from per-game rolling after SP-03 conversion).
 - [x] **SP-07**: FeatureBuilder computes `sp_recent_fip_diff` (30-day rolling FIP from MLB Stats API game logs; K/BB/HR/IP per start aggregated over trailing 30 calendar days with shift(1)).
 - [x] **SP-08**: FeatureBuilder computes `sp_pitch_count_last_diff` (pitch count in SP's most recent start; impute NaN first start with league-average 93 pitches) and `sp_days_rest_diff` (integer days rest, capped at 7).
-- [ ] **SP-09**: `feature_sets.py` defines three named constants: `TEAM_ONLY_FEATURE_COLS` (pre-lineup feature set, team stats only), `SP_ENHANCED_FEATURE_COLS` (full set including all new SP columns), and `V1_FULL_FEATURE_COLS` (v1 feature set preserved for apples-to-apples backtest comparison).
+- [x] **SP-09**: `feature_sets.py` defines three named constants: `TEAM_ONLY_FEATURE_COLS` (pre-lineup feature set, team stats only), `SP_ENHANCED_FEATURE_COLS` (full set including all new SP columns), and `V1_FULL_FEATURE_COLS` (v1 feature set preserved for apples-to-apples backtest comparison).
 - [x] **SP-10**: FeatureBuilder handles SP cold-start: uses previous-season aggregate stats as prior for first start of season; imputes league-average values for rookies and mid-season call-ups.
-- [ ] **SP-11**: Feature store saved as `feature_store_v2.parquet` (versioned separately from `feature_store_v1.parquet`; v1 file preserved unchanged).
-- [ ] **SP-12**: Temporal safety test suite extended to all new SP columns; each column must change game-to-game within a season per pitcher (no constant values that would indicate a season-level lookup instead of a rolling one).
+- [x] **SP-11**: Feature store saved as `feature_store_v2.parquet` (versioned separately from `feature_store_v1.parquet`; v1 file preserved unchanged).
+- [x] **SP-12**: Temporal safety test suite extended to all new SP columns; each column must change game-to-game within a season per pitcher (no constant values that would indicate a season-level lookup instead of a rolling one).
 
 ### Model Retrain & Calibration (Track 1)
 
@@ -126,10 +126,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SP-06 | Phase 5 | Complete |
 | SP-07 | Phase 5 | Complete |
 | SP-08 | Phase 5 | Complete |
-| SP-09 | Phase 5 | Pending |
+| SP-09 | Phase 5 | Complete |
 | SP-10 | Phase 5 | Complete |
-| SP-11 | Phase 5 | Pending |
-| SP-12 | Phase 5 | Pending |
+| SP-11 | Phase 5 | Complete |
+| SP-12 | Phase 5 | Complete |
 | MDL-01 | Phase 6 | Pending |
 | MDL-02 | Phase 6 | Pending |
 | MDL-03 | Phase 6 | Pending |
