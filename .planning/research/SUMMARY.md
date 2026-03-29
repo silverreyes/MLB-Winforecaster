@@ -1,189 +1,286 @@
 # Project Research Summary
 
-**Project:** MLB Win Probability Model
-**Domain:** Sports analytics -- pre-game binary outcome prediction with probability calibration
-**Researched:** 2026-03-28
+**Project:** MLB Win Forecaster v2.0
+**Domain:** Sports analytics — pre-game MLB win probability modeling with SP feature expansion and live dashboard deployment
+**Researched:** 2026-03-29
 **Confidence:** HIGH
 
 ## Executive Summary
 
-This project is an MLB pre-game win probability forecasting system -- a well-studied problem in sports analytics with a practical ceiling of approximately 58-62% accuracy due to baseball's inherent randomness. Experts build these systems as data pipelines that ingest team and pitcher statistics, engineer temporally-safe differential features, train calibrated probabilistic classifiers, and evaluate them using proper scoring rules (Brier score). The key differentiator for this project is the head-to-head comparison against Kalshi prediction market implied probabilities, which provides a real-world benchmark but also introduces comparison pitfalls (favorite-longshot bias, fee structure, limited historical data starting only from 2025).
+The MLB Win Forecaster v2.0 is an evolution of an existing, working v1 system. The v1 model trains three classifiers (Logistic Regression, Random Forest, XGBoost) on a 14-feature matrix covering team-level offense, bullpen quality, starting pitcher season aggregates, and park factors. Research confirms the right approach for v2 is iterative and surgical: fix the known xwOBA bug (ADVF-07), expand SP features using per-game rolling window computation to eliminate temporal leakage, retrain and recalibrate all six model/feature-set combinations, then deploy a FastAPI + Postgres + React stack to a Hostinger KVM 2 VPS that already hosts Ghost CMS and GamePredictor. The recommended stack is stable and fully pinned — Python 3.12, pandas 2.2.x (explicitly not 3.0 due to breaking PyArrow string dtype changes with pybaseball), scikit-learn 1.8 (for temperature scaling calibration), XGBoost 3.2 as the primary model, and supercronic for twice-daily cron scheduling inside Docker.
 
-The recommended approach is a five-phase pipeline: (1) data ingestion with aggressive local caching to Parquet, (2) feature engineering with strict temporal guard rails to prevent the single most dangerous failure mode -- look-ahead bias, (3) model training with walk-forward backtesting across three model types (logistic regression, random forest, XGBoost), (4) Kalshi integration as an independent benchmark, and (5) a live daily prediction pipeline that reuses all prior code. The technology stack centers on Python 3.12, pandas 2.2.x (explicitly not 3.0 due to breaking string dtype changes with pybaseball), scikit-learn 1.8 (for temperature scaling calibration), and XGBoost 3.2 as the primary gradient boosting model. The architecture enforces a shared `FeatureBuilder` class used identically by both backtest and live pipelines -- this single design decision prevents the most common source of production failures in sports prediction projects.
+The single most critical design decision is converting season-aggregate SP features to proper season-to-date rolling window computation using per-game logs with shift(1)-on-cumsum. The existing v1 code uses full-season FanGraphs totals as game-level features, which means a game on June 15 uses pitcher statistics that include starts from July through September — a form of temporal leakage that inflates backtest Brier scores and will not hold in live prediction. Fixing this is more important than adding any new SP feature. The second structural risk is the FanGraphs/pybaseball data source: Cloudflare protection has been blocking scraping since mid-2025 (GitHub issue #479, still open March 2026), and while a curl_cffi fix exists in pybaseball master, it may not be in the pinned version. The historical data cache (2015–2024) is already on disk and must be treated as immutable; all new feature development should route through MLB Stats API game logs wherever possible.
 
-The dominant risks are all forms of data leakage: using future game data in features, using end-of-season stats for mid-season games, and random train/test splits instead of temporal splits. These are not theoretical -- published MLB prediction projects have reported accuracy inflations of 5-15% from leakage that collapsed entirely in live deployment. Secondary risks include overfitting gradient boosting models to the small dataset (~12K games over 5 seasons), ignoring MLB rule changes that created structural breaks in 2023, and the cold-start problem where early-season predictions lack stable statistics. All of these are preventable with upfront architectural decisions.
+The deployment pattern is well-understood because GamePredictor on the same VPS already follows it: Docker Compose with FastAPI + Postgres + worker + Nginx frontend exposed on port 8082 via host-level Nginx reverse proxy with Certbot SSL. The new constraints are shared-RAM risk (8 GB across four services) and the requirement to set explicit memory limits before first deploy. All infrastructure pitfalls have known, documented mitigations and are low-recovery-cost if they occur. The research flags temporal leakage and pybaseball reliability as the high-cost risks that must be addressed before any retraining occurs.
+
+---
 
 ## Key Findings
 
 ### Recommended Stack
 
-The stack is anchored by a critical version constraint: **pandas 2.2.x paired with numpy 2.2.x**. Pandas 3.0 introduced PyArrow-backed string dtypes that break compatibility with pybaseball's object-dtype DataFrames -- this is a hard blocker, not a preference. Python 3.12 is the recommended runtime. Three data ingestion libraries cover all sources: pybaseball (FanGraphs, Statcast, Baseball Reference), MLB-StatsAPI (schedules, confirmed starters), and kalshi-python (market prices with RSA-PSS auth).
+The stack is anchored by a critical version constraint: pandas 2.2.x paired with numpy 2.2.x. Pandas 3.0 (Jan 2026) introduced PyArrow-backed string dtypes that break compatibility with pybaseball's object-dtype DataFrames — this is a hard blocker, not a preference. Python 3.12 is the recommended runtime. The ML layer uses scikit-learn 1.8 (temperature scaling now available in CalibratedClassifierCV), XGBoost 3.2 as the primary gradient boosting model (better sports analytics documentation and examples than LightGBM), and SHAP 0.51 for feature importance validation.
 
 **Core technologies:**
-- **Python 3.12 + pandas 2.2.x + numpy 2.2.x**: Foundation runtime and data processing -- pandas 3.0 explicitly avoided due to pybaseball incompatibility
-- **pybaseball 2.2.7**: De facto standard for baseball data ingestion (Statcast, FanGraphs, Baseball Reference)
-- **MLB-StatsAPI 1.9.0**: Game schedules and confirmed starting pitcher lookups
-- **kalshi-python 2.1.4**: Official Kalshi SDK for prediction market price data
-- **scikit-learn 1.8.0**: Model training, evaluation, and calibration -- includes new temperature scaling in `CalibratedClassifierCV`
-- **XGBoost 3.2.0**: Primary gradient boosting model with strong scikit-learn API compatibility
-- **Optuna 4.8.0**: Hyperparameter tuning with XGBoost pruning callbacks
-- **SHAP 0.51.0**: Feature importance visualization to verify models learn generalizable patterns
-- **JupyterLab 4.5.6**: Primary interface per project requirements
+- Python 3.12: runtime — minimum for the full dependency graph; avoid 3.14 (pybaseball not tested)
+- pandas 2.2.3 + numpy 2.2.x: data processing — hard pin below pandas 3.0 to avoid PyArrow dtype breaking changes
+- scikit-learn 1.8.0: modeling and calibration — temperature scaling (new in 1.8) is a better calibration option than isotonic for small calibration sets
+- XGBoost 3.2.0: primary gradient boosting — full sklearn API; better documentation for sports analytics than LightGBM
+- LightGBM 4.6.0: benchmarking only — keep for comparison; do not make it the primary model
+- SHAP 0.51.0: explainability — TreeExplainer works natively with XGBoost; required for feature importance validation
+- Optuna 4.8.0: hyperparameter search — pruning callbacks for XGBoost are dramatically faster than GridSearchCV
+- pybaseball 2.2.7: historical data ingestion — treat 2015-2024 cache as immutable; watch for 403s on new season data
+- MLB-StatsAPI 1.9.0: schedules, rosters, pitcher game logs — more reliable than FanGraphs for live data
+- kalshi-python 2.1.4: prediction market prices — official SDK with RSA-PSS auth
+- FastAPI + SQLAlchemy 2.0 async + asyncpg: API layer — same proven pattern as GamePredictor on same VPS
+- Postgres 16 (Docker): persistence — ACID, trivially handles 2,430 rows/season
+- supercronic: cron in Docker — purpose-built for containers; avoids every cron-in-Docker failure mode
 
-**What to avoid:** TensorFlow/PyTorch (overkill for 12K-row tabular data), Streamlit/Dash (out of scope), Apache Spark (dataset is trivially small), pandas 3.0 (breaking changes).
+**Do not use:** pandas 3.0, numpy 2.4, TensorFlow/PyTorch (overkill for 12K-row tabular data), Spark/Dask (dataset is trivially small), Streamlit/Dash (out of scope), Celery (overkill for 2 cron jobs/day).
 
 ### Expected Features
 
-Research identifies 10-15 differential features as the target feature count. Diminishing returns and overfitting risk escalate above 15 features for game-level binary classification.
+Research identifies a specific set of SP features to add, fix, and drop relative to the v1 feature matrix. The v1 baseline (14 features, including the broken `xwoba_diff`) is the starting point.
 
-**Must have (table stakes) -- V1 target achieving 58-62% accuracy:**
-- Home/away indicator (binary, 53.9% baseline)
-- Starting pitcher differential (FIP or xFIP -- single strongest per-game predictor)
-- Team wOBA or OPS differential (season-to-date -- best single offensive summary)
-- Pythagorean win percentage differential (run-differential-based team quality)
-- Park factor (3-year rolling average, runs)
-- Rolling 10-game team OPS differential (captures hot/cold streaks)
-- Bullpen ERA or FIP differential (second-tier pitching signal)
-- SP strikeout rate differential (dominance indicator, low multicollinearity with FIP)
+**Must have (fix existing or add with high evidence):**
+- xwOBA differential fix (ADVF-07) — column is `est_woba` not `xwoba`; join column is `"last_name, first_name"` as a single merged string (verified against live Baseball Savant CSV 2026-03-29)
+- Season-to-date SP features — convert all season-aggregate FanGraphs stats to rolling window (cumsum + shift(1)) to eliminate temporal leakage; this is the highest-priority engineering task
+- K-BB% differential (`sp_k_bb_pct_diff`) — replace `sp_k_pct_diff`; K-BB% explains 17.92% of future RA9 variance vs. under 10% for K/BB; computed as K% minus BB% from existing `pitching_stats()` data
+- WHIP differential (`sp_whip_diff`) — already in FanGraphs data, just not used; top-tier run prevention predictor with independent signal from FIP-family
 
-**Should have (differentiators) -- V1.5:**
-- SIERA (most predictive forward-looking ERA estimator)
-- Log5 win probability (Bill James head-to-head formula using Pythagorean W%)
-- SP recent form (last 3 starts rolling metrics)
-- xwOBA differential (Statcast-based true contact quality)
-- Bullpen FIP differential
+**Should have (differentiators with moderate evidence):**
+- SP ERA differential season-to-date (`sp_era_diff`) — captures BABIP/sequencing signal that FIP strips out; comes naturally from season-to-date conversion
+- Recent form FIP differential (`sp_recent_fip_diff`) — 30-day rolling FIP from game log K/BB/HR/IP; more stable than recent ERA at small samples
+- SP workload: pitch count last start (`sp_pitch_count_last_diff`) — each pitch increases next-game ERA by 0.007 (peer-reviewed); impute NaN first start with league-average 93 pitches
+- SP days rest differential (`sp_days_rest_diff`) — encode as integer [3,7] capped; cheap to compute; mixed evidence but not harmful
 
-**Defer (V2+):**
-- Weather features (temperature, wind) -- requires external API, marginal gain
-- Bullpen fatigue tracking -- requires per-pitcher game log pipeline
-- Travel distance penalty -- small effect (~3.5% home advantage reduction)
-- Elo rating system -- powerful but significant architectural complexity
-- Steamer/ZiPS projection blending -- most valuable early season, complex to implement
+**Drop from v1 feature set (redundancy pruning):**
+- `sp_fip_diff` — redundant with SIERA; SIERA RMSE 0.964 vs FIP 1.010 for year-to-year prediction; SIERA strictly dominates
+- `sp_xfip_diff` — nearly identical to SIERA for predictive purposes; pick one, keep SIERA
+- `sp_k_pct_diff` — replaced by `sp_k_bb_pct_diff` which is strictly more informative
 
-**Anti-features (avoid entirely):**
-- Batting average (wOBA strictly dominates)
-- Individual batter-vs-pitcher matchups (sample size too small, overfitting trap)
-- Fielding percentage (consistently reduces accuracy)
-- Lineup batting order position (marginal effect, high complexity)
+**Defer to v2+:**
+- Home/away splits per SP — sample size insufficient (BABIP needs 2000 BIP; single-season H/A split provides ~200-250 BIP)
+- Batter vs. pitcher matchups — confirmed anti-feature; pure noise at typical career PA sample sizes
+- xERA from Statcast — redundant with xwOBA; same batted-ball signal; adds noise not signal
+
+**Two-model architecture:** `TEAM_ONLY_FEATURE_COLS` (pre-lineup, 10am run) and `SP_ENHANCED_FEATURE_COLS` (post-lineup, 1pm run). Three model types times two feature sets equals six model artifacts total.
 
 ### Architecture Approach
 
-The architecture is a five-layer pipeline: data ingestion, raw cache, feature engineering, model training, and evaluation/reporting. The most important architectural decision is a shared `FeatureBuilder` class that produces one row of features per game, used identically by both the backtest pipeline (over historical games) and the live prediction pipeline (for today's games). All reusable logic lives in a `src/` package imported by thin Jupyter notebooks. Data flows through Parquet files organized as raw (immutable after fetch) and processed (regenerable from raw). Kalshi implied probabilities are carried as a benchmark column -- never as a model input feature.
+The v2 architecture extends the existing v1 codebase without a rewrite. All new SP features are added inside the existing `_add_sp_features()` method (not a new method) to preserve the single-pass lookup pattern. The `feature_sets.py` contract between FeatureBuilder and model input defines two named feature set constants; the v1 constants are preserved (renamed `V1_*`) for apples-to-apples backtest comparison. The deployment follows GamePredictor's proven pattern: Docker Compose on port 8082, host-level Nginx reverse proxy with Certbot SSL at `mlbforecaster.silverreyes.net`.
 
 **Major components:**
-1. **Data Ingestion Layer** -- Three API clients (MLB Stats API, pybaseball, Kalshi) writing to local Parquet cache
-2. **Feature Engineering Layer** -- Domain-specific modules (pitching, batting, bullpen, context) composed by a `FeatureBuilder` with strict temporal guard rails (`as_of_date` parameter, `shift(1)` on all rolling features)
-3. **Feature Store** -- Single Parquet file with one row per game, all features, outcome label, and Kalshi implied probability
-4. **Model Training/Backtest Pipeline** -- Walk-forward expanding window evaluation (train on seasons 1..N, predict N+1) with three model types and temporal cross-validation
-5. **Evaluation and Reporting** -- Brier score decomposition, calibration curves, model-vs-model and model-vs-Kalshi comparison in Jupyter notebooks
+1. FeatureBuilder (`src/features/feature_builder.py`) — ingests raw data, computes all features, outputs feature matrix Parquet; single source of truth for feature engineering; both backtest and live pipeline use identical code path
+2. Six model artifacts (joblib files) — LR/RF/XGBoost x team_only/sp_enhanced, each paired with IsotonicRegression calibrator; stored in Docker named volume shared between worker and API containers
+3. Postgres schema (`games`, `predictions`, `pipeline_runs`) — `predictions` stores both prediction versions as separate rows with `is_latest` flag; edge values computed at insert time by the worker, not at query time by the API
+4. FastAPI service (6 endpoints) — read-only API backed by async SQLAlchemy; loads all 6 model artifacts at startup via lifespan event; no computation in request handlers
+5. Pipeline worker (supercronic) — twice-daily execution (10am pre-lineup using team-only features, 1pm post-lineup using SP-enhanced features); writes to Postgres, marks old predictions `is_latest=FALSE`
+6. React frontend + host Nginx — static build served via Docker-internal Nginx; host Nginx reverse-proxies all traffic from port 8082
+
+**Feature data flow:**
+```
+MLB Stats API game logs (per-pitcher, per-game)
+  -> cumsum + shift(1) per season -> season-to-date SP stats
+  -> 30-day calendar window -> recent form SP stats
+  -> shift(1) on sorted log -> workload (pitch count, days rest)
+
+FanGraphs via pybaseball (season aggregate, cached 2015-2024)
+  -> cold-start fallback for first start of season
+
+Baseball Savant via pybaseball (est_woba from "last_name, first_name" column)
+  -> xwoba_diff after ADVF-07 fix
+```
 
 ### Critical Pitfalls
 
-1. **Look-ahead bias in feature construction** -- Every feature must use only data from completed games before the prediction date. Enforce with `as_of_date` parameters and `shift(1)` on all rolling computations. Write unit tests that verify removing a game's outcome does not change its features. Recovery cost is HIGH (full pipeline rebuild) if caught late.
+1. **Temporal leakage in season-aggregate SP features** — v1 uses full-season FanGraphs totals as game-level features; a June game sees September stats. Convert to per-game rolling aggregates with `shift(1)` on cumulative sums before adding or expanding any SP feature. Getting this wrong invalidates the entire retrained model. Recovery cost: HIGH (full pipeline rebuild, 4-8 hours).
 
-2. **Temporal leakage in train/test splits** -- Never use random splits or `KFold`. Always use walk-forward validation or `TimeSeriesSplit` with data sorted by date. The test set must be strictly after the training set in time. This must be the first decision in the model training phase.
+2. **pybaseball FanGraphs endpoints return HTTP 403** — Cloudflare protection active since mid-2025 (issue #479, still open March 2026); treat the existing 2015-2024 historical Parquet cache as immutable; add `try/except` with specific `HTTPError` catch around every pybaseball call; fall back to MLB Stats API game logs for current-season data if FanGraphs fails.
 
-3. **End-of-season stats used for mid-season games** -- The most common shortcut in published projects. Requires building a game-log-level pipeline that computes cumulative stats incrementally. Cannot be retrofitted; must be the foundational data architecture.
+3. **Feature matrix shape change breaks model pipeline** — adding SP columns requires a strict sequence: (a) update FeatureBuilder, (b) regenerate feature store Parquet (version it as `feature_store_v2.parquet`), (c) verify new columns are non-NaN, (d) update `feature_sets.py`, (e) retrain all 6 models. Out-of-order steps cause `KeyError` crashes or silent NaN imputation of new columns. Add a schema validation assertion at the top of `run_backtest()`.
 
-4. **Treating Kalshi prices as ground truth** -- Kalshi prices contain favorite-longshot bias (empirically proven across 300K+ contracts), bid-ask spreads, and fee structure. Evaluate model calibration independently against actual outcomes, then compare model and Kalshi Brier scores side-by-side. Adjust for fees before claiming profitability.
+4. **Isotonic calibration invalidation after retrain** — adding features changes the raw probability distribution; the old isotonic mapping is invalid; always recalibrate from scratch after any feature set change; verify with reliability diagrams for all 6 model/feature-set combinations before declaring v2 complete.
 
-5. **Overfitting gradient boosting to small dataset** -- 12K games with 20+ features and deep trees allows XGBoost to memorize team/pitcher patterns. Require aggressive regularization (max_depth 3-5, min_child_weight 50-100), early stopping on temporal validation, and a logistic regression calibration anchor. If GBM does not meaningfully beat LR (>0.005 Brier improvement on holdout), prefer the simpler model.
+5. **Docker OOM kills Ghost CMS and GamePredictor** — 8 GB VPS shared across four services (Ghost, GamePredictor, new MLB stack, host OS); set explicit memory limits in `docker-compose.yml` before first deploy (api: 512M, worker: 1G, postgres: 512M); budget only 60-70% of total RAM for the new stack.
+
+6. **SP name matching silently produces NaN features** — v1 has ~17% NaN rate from name format mismatches between MLB Stats API and FanGraphs; new SP features inherit this NaN pattern; NaN is imputed to median (league average), incorrectly treating elite/terrible pitchers as average; evaluate ID-based matching via `mlb_player_id -> fangraphs_id` cross-reference before Phase 1 commits to an implementation.
+
+---
 
 ## Implications for Roadmap
 
-Based on research, suggested phase structure:
+Research shows a clear dependency ordering: fix data integrity first, then add features, then retrain, then deploy. Each phase has well-defined inputs and outputs. Phases 3-5 are largely sequential; Phase 1 is where the most design decisions live and where the most re-work cost is incurred if done wrong.
 
-### Phase 1: Data Ingestion and Raw Cache
-**Rationale:** Hard dependency -- nothing can be built without data. pybaseball scraping is the first bottleneck (rate limiting), and establishing the Parquet cache pattern early prevents re-scraping throughout development.
-**Delivers:** MLB Stats API client (schedules, starters), pybaseball wrappers (batting/pitching stats, team game logs), raw Parquet cache organized by season, data exploration notebook proving data quality and coverage.
-**Addresses:** Schedule fetching, historical game data ingestion, Statcast metrics ingestion (FEATURES.md table stakes data sources).
-**Avoids:** Pitfall 10 (survivorship bias) -- establish coverage tracking from the start. Pitfall 5 (rule changes) -- partition data by rule era during ingestion.
+### Phase 1: SP Feature Integration (Data Layer)
 
-### Phase 2: Feature Engineering and Feature Store
-**Rationale:** Features are the contract between raw data and models. Temporal safety (the `as_of_date` pattern and `shift(1)` guard rails) must be baked into the foundation -- retrofitting is impossible. This phase determines whether all subsequent backtest results are trustworthy.
-**Delivers:** Feature modules (pitching, batting, bullpen, context), FeatureBuilder class with temporal guard rails, feature matrix Parquet (one row per historical game), feature exploration notebook with distributions and correlations, leakage unit tests.
-**Addresses:** All V1 table stakes features (SP differential, team wOBA/OPS differential, Pythagorean W%, park factor, rolling stats, bullpen metrics).
-**Avoids:** Pitfall 1 (look-ahead bias), Pitfall 3 (end-of-season stats), Pitfall 7 (small sample sizes via regression-to-mean blending).
+**Rationale:** Temporal leakage in existing SP features is the highest-priority risk. Fixing the data layer before retraining is mandatory — every model trained on leaked data produces invalid Brier scores that will not reproduce in live deployment. This phase has no external deployment dependencies and is pure data engineering.
 
-### Phase 3: Model Training and Backtesting
-**Rationale:** With a trusted feature matrix, models can be trained and evaluated. Walk-forward backtesting validates that features and models produce useful predictions before any market comparison is attempted.
-**Delivers:** Three trained models (LR, RF, XGBoost) with tuned hyperparameters, walk-forward backtest results over 3-5 seasons, Brier score and calibration curves per model, model comparison notebook.
-**Addresses:** All three model training requirements, backtesting requirement, Brier score computation.
-**Avoids:** Pitfall 2 (temporal leakage in splits), Pitfall 6 (Brier score tunnel vision -- require decomposition and calibration curves), Pitfall 9 (GBM overfitting -- aggressive regularization and LR benchmark).
+**Delivers:**
+- ADVF-07 fix: `xwoba_diff` working with correct `est_woba` column name and `"last_name, first_name"` join strategy
+- Season-to-date rolling SP features replacing season-aggregate lookups (cumsum + shift(1) per season per pitcher)
+- New SP feature columns: `sp_k_bb_pct_diff` (replaces `sp_k_pct_diff`), `sp_whip_diff`, `sp_era_diff`, `sp_recent_fip_diff`, `sp_pitch_count_last_diff`, `sp_days_rest_diff`
+- Dropped columns: `sp_fip_diff`, `sp_xfip_diff`, `sp_k_pct_diff` (redundant with SIERA and K-BB%)
+- `SP_ENHANCED_FEATURE_COLS` and `TEAM_ONLY_FEATURE_COLS` defined in `feature_sets.py`; `V1_FULL_FEATURE_COLS` preserved for comparison
+- Feature store versioned as `feature_store_v2.parquet`
+- Temporal safety test suite extended to cover all new SP columns (all new features must pass: feature values change game-to-game, no constant values within a season per pitcher)
+- Cold-start handling: previous season aggregate as prior; league-average replacement level for rookies
 
-### Phase 4: Kalshi Integration and Market Comparison
-**Rationale:** Kalshi comparison is the project's key differentiator but depends on having model predictions to compare against. Adding it after models are trained enables immediate side-by-side analysis. Also, Kalshi historical data only covers 2025+, so this phase is inherently limited in historical scope.
-**Delivers:** Kalshi API client (market discovery, price history), historical Kalshi implied probabilities joined to feature matrix, model-vs-Kalshi Brier score comparison, edge analysis with fee-adjusted profitability, market comparison notebook.
-**Addresses:** Kalshi market price ingestion, Brier score comparison against market implied probabilities.
-**Avoids:** Pitfall 4 (treating Kalshi as ground truth -- evaluate independently against outcomes first, then compare).
+**Addresses:** FEATURES.md table stakes (xwOBA fix, K-BB%, WHIP), differentiators (ERA STD, recent FIP, workload)
+**Avoids:** Pitfall #2 (temporal leakage), Pitfall #1 (add pybaseball error handling), Pitfall #5 (SP name matching — decide on ID vs. name approach before writing feature code)
 
-### Phase 5: Live Prediction Pipeline
-**Rationale:** This is the thinnest layer -- it orchestrates existing code (data clients, FeatureBuilder, trained models, Kalshi client) for today's games. Building it last ensures all components are proven.
-**Delivers:** Daily prediction notebook (fetch schedule, build features, predict, compare to Kalshi), side-by-side output table, SP confirmation handling with fallback logic, optional daily automation script.
-**Addresses:** Live prediction pipeline requirement, notebook-based reporting.
-**Avoids:** Pitfall 8 (SP uncertainty -- graceful degradation when starters are scratched or TBD).
+**Research flag:** Standard patterns. The shift(1)-on-cumsum pattern is already used in v1 for `rolling_ops_diff`. Cold-start handling edge cases deserve careful task breakdown.
+
+### Phase 2: Model Retrain and Calibration
+
+**Rationale:** Cannot retrain until the feature store Parquet is verified correct (Phase 1 output). This phase produces the 6 model artifacts needed by both the live pipeline and the API. The calibration step is load-bearing — isotonic regression must be re-fitted from scratch on the new probability distribution.
+
+**Delivers:**
+- 6 retrained and calibrated models: LR/RF/XGBoost x team_only/sp_enhanced
+- Brier score comparison: v2 vs. v1 on identical test folds using respective feature sets (apples-to-apples, not different folds)
+- Reliability diagrams for all 6 model/feature-set combinations (visual inspection required, not just Brier score)
+- VIF analysis on expanded SP feature set; any feature with VIF > 10 dropped
+- XGBoost feature importance (SHAP) ranking; near-zero-gain features dropped before final model
+- Ablation study: retrain with and without new SP features to quantify Brier score contribution
+- `model_metadata.json` with training date, feature columns, fold info, and Brier scores per fold
+
+**Uses:** scikit-learn 1.8 temperature scaling (compare against isotonic on 2020 fold with only ~891 games), Optuna 4.8 for hyperparameter search, SHAP 0.51 for feature importance
+**Avoids:** Pitfall #3 (schema change sequence — regenerate Parquet before updating feature_sets.py), Pitfall #4 (calibration invalidation — always recalibrate from scratch)
+
+**Research flag:** Standard patterns. Walk-forward backtest with `FOLD_MAP` and isotonic calibration are already implemented in v1. The temperature scaling comparison vs. isotonic on small folds is a new decision point worth testing empirically.
+
+### Phase 3: Live Pipeline and Database
+
+**Rationale:** Pipeline logic builds on the trained models (Phase 2 outputs) and the database schema. This phase wires together FeatureBuilder, model artifacts, Postgres, and supercronic scheduling. Must be complete and validated locally before Phase 4 (API) can serve live data.
+
+**Delivers:**
+- Postgres schema: `games`, `predictions`, `pipeline_runs` tables with `is_latest` flag and appropriate indexes
+- `pipeline/run.py`: twice-daily execution with `--version pre_lineup` / `--version post_lineup` argument
+- Pre-lineup fallback: uses `TEAM_ONLY_FEATURE_COLS` for all games; SP features skipped even if accidentally available
+- SP-change detection: SP name stored per prediction row; dashboard can show "SP may have changed" for predictions older than 3 hours
+- Health check endpoint returning `last_pipeline_run` timestamp
+- Pipeline log to persistent file; external uptime monitor (UptimeRobot) configured on `/api/v1/health`
+- Kalshi price fetch and edge computation stored per prediction row at insert time
+
+**Implements:** ARCHITECTURE.md Postgres schema, worker pipeline logic, supercronic crontab
+**Avoids:** Pitfall #6 (SP scratch/stale prediction — SP name in database, timestamp on dashboard), Pitfall #10 (silent cron failure — supercronic logs to stdout, health check endpoint)
+
+**Research flag:** Supercronic and the twice-daily pipeline pattern are well-documented. The SP-change detection between 1pm and first pitch (every 30 minutes) is the one novel component — design whether this triggers a full re-run or just a "possibly stale" flag before implementation.
+
+### Phase 4: API and Dashboard
+
+**Rationale:** The API is a thin read layer over Postgres. Once the database is populated by Phase 3, this phase is straightforward. The React frontend is the user-facing output of the entire project.
+
+**Delivers:**
+- FastAPI service with 6 endpoints: `/api/v1/predictions/today`, `/api/v1/predictions/{date}`, `/api/v1/predictions/latest-timestamp`, `/api/v1/results`, `/api/v1/results/accuracy`, `/api/v1/health`
+- All 6 model artifacts loaded at startup via lifespan event; no model loading in request handlers
+- React dashboard: today's predictions with LR/RF/XGB probabilities, Kalshi prices, edge values, SP names, and confirmation status
+- "Last updated: [timestamp]" displayed prominently; predictions grayed out if older than 3 hours
+- "SP TBD — team-only estimate" visual indicator for unconfirmed starters
+- Explicit error state when API is unreachable (not a blank page or infinite spinner)
+- Client polling every 60 seconds with `If-Modified-Since` headers; polling paused when browser tab is hidden
+
+**Implements:** ARCHITECTURE.md FastAPI project structure, response schemas, lifespan model loading pattern
+**Avoids:** PITFALLS.md UX pitfalls (stale predictions, no error state, aggressive polling at 10-second intervals, hiding uncertainty)
+
+**Research flag:** Standard FastAPI + async SQLAlchemy + React patterns. No research-phase needed.
+
+### Phase 5: Infrastructure and Deployment
+
+**Rationale:** Deploy last, after all components are validated locally. The VPS hosting environment has shared resources; infrastructure mistakes can take down Ghost CMS and GamePredictor. All pitfalls here are preventable with upfront configuration but are high-impact if skipped.
+
+**Delivers:**
+- Docker Compose stack on port 8082 with explicit memory limits (api: 512M, worker: 1G, postgres: 512M)
+- Named Docker volume for Postgres (`pgdata`); anonymous volumes prohibited; persistence test before go-live
+- Host Nginx server block for `mlbforecaster.silverreyes.net` validated with `nginx -t` before enabling
+- Certbot SSL cert issued and renewal dry-run tested
+- Daily Postgres backup via `pg_dump` to `/opt/backups/`
+- Deployment checklist document: "Never run `docker-compose down -v` on production"
+- Memory monitoring cron: `docker stats --no-stream` every 5 minutes to log
+
+**Implements:** ARCHITECTURE.md Docker Compose topology and host Nginx vhost config
+**Avoids:** Pitfall #7 (Docker OOM), Pitfall #8 (Nginx config kills all sites), Pitfall #9 (Postgres volume loss)
+
+**Research flag:** Follows established GamePredictor pattern on same VPS. No research-phase needed — exact Nginx config and Docker Compose structure are fully documented in ARCHITECTURE.md.
 
 ### Phase Ordering Rationale
 
-- **Strict dependency chain:** Each phase consumes the output of the previous phase. Data ingestion produces raw cache; feature engineering consumes raw cache to produce the feature matrix; model training consumes the feature matrix; Kalshi comparison consumes model predictions; live prediction orchestrates all components.
-- **Risk frontloading:** The two most dangerous pitfalls (look-ahead bias and temporal leakage) are addressed in Phases 2 and 3 respectively. If these are wrong, everything downstream is invalid. Addressing them early means validation is possible before significant model tuning effort.
-- **Kalshi as late integration:** Kalshi data only exists from 2025. Delaying Kalshi integration to Phase 4 means the core model can be developed and validated on 2019-2025 data without any dependency on Kalshi availability. The comparison is layered on afterward.
-- **Live pipeline as thin orchestration:** The live pipeline adds no new logic -- it reuses Phase 1-4 code in a "today" context. This architectural decision (shared FeatureBuilder) means the live pipeline is inherently consistent with the backtest.
+- **Data before models:** Temporal leakage is a correctness problem, not a performance problem. Training on leaked data produces invalid results that require a full re-do when caught late.
+- **Models before pipeline:** The pipeline worker loads model artifacts. Artifacts must exist before the pipeline can be deployed and tested end-to-end.
+- **Pipeline before API:** The API serves data from Postgres. Postgres must be populated before the API returns meaningful responses.
+- **API before infrastructure:** Validate all components working in Docker locally before touching the production VPS. One bad Nginx config takes down four services simultaneously.
+- **Phase 1 is the critical path:** It is where the most design decisions live (ID matching strategy, cumsum pattern, cold-start handling) and where the most re-work cost is incurred if done wrong.
 
 ### Research Flags
 
-Phases likely needing deeper research during planning:
-- **Phase 2 (Feature Engineering):** The regression-to-mean blending for early-season stats, the exact rolling window implementations (SMA vs EMA), and the differential framing strategy all benefit from more detailed design research. The cold-start problem (first 2-3 weeks of a season) is well-documented but the specific blending formula needs tuning.
-- **Phase 4 (Kalshi Integration):** The Kalshi API is evolving. The series-ticker discovery for MLB games, historical price data availability, and the favorite-longshot bias de-biasing methodology need hands-on validation. Kalshi fee structure may change.
+**Phases needing closer attention during planning:**
+- **Phase 1 (SP Feature Integration):** The season-to-date cumulative computation with shift(1) requires careful design, especially around the cold-start edge case (first start of season, rookies, mid-season call-ups). The ID-based name matching feasibility decision needs to be made before feature code is written. Recommend a detailed task breakdown.
+- **Phase 3 (Live Pipeline):** The SP-change detection logic between 1pm and first pitch is the one genuinely novel component. Decide before implementation whether a "flag as possibly stale" approach is sufficient vs. a full re-run trigger for changed starters.
 
-Phases with standard patterns (skip deeper research):
-- **Phase 1 (Data Ingestion):** pybaseball and MLB-StatsAPI are well-documented with extensive examples. The caching pattern is straightforward.
-- **Phase 3 (Model Training):** Walk-forward backtesting, scikit-learn pipelines, XGBoost hyperparameter tuning, and calibration are all thoroughly documented with established best practices.
-- **Phase 5 (Live Pipeline):** Thin orchestration layer with no novel patterns.
+**Phases with standard patterns (no additional research needed):**
+- **Phase 2 (Model Retrain):** Walk-forward backtest, isotonic calibration, and SHAP feature importance are all implemented in v1. Extend, do not rewrite. Temperature scaling vs. isotonic is an empirical decision, not a research gap.
+- **Phase 4 (API and Dashboard):** FastAPI + async SQLAlchemy + React is thoroughly documented with established patterns.
+- **Phase 5 (Infrastructure):** Follows GamePredictor's proven deployment pattern on the same VPS with exact configuration documented.
+
+---
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | All package versions verified on PyPI. Pandas 2.2.x constraint well-justified by pybaseball compatibility. scikit-learn 1.8 temperature scaling confirmed in release docs. |
-| Features | HIGH | Feature recommendations backed by multiple academic sources (PMC, Wharton thesis), practitioner reports (FiveThirtyEight Elo methodology, Zheng SVM model), and FanGraphs sabermetric definitions. 10-15 feature target is consensus. |
-| Architecture | HIGH | Pipeline pattern (ingest, feature, train, evaluate) is the standard for ML prediction projects. Shared FeatureBuilder pattern specifically addresses the most common failure mode. Walk-forward backtesting is well-established. |
-| Pitfalls | HIGH | Multiple independent sources converge on the same pitfalls: look-ahead bias (Wharton thesis, Zheng practitioner report), temporal leakage (scikit-learn docs), Kalshi bias (Whelan 2025 empirical study of 300K contracts), GBM overfitting (XGBoost and LightGBM official tuning guides). |
+| Stack | HIGH | All versions verified on PyPI; pandas 2.2.x pin justified with official migration guide; scikit-learn 1.8 temperature scaling confirmed in release highlights; XGBoost 3.2 sklearn API compatibility verified |
+| Features | HIGH | xwOBA bug root-cause verified against live Baseball Savant CSV endpoint 2026-03-29; SIERA RMSE advantage confirmed from Pitcher List peer analysis; K-BB% finding from multiple FanGraphs community studies; BABIP stabilization data from FanGraphs Sabermetrics Library |
+| Architecture | HIGH | Based on direct analysis of v1 codebase source files; deployment pattern mirrors verified GamePredictor stack on same VPS; Postgres schema is standard and well-reasoned; FastAPI lifespan pattern from official docs |
+| Pitfalls | HIGH | pybaseball 403 issue verified against open GitHub issues (March 2026); temporal leakage analysis based on direct code inspection of `feature_builder.py`; Docker OOM and Nginx pitfalls from official Docker docs and v1 VPS lessons |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **Kalshi historical data depth:** Kalshi sports markets launched in early 2025. Historical backtest comparison is limited to approximately one season. This is a hard constraint -- the project must clearly scope which evaluation is model-only (2019-2024) vs. model-vs-Kalshi (2025 only).
-- **pybaseball reliability on Python 3.12:** pybaseball officially supports up to Python 3.11. It works on 3.12 but is not officially tested. May require fallback to direct requests + BeautifulSoup if scraping breaks.
-- **2020 season anomaly:** The 60-game 2020 season had different dynamics. Research recommends either excluding it or flagging it as a separate era. Decision needed during Phase 1 data ingestion.
-- **Exact Bayesian blending weights for cold-start:** The regression-to-mean formula for early-season stats (blending prior-season with current-season) has suggested stabilization points (60 IP for ERA, 30 IP for FIP) but optimal prior weights need empirical tuning during Phase 2.
-- **Kalshi API authentication for historical data:** Public market data endpoints may not require auth, but historical price data access needs verification during Phase 4 implementation.
+- **pybaseball curl_cffi fix version:** The Cloudflare bypass fix exists in pybaseball master but may not be in v2.2.7. Before Phase 1 begins, test `pitching_stats()` against a 2025 or 2026 season to determine if a version upgrade is needed. Document the exact working version.
+
+- **MLB Stats API game log field coverage:** FEATURES.md notes that cached pitcher game logs may lack K/BB/HR per game (needed for `sp_recent_fip_diff`) and `numberOfPitches` may not be in cached logs (needed for `sp_pitch_count_last_diff`). Inspect an actual cached log file before implementing those features. A re-fetch with additional stat hydration may be required.
+
+- **Temperature scaling vs. isotonic on small folds:** The 2020 calibration fold has only ~891 games, which is marginal for isotonic regression. During Phase 2, compare reliability diagrams for temperature scaling vs. isotonic on the smallest fold to determine which is more robust for this dataset.
+
+- **ID-based SP name matching feasibility:** PITFALLS.md recommends building a `mlb_player_id -> fangraphs_id` cross-reference table to fix the ~17% NaN rate from name mismatches. The data source for this mapping (Chadwick Bureau register, pybaseball `playerid_lookup()`, or a hand-built table) needs to be evaluated before Phase 1 implementation begins.
+
+- **Kalshi historical data scope:** Kalshi sports markets launched in early 2025. The edge analysis and model-vs-Kalshi comparison is limited to approximately one season. This is a hard constraint noted in v1 research that carries forward.
+
+---
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [pybaseball PyPI](https://pypi.org/project/pybaseball/) -- v2.2.7, data ingestion capabilities
-- [MLB-StatsAPI PyPI](https://pypi.org/project/MLB-StatsAPI/) -- v1.9.0, schedule and roster access
-- [kalshi-python PyPI](https://pypi.org/project/kalshi-python/) -- v2.1.4, market data SDK
-- [scikit-learn 1.8 release highlights](https://scikit-learn.org/stable/auto_examples/release_highlights/plot_release_highlights_1_8_0.html) -- temperature scaling calibration
-- [pandas 3.0 migration guide](https://pandas.pydata.org/docs/user_guide/migration-3-strings.html) -- breaking string dtype changes
-- [PMC: Feature Selection for MLB Game Prediction](https://pmc.ncbi.nlm.nih.gov/articles/PMC8871522/) -- RFE feature selection, SVM achieving 65.75%
-- [Wharton Thesis: Forecasting MLB Game Outcomes](https://fisher.wharton.upenn.edu/wp-content/uploads/2020/09/Thesis_Andrew-Cui.pdf) -- 10-day trailing differentials, feature engineering methodology
-- [FiveThirtyEight MLB Elo Methodology](https://fivethirtyeight.com/methodology/how-our-mlb-predictions-work/) -- Elo adjustments, SP impact, travel/rest effects
-- [Whelan (2025): Kalshi Prediction Market Analysis](https://www.karlwhelan.com/sports-betting-kalshi-prediction-market/) -- Empirical favorite-longshot bias across 300K+ contracts
+- pybaseball PyPI (v2.2.7, Sep 2023) and GitHub issues #479, #492, #495 — version confirmed; Cloudflare issue verified March 2026
+- MLB-StatsAPI PyPI (v1.9.0, Apr 2025) — schedule, roster, and game log functions confirmed
+- kalshi-python PyPI (v2.1.4, Sep 2025) — official SDK with RSA-PSS auth
+- pandas 3.0 migration guide (official) — breaking PyArrow string dtype changes documented
+- scikit-learn 1.8 release highlights (official) — temperature scaling calibration confirmed
+- Baseball Savant Expected Statistics CSV (verified 2026-03-29) — `est_woba` and `last_name, first_name` column names confirmed at primary source
+- FanGraphs Sabermetrics Library: Sample Size — K% stabilizes at 70 BF, BB% at 170 BF, BABIP at 2000 BIP
+- Pitcher List: Going Deep on FIP/xFIP/SIERA — SIERA RMSE 0.964 vs FIP 1.010 for year-to-year prediction
+- v1 codebase direct analysis — `feature_builder.py`, `sp_stats.py`, `sp_recent_form.py`, `feature_sets.py`, `backtest.py`, `team_mappings.py`
+- SHAP PyPI (v0.51.0, Mar 2026) — verified
+- Optuna PyPI (v4.8.0) — verified
+- joblib PyPI (v1.5.3, Dec 2025) — verified
+- JupyterLab PyPI (v4.5.6, Mar 2026) — verified
+- Docker docs: Resource constraints and volume persistence — memory limits and OOM behavior
 
 ### Secondary (MEDIUM confidence)
-- [Zheng: Beat the Sportsbook with ML](https://medium.com/@40alexz.40/how-i-beat-the-sportsbook-in-baseball-with-machine-learning-0387f25fbdd8) -- 11-feature SVM, data leakage discovery, 13.95% ROI
-- [Faddis: Predicting Win Probability for MLB Games](https://medium.com/@nfadd/predicting-win-probability-for-mlb-games-with-machine-learning-a4c2ad993496) -- XGBoost with rolling averages, 61.46% accuracy
-- [arXiv:2504.04906: Misconceptions about Brier Score](https://arxiv.org/html/2504.04906v4) -- calibration vs discrimination nuances
-- [Sports-AI: Model Calibration for Betting](https://www.sports-ai.dev/blog/ai-model-calibration-brier-score) -- calibration-optimized models yield 69.86% higher returns
-- [Pitcher List: FIP vs xFIP vs SIERA](https://pitcherlist.com/the-relative-value-of-fip-xfip-and-siera-pt-ii/) -- SIERA most predictive forward-looking metric
+- FanGraphs Community: K-BB% analysis — K-BB% explains 17.92% of future RA9 variance (community study, consistent with FanGraphs main site)
+- Pitcher List Part II: xFIP and SIERA most predictive forward-looking metrics
+- FiveThirtyEight MLB methodology — SP adjustment worth ~1% correct-call improvement; opener handling strategy
+- Journal of Strength and Conditioning Research (2012, PubMed) — pitch count effect on next-game ERA (~0.007 per pitch); peer-reviewed but effect is small
+- FanGraphs Community: Days of rest analysis — no significant difference across rest categories (single study)
+- PMC: Feature Selection for MLB Game Prediction — RFE feature selection methodology
+- Wharton thesis: Forecasting MLB Game Outcomes — 10-day trailing differentials, cold-start handling approaches
+- Beyond the Box Score: Stop using K/BB — K-BB% vs. K/BB ratio argument (well-reasoned, single article)
 
 ### Tertiary (LOW confidence)
-- [Kalshi API docs](https://docs.kalshi.com/getting_started/quick_start_market_data) -- API structure confirmed, but sports-specific endpoints may evolve
-- [CEPR: Economics of the Kalshi Prediction Market](https://cepr.org/voxeu/columns/economics-kalshi-prediction-market) -- general market structure, not MLB-specific
+- Baseball Prospectus: Siren Song of Expected Metrics — xwOBA not clearly better than FIP for pitcher prediction (single analysis; counters the "more Statcast = better" assumption but should be validated against current data)
+- pybaseball GitHub issue #479 comment thread — curl_cffi fix details; community-reported, not confirmed by pybaseball maintainers
 
 ---
-*Research completed: 2026-03-28*
+*Research completed: 2026-03-29*
 *Ready for roadmap: yes*
