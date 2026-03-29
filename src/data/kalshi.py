@@ -344,3 +344,81 @@ def fetch_kalshi_markets(max_age_hours: float = 24) -> pd.DataFrame:
     df = df.sort_values("date").reset_index(drop=True)
     save_to_cache(df, key, parquet_path, season=2025)
     return df
+
+
+def fetch_kalshi_open_prices(df: pd.DataFrame) -> pd.DataFrame:
+    """Fetch pre-game opening prices via Kalshi batch candlestick API.
+
+    Groups markets by date and makes one batch GET /markets/candlesticks
+    call per date (187 unique dates for 2025 season). Uses daily candles
+    (period_interval=1440) and extracts price.open_dollars (first trade
+    price of the day).
+
+    Args:
+        df: DataFrame from fetch_kalshi_markets() with 'market_ticker' and
+            'date' columns.
+
+    Returns:
+        Same DataFrame with 'kalshi_open_price' column added.
+        NaN where no candlestick data exists (no trades occurred).
+    """
+    from datetime import timedelta, timezone
+
+    if df.empty or "market_ticker" not in df.columns:
+        df["kalshi_open_price"] = pd.Series(dtype=float)
+        return df
+
+    headers = _get_headers()
+    open_prices = {}  # ticker -> open_price_dollars
+
+    # Group tickers by date for batch fetching
+    grouped = df.groupby("date")["market_ticker"].apply(list).to_dict()
+    total_dates = len(grouped)
+
+    for i, (game_date, tickers) in enumerate(sorted(grouped.items()), 1):
+        dt = datetime.strptime(game_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        start_ts = int(dt.timestamp())
+        end_ts = int((dt + timedelta(hours=30)).timestamp())  # captures midnight-ET boundary
+
+        try:
+            resp = requests.get(
+                f"{BASE_URL}/markets/candlesticks",
+                params={
+                    "market_tickers": ",".join(tickers),
+                    "start_ts": start_ts,
+                    "end_ts": end_ts,
+                    "period_interval": 1440,
+                },
+                headers=headers,
+                timeout=15,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+
+            for m in data.get("markets", []):
+                ticker = m["market_ticker"]
+                candles = m.get("candlesticks", [])
+                if candles and candles[0].get("price", {}).get("open_dollars") is not None:
+                    open_prices[ticker] = float(candles[0]["price"]["open_dollars"])
+                # else: no candle data, stays absent -> NaN
+
+        except requests.RequestException as e:
+            logger.warning("Candlestick fetch failed for date %s: %s", game_date, e)
+
+        if i % 20 == 0 or i == total_dates:
+            logger.info("Candlestick fetch progress: %d/%d dates", i, total_dates)
+
+        time.sleep(RATE_LIMIT_DELAY)
+
+    # Map ticker -> open price, NaN for missing
+    df = df.copy()
+    df["kalshi_open_price"] = df["market_ticker"].map(open_prices).astype(float)
+
+    n_found = df["kalshi_open_price"].notna().sum()
+    n_missing = df["kalshi_open_price"].isna().sum()
+    logger.info(
+        "Open prices: %d found, %d missing (%.1f%% coverage)",
+        n_found, n_missing, 100 * n_found / len(df) if len(df) > 0 else 0,
+    )
+
+    return df
