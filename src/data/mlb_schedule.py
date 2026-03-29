@@ -65,13 +65,16 @@ def fetch_schedule(season: int) -> pd.DataFrame:
         df["home_team"] = df["home_name"].apply(normalize_team)
     if "away_name" in df.columns:
         df["away_team"] = df["away_name"].apply(normalize_team)
+    # Non-team sentinel values statsapi returns in winning_team/losing_team:
+    # "Tie" — game ended tied (weather/darkness, rare but real in 2016 etc.)
+    _SKIP_NORMALIZE = {"", "Tie"}
     if "winning_team" in df.columns:
         df["winning_team"] = df["winning_team"].apply(
-            lambda x: normalize_team(x) if pd.notna(x) and x != "" else x
+            lambda x: normalize_team(x) if pd.notna(x) and x not in _SKIP_NORMALIZE else x
         )
     if "losing_team" in df.columns:
         df["losing_team"] = df["losing_team"].apply(
-            lambda x: normalize_team(x) if pd.notna(x) and x != "" else x
+            lambda x: normalize_team(x) if pd.notna(x) and x not in _SKIP_NORMALIZE else x
         )
 
     # Rename for consistent column naming
