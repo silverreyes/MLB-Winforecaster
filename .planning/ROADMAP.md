@@ -47,11 +47,12 @@ Plans:
   2. User can inspect the FeatureBuilder and confirm that all rolling features use `shift(1)` and accept an `as_of_date` parameter, preventing look-ahead leakage
   3. Unit tests exist that verify removing a game's outcome does not change that game's feature values (leakage detection)
   4. User can run a feature exploration notebook showing feature distributions, correlations, and coverage across seasons
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
+- [ ] 02-01-PLAN.md — Sabermetric formulas, per-game batting log loader, and Wave 0 test stubs
+- [ ] 02-02-PLAN.md — FeatureBuilder class with all differential feature methods and full test suite
+- [ ] 02-03-PLAN.md — Ingestion, build, and exploration notebooks producing feature_matrix.parquet
 
 ### Phase 3: Model Training and Backtesting
 **Goal**: User can compare three trained, calibrated models on Brier score and calibration quality across multiple seasons of walk-forward backtesting
@@ -92,6 +93,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Data Ingestion and Raw Cache | 3/3 | Complete | 2026-03-28 |
-| 2. Feature Engineering and Feature Store | 0/TBD | Not started | - |
+| 2. Feature Engineering and Feature Store | 0/3 | Planned | - |
 | 3. Model Training and Backtesting | 0/TBD | Not started | - |
 | 4. Kalshi Market Comparison and Edge Analysis | 0/TBD | Not started | - |
