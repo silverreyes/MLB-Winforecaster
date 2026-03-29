@@ -40,7 +40,7 @@ Transform raw Phase 1 Parquet caches into a single game-level feature matrix wit
 - Standalone notebook (separate from the build notebook). Reads the final feature Parquet and explores it.
 - Primary purpose: **sanity check and leakage detection** before modeling:
   1. Coverage table: % non-null per feature per season
-  2. Correlation of each feature with home-win outcome (flag anything suspiciously high, e.g., > 0.3 raw correlation)
+  2. Correlation of each feature with home-win outcome (flag anything suspiciously high, e.g., > 0.7 raw correlation — in a noisy sports prediction problem, 0.3 is a legitimate strong signal, not leakage; only near-perfect correlations warrant investigation)
   3. Temporal ordering spot-checks: verify `shift(1)` is working — confirm a game's feature values do not change if that game's outcome is removed
 - Notebook should be runnable independently without re-building the matrix.
 
