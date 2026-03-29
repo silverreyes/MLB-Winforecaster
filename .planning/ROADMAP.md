@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Data Ingestion and Raw Cache** - Fetch MLB schedules, historical stats, Statcast metrics, and Kalshi prices into local Parquet storage
 - [x] **Phase 2: Feature Engineering and Feature Store** - Build temporally-safe differential features from raw data into a single game-level feature matrix
-- [ ] **Phase 3: Model Training and Backtesting** - Train three calibrated models and evaluate via walk-forward backtesting with Brier score and calibration analysis
+- [x] **Phase 3: Model Training and Backtesting** - Train three calibrated models and evaluate via walk-forward backtesting with Brier score and calibration analysis
 - [ ] **Phase 4: Kalshi Market Comparison and Edge Analysis** - Benchmark model predictions against Kalshi implied probabilities and identify fee-adjusted edges
 
 ## Phase Details
@@ -67,8 +67,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — Model training library: feature sets, model factories (LR/RF/XGBoost), isotonic calibration, walk-forward backtest loop, evaluation utilities, and test suites
-- [ ] 03-02-PLAN.md — Training notebook (09) and comparison notebook (10) with user verification checkpoint
+- [x] 03-01-PLAN.md — Model training library: feature sets, model factories (LR/RF/XGBoost), isotonic calibration, walk-forward backtest loop, evaluation utilities, and test suites
+- [x] 03-02-PLAN.md — Training notebook (09) and comparison notebook (10) with user verification checkpoint
 
 ### Phase 4: Kalshi Market Comparison and Edge Analysis
 **Goal**: User can evaluate whether any model outperforms Kalshi market prices on calibration for 2025 season games, and identify specific games where meaningful model-vs-market edges exist after fees
@@ -94,5 +94,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. Data Ingestion and Raw Cache | 3/3 | Complete | 2026-03-28 |
 | 2. Feature Engineering and Feature Store | 3/3 | Complete | 2026-03-29 |
-| 3. Model Training and Backtesting | 0/2 | Planning complete | - |
+| 3. Model Training and Backtesting | 2/2 | Complete | 2026-03-29 |
 | 4. Kalshi Market Comparison and Edge Analysis | 0/TBD | Not started | - |

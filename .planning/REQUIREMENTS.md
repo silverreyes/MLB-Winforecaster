@@ -39,7 +39,7 @@ Requirements for initial release. Each maps to a roadmap phase.
 - [x] **EVAL-01**: All three models are evaluated via walk-forward backtesting (train on seasons 1..N, predict season N+1; no random splits)
 - [x] **EVAL-02**: Brier score is computed per model, per season, and in aggregate across all backtest seasons
 - [x] **EVAL-03**: Calibration curves (reliability diagrams) are generated per model to visualize over/underconfidence
-- [ ] **EVAL-04**: Model comparison notebook presents LR vs RF vs XGBoost side-by-side on Brier score, calibration, and per-season accuracy
+- [x] **EVAL-04**: Model comparison notebook presents LR vs RF vs XGBoost side-by-side on Brier score, calibration, and per-season accuracy
 
 ### Kalshi Market Integration
 
@@ -105,7 +105,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EVAL-01 | Phase 3 | Complete |
 | EVAL-02 | Phase 3 | Complete |
 | EVAL-03 | Phase 3 | Complete |
-| EVAL-04 | Phase 3 | Pending |
+| EVAL-04 | Phase 3 | Complete |
 | MARKET-01 | Phase 4 | Pending |
 | MARKET-02 | Phase 4 | Pending |
 | MARKET-03 | Phase 4 | Pending |
