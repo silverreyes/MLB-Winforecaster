@@ -105,8 +105,10 @@ def _make_sp_stats(season, min_gs=1):
         "SIERA": [3.30, 4.00, 3.60, 4.40],
         "K%": [0.28, 0.22, 0.25, 0.20],
         "BB%": [0.06, 0.08, 0.07, 0.09],
+        "K-BB%": [0.22, 0.14, 0.18, 0.11],
         "WHIP": [1.10, 1.25, 1.15, 1.30],
         "WAR": [5.0, 3.0, 4.0, 2.0],
+        "IDfg": [10001, 10002, 10003, 10004],
         "is_shortened_season": [season == 2020] * 4,
         "season_games": [60 if season == 2020 else 162] * 4,
         "season": [season] * 4,
@@ -126,8 +128,10 @@ def _make_sp_stats(season, min_gs=1):
             "SIERA": [2.70, 3.10, 3.70, 4.10],
             "K%": [0.30, 0.27, 0.24, 0.21],
             "BB%": [0.05, 0.06, 0.07, 0.08],
+            "K-BB%": [0.25, 0.21, 0.17, 0.13],
             "WHIP": [1.00, 1.10, 1.20, 1.30],
             "WAR": [2.0, 1.5, 1.0, 0.5],
+            "IDfg": [10005, 10006, 10007, 10008],
             "is_shortened_season": [season == 2020] * 4,
             "season_games": [60 if season == 2020 else 162] * 4,
             "season": [season] * 4,
@@ -216,6 +220,90 @@ def _make_kalshi_markets():
     ])
 
 
+def _make_pitcher_id_map(season):
+    """Create synthetic pitcher ID map for game log v2 lookups."""
+    return {
+        "Pitcher A": 1001,
+        "Pitcher B": 1002,
+        "Pitcher C": 1003,
+        "Pitcher D": 1004,
+    }
+
+
+def _make_pitcher_game_log_v2(player_id, season):
+    """Create synthetic v2 game logs for each pitcher with varying stats.
+
+    Returns game logs that align with the schedule dates (May 1-10).
+    Each pitcher gets 5 starts matching their scheduled appearances.
+    """
+    # Map player IDs to their scheduled game dates
+    # Schedule: 10 games on May 01-10
+    # Even games (0,2,4,6,8): NYY home, BOS away
+    # Odd games (1,3,5,7,9): BOS home, NYY away
+    # Pitcher A: NYY pitcher in even-index games (home_sp for i%2==0 when home=NYY)
+    # Pitcher B: BOS pitcher in even-index games (away_sp for i%2==0 when away=BOS)
+    # Pitcher C: NYY pitcher in odd-index games
+    # Pitcher D: BOS pitcher in odd-index games
+    pitcher_logs = {
+        1001: {  # Pitcher A - starts on dates when he's scheduled
+            "dates": [f"{season}-05-01", f"{season}-05-03", f"{season}-05-05",
+                      f"{season}-05-07", f"{season}-05-09"],
+            "ip":  [6.0, 7.0, 5.0, 6.0, 7.0],
+            "er":  [2,   1,   3,   2,   1],
+            "k":   [7,   8,   5,   7,   9],
+            "bb":  [2,   1,   3,   2,   1],
+            "hr":  [1,   0,   1,   1,   0],
+            "np":  [95,  100, 88,  92,  105],
+        },
+        1002: {  # Pitcher B
+            "dates": [f"{season}-05-01", f"{season}-05-03", f"{season}-05-05",
+                      f"{season}-05-07", f"{season}-05-09"],
+            "ip":  [5.0, 6.0, 4.0, 5.0, 6.0],
+            "er":  [3,   2,   4,   3,   2],
+            "k":   [5,   6,   4,   5,   7],
+            "bb":  [3,   2,   3,   3,   2],
+            "hr":  [1,   1,   2,   1,   1],
+            "np":  [90,  95,  82,  88,  98],
+        },
+        1003: {  # Pitcher C
+            "dates": [f"{season}-05-02", f"{season}-05-04", f"{season}-05-06",
+                      f"{season}-05-08", f"{season}-05-10"],
+            "ip":  [6.0, 5.0, 7.0, 6.0, 5.0],
+            "er":  [2,   3,   1,   2,   3],
+            "k":   [6,   5,   8,   6,   5],
+            "bb":  [2,   3,   1,   2,   3],
+            "hr":  [1,   1,   0,   1,   1],
+            "np":  [92,  88,  102, 94,  87],
+        },
+        1004: {  # Pitcher D
+            "dates": [f"{season}-05-02", f"{season}-05-04", f"{season}-05-06",
+                      f"{season}-05-08", f"{season}-05-10"],
+            "ip":  [5.0, 4.0, 6.0, 5.0, 4.0],
+            "er":  [3,   4,   2,   3,   4],
+            "k":   [4,   3,   6,   4,   3],
+            "bb":  [3,   4,   2,   3,   4],
+            "hr":  [2,   2,   1,   2,   2],
+            "np":  [85,  78,  95,  86,  80],
+        },
+    }
+    if player_id not in pitcher_logs:
+        return pd.DataFrame(columns=[
+            "date", "innings_pitched", "earned_runs", "strikeouts",
+            "base_on_balls", "home_runs", "number_of_pitches", "games_started",
+        ])
+    info = pitcher_logs[player_id]
+    return pd.DataFrame({
+        "date": pd.to_datetime(info["dates"]),
+        "innings_pitched": info["ip"],
+        "earned_runs": info["er"],
+        "strikeouts": info["k"],
+        "base_on_balls": info["bb"],
+        "home_runs": info["hr"],
+        "number_of_pitches": info["np"],
+        "games_started": [1] * len(info["dates"]),
+    })
+
+
 # ---------------------------------------------------------------------------
 # Helper: build features with all mocks
 # ---------------------------------------------------------------------------
@@ -252,6 +340,8 @@ PATCH_TARGETS = {
     "src.features.feature_builder.fetch_statcast_pitcher": _mock_fetch_statcast_pitcher,
     "src.features.feature_builder.fetch_kalshi_markets": _mock_fetch_kalshi_markets,
     "src.features.feature_builder.fetch_sp_recent_form_bulk": _make_sp_recent_form_bulk,
+    "src.features.feature_builder._get_pitcher_id_map": _make_pitcher_id_map,
+    "src.features.feature_builder._fetch_pitcher_game_log_v2": _make_pitcher_game_log_v2,
 }
 
 
@@ -264,7 +354,9 @@ def built_features():
          patch("src.features.feature_builder.fetch_team_game_log", side_effect=_mock_fetch_team_game_log), \
          patch("src.features.feature_builder.fetch_statcast_pitcher", side_effect=_mock_fetch_statcast_pitcher), \
          patch("src.features.feature_builder.fetch_kalshi_markets", side_effect=_mock_fetch_kalshi_markets), \
-         patch("src.features.feature_builder.fetch_sp_recent_form_bulk", side_effect=_make_sp_recent_form_bulk):
+         patch("src.features.feature_builder.fetch_sp_recent_form_bulk", side_effect=_make_sp_recent_form_bulk), \
+         patch("src.features.feature_builder._get_pitcher_id_map", side_effect=_make_pitcher_id_map), \
+         patch("src.features.feature_builder._fetch_pitcher_game_log_v2", side_effect=_make_pitcher_game_log_v2):
         fb = FeatureBuilder(seasons=[2022, 2023])
         df = fb.build()
     return df
@@ -276,12 +368,17 @@ def built_features():
 
 
 def test_sp_differential(built_features):
-    """FEAT-01: SP FIP, xFIP, K% differentials computed correctly."""
+    """FEAT-01: SP FIP, xFIP, WHIP, ERA, K-BB% differentials computed correctly."""
     df = built_features
     assert "sp_fip_diff" in df.columns
     assert "sp_xfip_diff" in df.columns
-    assert "sp_k_pct_diff" in df.columns
+    assert "sp_k_bb_pct_diff" in df.columns
+    assert "sp_whip_diff" in df.columns
+    assert "sp_era_diff" in df.columns
+    # sp_k_pct_diff should be REMOVED (replaced by sp_k_bb_pct_diff)
+    assert "sp_k_pct_diff" not in df.columns
 
+    # FIP and xFIP still come from FanGraphs season-level.
     # For a NYY-home game where Pitcher A (FIP=3.50) faces Pitcher B (FIP=4.20):
     # sp_fip_diff = 3.50 - 4.20 = -0.70
     nyy_home = df[(df["home_team"] == "NYY") & (df["home_probable_pitcher"] == "Pitcher A") &
@@ -290,7 +387,8 @@ def test_sp_differential(built_features):
         row = nyy_home.iloc[0]
         assert row["sp_fip_diff"] == pytest.approx(-0.70, abs=0.01)
         assert row["sp_xfip_diff"] == pytest.approx(3.40 - 4.10, abs=0.01)
-        assert row["sp_k_pct_diff"] == pytest.approx(0.28 - 0.22, abs=0.01)
+        # WHIP: Pitcher A WHIP=1.10, Pitcher B WHIP=1.25
+        assert row["sp_whip_diff"] == pytest.approx(1.10 - 1.25, abs=0.01)
 
 
 def test_offense_differential(built_features):
@@ -386,12 +484,16 @@ def test_output_schema(built_features):
     df = built_features
     required_columns = [
         "game_date", "home_team", "away_team", "season", "home_win",
-        "sp_fip_diff", "team_ops_diff", "rolling_ops_diff",
+        "sp_fip_diff", "sp_xfip_diff", "sp_k_bb_pct_diff",
+        "sp_whip_diff", "sp_era_diff", "sp_siera_diff",
+        "team_ops_diff", "rolling_ops_diff",
         "bullpen_era_diff", "is_home", "park_factor",
         "sp_recent_era_diff", "kalshi_yes_price",
     ]
     for col in required_columns:
         assert col in df.columns, f"Missing column: {col}"
+    # sp_k_pct_diff must NOT be in output
+    assert "sp_k_pct_diff" not in df.columns, "sp_k_pct_diff should be removed"
 
 
 def test_season_column_present(built_features):
@@ -472,6 +574,7 @@ def _make_sp_stats_xwoba(season, min_gs=1):
         "SIERA": [3.00, 3.40, 3.60, 4.40],
         "K%": [0.28, 0.25, 0.25, 0.20],
         "BB%": [0.06, 0.07, 0.07, 0.09],
+        "K-BB%": [0.22, 0.18, 0.18, 0.11],
         "WHIP": [1.10, 1.15, 1.15, 1.30],
         "WAR": [5.0, 4.0, 4.0, 2.0],
         "IDfg": [19052, 13125, 99901, 99902],
@@ -492,6 +595,7 @@ def _make_sp_stats_xwoba(season, min_gs=1):
             "SIERA": [2.70, 3.10, 3.70, 4.10],
             "K%": [0.30, 0.27, 0.24, 0.21],
             "BB%": [0.05, 0.06, 0.07, 0.08],
+            "K-BB%": [0.25, 0.21, 0.17, 0.13],
             "WHIP": [1.00, 1.10, 1.20, 1.30],
             "WAR": [2.0, 1.5, 1.0, 0.5],
             "IDfg": [99903, 99904, 99905, 99906],
@@ -551,6 +655,44 @@ def _make_sp_recent_form_xwoba(game_dates, season, sp_names=None):
     return result
 
 
+def _make_pitcher_id_map_xwoba(season):
+    """Pitcher ID map for xwOBA test (maps Webb/Cole names to IDs)."""
+    return {
+        "Logan Webb": 543321,
+        "Gerrit Cole": 543037,
+        "Pitcher C": 500003,
+        "Pitcher D": 500004,
+    }
+
+
+def _make_pitcher_game_log_v2_xwoba(player_id, season):
+    """Game log v2 for xwOBA test."""
+    # Generate 5 starts in June for each pitcher
+    pitcher_data = {
+        543321: {"er": [2, 1, 3, 2, 1], "k": [7, 8, 5, 7, 9], "bb": [2, 1, 3, 2, 1]},
+        543037: {"er": [3, 2, 4, 3, 2], "k": [6, 7, 5, 6, 8], "bb": [2, 2, 3, 2, 1]},
+        500003: {"er": [2, 3, 1, 2, 3], "k": [6, 5, 8, 6, 5], "bb": [2, 3, 1, 2, 3]},
+        500004: {"er": [3, 4, 2, 3, 4], "k": [4, 3, 6, 4, 3], "bb": [3, 4, 2, 3, 4]},
+    }
+    if player_id not in pitcher_data:
+        return pd.DataFrame(columns=[
+            "date", "innings_pitched", "earned_runs", "strikeouts",
+            "base_on_balls", "home_runs", "number_of_pitches", "games_started",
+        ])
+    d = pitcher_data[player_id]
+    dates = [f"{season}-06-{(i + 1):02d}" for i in range(5)]
+    return pd.DataFrame({
+        "date": pd.to_datetime(dates),
+        "innings_pitched": [6.0, 7.0, 5.0, 6.0, 7.0],
+        "earned_runs": d["er"],
+        "strikeouts": d["k"],
+        "base_on_balls": d["bb"],
+        "home_runs": [1, 0, 1, 1, 0],
+        "number_of_pitches": [95, 100, 88, 92, 105],
+        "games_started": [1, 1, 1, 1, 1],
+    })
+
+
 def test_xwoba_fix():
     """SP-01: xwoba_diff is non-NaN when both pitchers have Statcast data.
 
@@ -565,7 +707,9 @@ def test_xwoba_fix():
          patch("src.features.feature_builder.fetch_team_game_log", side_effect=_make_game_logs_xwoba), \
          patch("src.features.feature_builder.fetch_statcast_pitcher", side_effect=_make_statcast_pitcher_fixed), \
          patch("src.features.feature_builder.fetch_kalshi_markets", side_effect=_make_kalshi_markets), \
-         patch("src.features.feature_builder.fetch_sp_recent_form_bulk", side_effect=_make_sp_recent_form_xwoba):
+         patch("src.features.feature_builder.fetch_sp_recent_form_bulk", side_effect=_make_sp_recent_form_xwoba), \
+         patch("src.features.feature_builder._get_pitcher_id_map", side_effect=_make_pitcher_id_map_xwoba), \
+         patch("src.features.feature_builder._fetch_pitcher_game_log_v2", side_effect=_make_pitcher_game_log_v2_xwoba):
         fb = FeatureBuilder(seasons=[2024])
         df = fb.build()
 

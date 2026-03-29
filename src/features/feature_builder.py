@@ -7,7 +7,8 @@ Every rolling feature enforces temporal safety via shift(1) with season boundary
 reset. The class produces a DataFrame (not yet the final Parquet file -- Plan 03).
 
 Output columns include:
-    - SP differentials: sp_fip_diff, sp_xfip_diff, sp_k_pct_diff, sp_siera_diff
+    - SP differentials: sp_fip_diff, sp_xfip_diff, sp_k_bb_pct_diff,
+      sp_siera_diff, sp_whip_diff, sp_era_diff
     - Offense differentials: team_woba_diff, team_ops_diff, pyth_win_pct_diff
     - Rolling: rolling_ops_diff (10-game window with shift(1))
     - Bullpen: bullpen_era_diff, bullpen_fip_diff
@@ -33,9 +34,25 @@ from src.features.formulas import (
 )
 from src.data.sp_id_bridge import build_mlb_to_fg_bridge, strip_accents, MANUAL_OVERRIDES
 from src.features.game_logs import fetch_team_game_log
-from src.features.sp_recent_form import fetch_sp_recent_form_bulk, _get_pitcher_id_map
+from src.features.sp_recent_form import (
+    fetch_sp_recent_form_bulk,
+    _fetch_pitcher_game_log_v2,
+    _get_pitcher_id_map,
+    compute_rolling_fip_bulk,
+    compute_pitch_count_and_rest_bulk,
+)
 
 logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# League-average constants for cold-start imputation (SP-10)
+# ---------------------------------------------------------------------------
+LEAGUE_AVG_ERA = 4.25
+LEAGUE_AVG_K_BB_PCT = 0.10   # 10% K-BB differential
+LEAGUE_AVG_WHIP = 1.30
+LEAGUE_AVG_SIERA = 4.15
+LEAGUE_AVG_FIP = 4.15
+LEAGUE_AVG_XFIP = 4.10
 
 
 class FeatureBuilder:
@@ -174,20 +191,36 @@ class FeatureBuilder:
         return {}
 
     def _add_sp_features(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Add starting pitcher differential features (FEAT-01, FEAT-06 partial).
+        """Add starting pitcher differential features (SP-03, SP-04, SP-05, SP-06, SP-10).
 
-        Features: sp_fip_diff, sp_xfip_diff, sp_k_pct_diff, sp_siera_diff
+        Temporally-safe features (season-to-date rolling via cumsum + shift(1)):
+            sp_era_diff, sp_k_bb_pct_diff
+
+        FanGraphs season-level features (not computable from game logs):
+            sp_fip_diff, sp_xfip_diff, sp_whip_diff, sp_siera_diff
+
+        Cold-start handling: first start of season falls back to previous-season
+        FanGraphs stats, then to league-average constants.
 
         Uses multi-tier name resolution:
         1. Exact FanGraphs name match
         2. Manual override (MANUAL_OVERRIDES dict)
         3. Accent-stripped name match
         4. ID bridge (Chadwick register + MLB Stats API -> FG ID -> stats)
+        5. Accent-stripped name in fg_name_lookup
         """
         logger.info("Adding SP features...")
 
-        # Build per-season pitcher lookup: {(season, pitcher_name): {stat: value}}
-        sp_lookup: dict[tuple[int, str], dict] = {}
+        # Collect all probable starter names across all games
+        all_sp_names: set[str] = set()
+        all_sp_names.update(df["home_probable_pitcher"].dropna().unique())
+        all_sp_names.update(df["away_probable_pitcher"].dropna().unique())
+
+        # ------------------------------------------------------------------
+        # 1. Build per-season FanGraphs lookup and ID bridge infrastructure
+        # ------------------------------------------------------------------
+        # FanGraphs season-level lookup: {(season, pitcher_name): {stat: value}}
+        fg_season_lookup: dict[tuple[int, str], dict] = {}
         # Also build per-season auxiliary lookups for ID bridge
         season_fg_id_to_stats: dict[int, dict[int, dict]] = {}
         season_bridge: dict[int, dict[int, int]] = {}
@@ -197,17 +230,18 @@ class FeatureBuilder:
         for season in self.seasons:
             sp_df = fetch_sp_stats(season, min_gs=1)
 
-            # Primary lookup by exact name
+            # Primary lookup by exact name (includes WHIP, SIERA, FIP, xFIP)
             for _, row in sp_df.iterrows():
                 name = row["Name"]
                 stats = {
                     "FIP": row.get("FIP"),
                     "xFIP": row.get("xFIP"),
-                    "K%": row.get("K%"),
                     "SIERA": row.get("SIERA"),
+                    "WHIP": row.get("WHIP"),
                     "ERA": row.get("ERA"),
+                    "K-BB%": row.get("K-BB%"),
                 }
-                sp_lookup[(season, name)] = stats
+                fg_season_lookup[(season, name)] = stats
 
             # Build FG ID -> stats lookup
             fg_id_to_stats: dict[int, dict] = {}
@@ -217,9 +251,10 @@ class FeatureBuilder:
                 stats = {
                     "FIP": row.get("FIP"),
                     "xFIP": row.get("xFIP"),
-                    "K%": row.get("K%"),
                     "SIERA": row.get("SIERA"),
+                    "WHIP": row.get("WHIP"),
                     "ERA": row.get("ERA"),
+                    "K-BB%": row.get("K-BB%"),
                 }
                 if idfg is not None and pd.notna(idfg):
                     fg_id_to_stats[int(idfg)] = stats
@@ -246,25 +281,171 @@ class FeatureBuilder:
             season_bridge[season] = bridge
             season_pitcher_id_map[season] = pitcher_id_map
 
-        # Map pitcher stats using multi-tier resolution
+        # ------------------------------------------------------------------
+        # 2. Build per-game pitcher log and compute season-to-date rolling
+        # ------------------------------------------------------------------
+        all_logs = []
+        for season in self.seasons:
+            pid_map = season_pitcher_id_map.get(season, {})
+            for sp_name in all_sp_names:
+                mlb_id = pid_map.get(sp_name)
+                if mlb_id is None:
+                    continue
+                log = _fetch_pitcher_game_log_v2(mlb_id, season)
+                if log is not None and not log.empty:
+                    log = log.copy()
+                    log["pitcher_name"] = sp_name
+                    log["pitcher_id"] = mlb_id
+                    log["season"] = season
+                    all_logs.append(log)
+
+        # Season-to-date lookup: {(season, pitcher_name, date_str): {std_era, std_k_bb_rate}}
+        std_lookup: dict[tuple[int, str, str], dict] = {}
+
+        if all_logs:
+            logs = pd.concat(all_logs, ignore_index=True)
+            logs["date"] = pd.to_datetime(logs["date"])
+            logs = logs.sort_values(["pitcher_id", "season", "date"])
+
+            # Compute cumulative stats per pitcher per season
+            grp = logs.groupby(["pitcher_id", "season"])
+            logs["cum_er"] = grp["earned_runs"].cumsum()
+            logs["cum_ip"] = grp["innings_pitched"].cumsum()
+            logs["cum_k"] = grp["strikeouts"].cumsum()
+            logs["cum_bb"] = grp["base_on_balls"].cumsum()
+
+            # shift(1): game N sees only stats through game N-1
+            logs["prev_cum_er"] = grp["cum_er"].shift(1)
+            logs["prev_cum_ip"] = grp["cum_ip"].shift(1)
+            logs["prev_cum_k"] = grp["cum_k"].shift(1)
+            logs["prev_cum_bb"] = grp["cum_bb"].shift(1)
+
+            # Season-to-date ERA
+            logs["std_era"] = np.where(
+                logs["prev_cum_ip"] > 0,
+                (logs["prev_cum_er"] * 9) / logs["prev_cum_ip"],
+                np.nan,
+            )
+
+            # Season-to-date K-BB rate (per 9 IP for scale)
+            logs["std_k_bb_rate"] = np.where(
+                logs["prev_cum_ip"] > 0,
+                ((logs["prev_cum_k"] - logs["prev_cum_bb"]) * 9) / logs["prev_cum_ip"],
+                np.nan,
+            )
+
+            # Build lookup from logs DataFrame
+            for _, row in logs.iterrows():
+                date_str = row["date"].strftime("%Y-%m-%d")
+                std_lookup[(row["season"], row["pitcher_name"], date_str)] = {
+                    "std_era": row["std_era"],
+                    "std_k_bb_rate": row["std_k_bb_rate"],
+                }
+
+        # ------------------------------------------------------------------
+        # 3. Build cold-start fallback from previous season FanGraphs stats
+        # ------------------------------------------------------------------
+        prev_season_stats: dict[tuple[int, str], dict] = {}
+        for season in self.seasons:
+            prev = season - 1
+            try:
+                prev_fg = fetch_sp_stats(prev, min_gs=1)
+                for _, row in prev_fg.iterrows():
+                    prev_season_stats[(season, row["Name"])] = {
+                        "ERA": row.get("ERA", LEAGUE_AVG_ERA),
+                        "K-BB%": row.get("K-BB%", LEAGUE_AVG_K_BB_PCT),
+                        "WHIP": row.get("WHIP", LEAGUE_AVG_WHIP),
+                        "SIERA": row.get("SIERA", LEAGUE_AVG_SIERA),
+                        "FIP": row.get("FIP", LEAGUE_AVG_FIP),
+                        "xFIP": row.get("xFIP", LEAGUE_AVG_XFIP),
+                    }
+            except Exception:
+                pass
+
+        # ------------------------------------------------------------------
+        # 4. Map features to the game DataFrame
+        # ------------------------------------------------------------------
         for prefix, pitcher_col in [("home_sp", "home_probable_pitcher"),
                                      ("away_sp", "away_probable_pitcher")]:
-            for stat, col_name in [("FIP", f"{prefix}_fip"),
-                                    ("xFIP", f"{prefix}_xfip"),
-                                    ("K%", f"{prefix}_k_pct"),
-                                    ("SIERA", f"{prefix}_siera")]:
-                df[col_name] = df.apply(
-                    lambda r, s=stat, pc=pitcher_col: self._resolve_sp_stats(
-                        r["season"],
-                        r[pc],
-                        sp_lookup,
-                        season_fg_id_to_stats.get(r["season"], {}),
-                        season_bridge.get(r["season"], {}),
-                        season_pitcher_id_map.get(r["season"], {}),
-                        season_fg_name_lookup.get(r["season"], {}),
-                    ).get(s),
-                    axis=1,
+            # Season-to-date rolling: ERA, K-BB rate
+            era_vals = []
+            k_bb_vals = []
+            # FanGraphs season-level: FIP, xFIP, WHIP, SIERA
+            fip_vals = []
+            xfip_vals = []
+            whip_vals = []
+            siera_vals = []
+
+            for _, row in df.iterrows():
+                season = row["season"]
+                pitcher_name = row[pitcher_col]
+                game_date_str = row["game_date"].strftime("%Y-%m-%d") if hasattr(row["game_date"], "strftime") else str(row["game_date"])[:10]
+
+                # --- std_era: rolling -> prev_season -> league_avg ---
+                std_stats = std_lookup.get((season, pitcher_name, game_date_str), {})
+                era_val = std_stats.get("std_era")
+                if era_val is None or (isinstance(era_val, float) and np.isnan(era_val)):
+                    # Cold-start: try previous season
+                    prev_stats = prev_season_stats.get((season, pitcher_name), {})
+                    era_val = prev_stats.get("ERA")
+                    if era_val is None or (isinstance(era_val, float) and np.isnan(era_val)):
+                        era_val = LEAGUE_AVG_ERA
+                era_vals.append(era_val)
+
+                # --- std_k_bb_rate: rolling -> prev_season K-BB% -> league_avg ---
+                k_bb_val = std_stats.get("std_k_bb_rate")
+                if k_bb_val is None or (isinstance(k_bb_val, float) and np.isnan(k_bb_val)):
+                    prev_stats = prev_season_stats.get((season, pitcher_name), {})
+                    k_bb_val = prev_stats.get("K-BB%")
+                    if k_bb_val is None or (isinstance(k_bb_val, float) and np.isnan(k_bb_val)):
+                        k_bb_val = LEAGUE_AVG_K_BB_PCT
+                k_bb_vals.append(k_bb_val)
+
+                # --- FanGraphs season-level: FIP, xFIP, WHIP, SIERA ---
+                fg_stats = self._resolve_sp_stats(
+                    season,
+                    pitcher_name,
+                    fg_season_lookup,
+                    season_fg_id_to_stats.get(season, {}),
+                    season_bridge.get(season, {}),
+                    season_pitcher_id_map.get(season, {}),
+                    season_fg_name_lookup.get(season, {}),
                 )
+
+                # FIP: FG season -> prev_season -> league_avg
+                fip_v = fg_stats.get("FIP")
+                if fip_v is None or (isinstance(fip_v, float) and np.isnan(fip_v)):
+                    prev_stats = prev_season_stats.get((season, pitcher_name), {})
+                    fip_v = prev_stats.get("FIP", LEAGUE_AVG_FIP)
+                fip_vals.append(fip_v)
+
+                # xFIP
+                xfip_v = fg_stats.get("xFIP")
+                if xfip_v is None or (isinstance(xfip_v, float) and np.isnan(xfip_v)):
+                    prev_stats = prev_season_stats.get((season, pitcher_name), {})
+                    xfip_v = prev_stats.get("xFIP", LEAGUE_AVG_XFIP)
+                xfip_vals.append(xfip_v)
+
+                # WHIP (FG season-level -- not computable from game logs)
+                whip_v = fg_stats.get("WHIP")
+                if whip_v is None or (isinstance(whip_v, float) and np.isnan(whip_v)):
+                    prev_stats = prev_season_stats.get((season, pitcher_name), {})
+                    whip_v = prev_stats.get("WHIP", LEAGUE_AVG_WHIP)
+                whip_vals.append(whip_v)
+
+                # SIERA
+                siera_v = fg_stats.get("SIERA")
+                if siera_v is None or (isinstance(siera_v, float) and np.isnan(siera_v)):
+                    prev_stats = prev_season_stats.get((season, pitcher_name), {})
+                    siera_v = prev_stats.get("SIERA", LEAGUE_AVG_SIERA)
+                siera_vals.append(siera_v)
+
+            df[f"{prefix}_std_era"] = era_vals
+            df[f"{prefix}_std_k_bb_rate"] = k_bb_vals
+            df[f"{prefix}_fip"] = fip_vals
+            df[f"{prefix}_xfip"] = xfip_vals
+            df[f"{prefix}_whip"] = whip_vals
+            df[f"{prefix}_siera"] = siera_vals
 
             # Log unmatched pitchers at DEBUG level
             unmatched = df[df[f"{prefix}_fip"].isna()][pitcher_col].unique()
@@ -275,17 +456,26 @@ class FeatureBuilder:
                         f"SP name unmatched: '{name}' not found in sp_stats (season={s})"
                     )
 
-        # Compute differentials
+        # ------------------------------------------------------------------
+        # 5. Compute differentials
+        # ------------------------------------------------------------------
+        df["sp_era_diff"] = df["home_sp_std_era"] - df["away_sp_std_era"]
+        df["sp_k_bb_pct_diff"] = df["home_sp_std_k_bb_rate"] - df["away_sp_std_k_bb_rate"]
+        df["sp_whip_diff"] = df["home_sp_whip"] - df["away_sp_whip"]
+        df["sp_siera_diff"] = df["home_sp_siera"] - df["away_sp_siera"]
         df["sp_fip_diff"] = df["home_sp_fip"] - df["away_sp_fip"]
         df["sp_xfip_diff"] = df["home_sp_xfip"] - df["away_sp_xfip"]
-        df["sp_k_pct_diff"] = df["home_sp_k_pct"] - df["away_sp_k_pct"]
-        df["sp_siera_diff"] = df["home_sp_siera"] - df["away_sp_siera"]
 
-        # Drop intermediate columns
+        # ------------------------------------------------------------------
+        # 6. Drop intermediate columns
+        # ------------------------------------------------------------------
         for prefix in ["home_sp", "away_sp"]:
             df = df.drop(
-                columns=[f"{prefix}_fip", f"{prefix}_xfip",
-                         f"{prefix}_k_pct", f"{prefix}_siera"],
+                columns=[
+                    f"{prefix}_std_era", f"{prefix}_std_k_bb_rate",
+                    f"{prefix}_fip", f"{prefix}_xfip",
+                    f"{prefix}_whip", f"{prefix}_siera",
+                ],
                 errors="ignore",
             )
 

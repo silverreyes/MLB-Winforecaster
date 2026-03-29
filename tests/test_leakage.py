@@ -71,8 +71,10 @@ def _make_sp_stats_leakage(season, min_gs=1):
         "SIERA": [3.30, 4.00, 3.60, 4.40],
         "K%": [0.28, 0.22, 0.25, 0.20],
         "BB%": [0.06, 0.08, 0.07, 0.09],
+        "K-BB%": [0.22, 0.14, 0.18, 0.11],
         "WHIP": [1.10, 1.25, 1.15, 1.30],
         "WAR": [5.0, 3.0, 4.0, 2.0],
+        "IDfg": [10001, 10002, 10003, 10004],
         "is_shortened_season": [False] * 4,
         "season_games": [162] * 4,
         "season": [season] * 4,
@@ -90,8 +92,10 @@ def _make_sp_stats_leakage(season, min_gs=1):
             "SIERA": [2.70, 3.10, 3.70, 4.10],
             "K%": [0.30, 0.27, 0.24, 0.21],
             "BB%": [0.05, 0.06, 0.07, 0.08],
+            "K-BB%": [0.25, 0.21, 0.17, 0.13],
             "WHIP": [1.00, 1.10, 1.20, 1.30],
             "WAR": [2.0, 1.5, 1.0, 0.5],
+            "IDfg": [10005, 10006, 10007, 10008],
             "is_shortened_season": [False] * 4,
             "season_games": [162] * 4,
             "season": [season] * 4,
@@ -170,6 +174,50 @@ def _make_kalshi_leakage():
     ])
 
 
+def _make_pitcher_id_map_leakage(season):
+    """Pitcher ID map for leakage tests."""
+    return {
+        "Pitcher A": 1001,
+        "Pitcher B": 1002,
+        "Pitcher C": 1003,
+        "Pitcher D": 1004,
+    }
+
+
+def _make_pitcher_game_log_v2_leakage(player_id, season):
+    """Game log v2 for leakage tests with varying stats per game.
+
+    15 games per pitcher, matching schedule dates (May 01-15).
+    Stats vary per game to test season-to-date rolling behavior.
+    """
+    n_games = 15
+    # Use repeating pattern with variation so stats change game-to-game
+    ip_cycle = [6.0, 5.0, 7.0]
+    er_cycle = [2, 3, 1]
+    k_cycle = [7, 5, 8]
+    bb_cycle = [2, 3, 1]
+
+    # Offset per pitcher to get different values
+    offsets = {1001: 0, 1002: 1, 1003: 2, 1004: 0}
+    offset = offsets.get(player_id, 0)
+
+    dates = [f"{season}-05-{(i + 1):02d}" for i in range(n_games)]
+    rows = []
+    for i in range(n_games):
+        idx = (i + offset) % 3
+        rows.append({
+            "date": pd.to_datetime(dates[i]),
+            "innings_pitched": ip_cycle[idx],
+            "earned_runs": er_cycle[idx],
+            "strikeouts": k_cycle[idx],
+            "base_on_balls": bb_cycle[idx],
+            "home_runs": 1,
+            "number_of_pitches": 90 + i,
+            "games_started": 1,
+        })
+    return pd.DataFrame(rows)
+
+
 def _build_with_mocks(seasons, schedule_fn=None):
     """Build features with mocked loaders. Optionally override schedule."""
     sched_fn = schedule_fn or _make_schedule_for_leakage
@@ -179,7 +227,9 @@ def _build_with_mocks(seasons, schedule_fn=None):
          patch("src.features.feature_builder.fetch_team_game_log", side_effect=_make_game_logs_leakage), \
          patch("src.features.feature_builder.fetch_statcast_pitcher", side_effect=_make_statcast_leakage), \
          patch("src.features.feature_builder.fetch_kalshi_markets", side_effect=_make_kalshi_leakage), \
-         patch("src.features.feature_builder.fetch_sp_recent_form_bulk", side_effect=_make_sp_form_bulk_leakage):
+         patch("src.features.feature_builder.fetch_sp_recent_form_bulk", side_effect=_make_sp_form_bulk_leakage), \
+         patch("src.features.feature_builder._get_pitcher_id_map", side_effect=_make_pitcher_id_map_leakage), \
+         patch("src.features.feature_builder._fetch_pitcher_game_log_v2", side_effect=_make_pitcher_game_log_v2_leakage):
         fb = FeatureBuilder(seasons=seasons)
         return fb.build()
 
@@ -256,7 +306,8 @@ def test_no_leakage_on_outcome_removal():
     # to the same game_date in both builds)
     # Feature columns that should be identical regardless of outcome masking
     feature_cols = [
-        "sp_fip_diff", "sp_xfip_diff", "sp_k_pct_diff",
+        "sp_fip_diff", "sp_xfip_diff", "sp_k_bb_pct_diff",
+        "sp_whip_diff", "sp_era_diff", "sp_siera_diff",
         "team_woba_diff", "team_ops_diff",
         "bullpen_era_diff", "is_home", "park_factor",
         "rolling_ops_diff",
