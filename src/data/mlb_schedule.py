@@ -44,7 +44,12 @@ def fetch_schedule(season: int) -> pd.DataFrame:
         )
 
     start_date, end_date = SEASON_DATES[season]
-    games = statsapi_schedule(start_date=start_date, end_date=end_date)
+    games = statsapi_schedule(start_date=start_date, end_date=end_date, sportId=1)
+    # Filter to regular season only (game_type="R").
+    # The date ranges may overlap spring training or include exhibition
+    # games (type "E") where minor league affiliates face MLB teams —
+    # those team names are not in team_mappings and cause ValueError.
+    games = [g for g in games if g.get("game_type") == "R"]
 
     # Convert list of dicts to DataFrame
     df = pd.DataFrame(games)

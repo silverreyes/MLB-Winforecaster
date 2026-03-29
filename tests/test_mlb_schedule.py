@@ -17,6 +17,7 @@ SAMPLE_SCHEDULE_DATA = [
     {
         "game_id": 718001,
         "game_date": "2023-04-01",
+        "game_type": "R",
         "home_name": "New York Yankees",
         "away_name": "Boston Red Sox",
         "home_probable_pitcher": "Gerrit Cole",
@@ -30,6 +31,7 @@ SAMPLE_SCHEDULE_DATA = [
     {
         "game_id": 718002,
         "game_date": "2023-04-01",
+        "game_type": "R",
         "home_name": "Los Angeles Dodgers",
         "away_name": "San Francisco Giants",
         "home_probable_pitcher": "Clayton Kershaw",
@@ -47,6 +49,7 @@ SAMPLE_2025_SCHEDULE = [
     {
         "game_id": 750001,
         "game_date": "2025-03-27",
+        "game_type": "R",
         "home_name": "Chicago Cubs",
         "away_name": "Chicago White Sox",
         "home_probable_pitcher": "TBD",
