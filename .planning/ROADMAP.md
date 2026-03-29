@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Data Ingestion and Raw Cache** - Fetch MLB schedules, historical stats, Statcast metrics, and Kalshi prices into local Parquet storage
 - [x] **Phase 2: Feature Engineering and Feature Store** - Build temporally-safe differential features from raw data into a single game-level feature matrix
 - [x] **Phase 3: Model Training and Backtesting** - Train three calibrated models and evaluate via walk-forward backtesting with Brier score and calibration analysis
-- [ ] **Phase 4: Kalshi Market Comparison and Edge Analysis** - Benchmark model predictions against Kalshi implied probabilities and identify fee-adjusted edges
+- [x] **Phase 4: Kalshi Market Comparison and Edge Analysis** - Benchmark model predictions against Kalshi implied probabilities and identify fee-adjusted edges
 
 ## Phase Details
 
@@ -80,11 +80,11 @@ Plans:
   2. User can compare each model's Brier score against the Kalshi implied probability Brier score on the same 2025 games — reported as a partial benchmark distinct from the full 2015–2024 backtest
   3. User can view an edge analysis identifying individual games where model probability diverges from Kalshi opening price by a meaningful margin
   4. User can view profitability analysis with Kalshi fee structure applied — no edge is reported without fee adjustment
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
-- [ ] 04-01-PLAN.md — Library code: predict_2025 fold runner, Kalshi open price fetcher, edge/fee analysis module, and comprehensive tests
-- [ ] 04-02-PLAN.md — Kalshi comparison notebook (11) and edge analysis notebook (12) with user verification
+- [x] 04-01-PLAN.md — Library code: predict_2025 fold runner, Kalshi open price fetcher, edge/fee analysis module, and comprehensive tests
+- [x] 04-02-PLAN.md — Kalshi comparison notebook (11) and edge analysis notebook (12) with user verification
 
 ## Progress
 
@@ -96,4 +96,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | 1. Data Ingestion and Raw Cache | 3/3 | Complete | 2026-03-28 |
 | 2. Feature Engineering and Feature Store | 3/3 | Complete | 2026-03-29 |
 | 3. Model Training and Backtesting | 2/2 | Complete | 2026-03-29 |
-| 4. Kalshi Market Comparison and Edge Analysis | 0/2 | Not started | - |
+| 4. Kalshi Market Comparison and Edge Analysis | 2/2 | Complete   | 2026-03-29 |
