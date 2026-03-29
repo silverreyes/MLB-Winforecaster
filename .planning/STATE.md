@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: milestone
 status: completed
 stopped_at: Completed 04-02-PLAN.md (v1 milestone complete)
-last_updated: "2026-03-29T15:02:37.448Z"
+last_updated: "2026-03-29T17:00:29.748Z"
 last_activity: 2026-03-29 -- Completed 04-02-PLAN.md (Phase 4 notebooks)
 progress:
   total_phases: 4
@@ -18,10 +18,10 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-28)
+See: .planning/PROJECT.md (updated 2026-03-29 after v1.0 milestone)
 
 **Core value:** Produce well-calibrated win probability estimates that can be rigorously compared against Kalshi market prices, surfacing where models agree, disagree, and where edges may exist.
-**Current focus:** All v1 requirements complete -- 4 phases, 10 plans executed
+**Current focus:** v1.0 shipped. Next: `/gsd:new-milestone` for v2 (live prediction pipeline + advanced features)
 
 ## Current Position
 
