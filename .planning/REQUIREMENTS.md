@@ -14,8 +14,8 @@
 - [ ] **SP-04**: FeatureBuilder computes `sp_k_bb_pct_diff` (K-BB% differential) and removes `sp_k_pct_diff`; K-BB% explains 17.92% of future RA9 variance vs under 10% for K% alone.
 - [ ] **SP-05**: FeatureBuilder computes `sp_whip_diff` differential; WHIP provides independent signal from the FIP family.
 - [ ] **SP-06**: FeatureBuilder computes `sp_era_diff` (season-to-date ERA differential, sourced from per-game rolling after SP-03 conversion).
-- [ ] **SP-07**: FeatureBuilder computes `sp_recent_fip_diff` (30-day rolling FIP from MLB Stats API game logs; K/BB/HR/IP per start aggregated over trailing 30 calendar days with shift(1)).
-- [ ] **SP-08**: FeatureBuilder computes `sp_pitch_count_last_diff` (pitch count in SP's most recent start; impute NaN first start with league-average 93 pitches) and `sp_days_rest_diff` (integer days rest, capped at 7).
+- [x] **SP-07**: FeatureBuilder computes `sp_recent_fip_diff` (30-day rolling FIP from MLB Stats API game logs; K/BB/HR/IP per start aggregated over trailing 30 calendar days with shift(1)).
+- [x] **SP-08**: FeatureBuilder computes `sp_pitch_count_last_diff` (pitch count in SP's most recent start; impute NaN first start with league-average 93 pitches) and `sp_days_rest_diff` (integer days rest, capped at 7).
 - [ ] **SP-09**: `feature_sets.py` defines three named constants: `TEAM_ONLY_FEATURE_COLS` (pre-lineup feature set, team stats only), `SP_ENHANCED_FEATURE_COLS` (full set including all new SP columns), and `V1_FULL_FEATURE_COLS` (v1 feature set preserved for apples-to-apples backtest comparison).
 - [ ] **SP-10**: FeatureBuilder handles SP cold-start: uses previous-season aggregate stats as prior for first start of season; imputes league-average values for rookies and mid-season call-ups.
 - [ ] **SP-11**: Feature store saved as `feature_store_v2.parquet` (versioned separately from `feature_store_v1.parquet`; v1 file preserved unchanged).
@@ -124,8 +124,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SP-04 | Phase 5 | Pending |
 | SP-05 | Phase 5 | Pending |
 | SP-06 | Phase 5 | Pending |
-| SP-07 | Phase 5 | Pending |
-| SP-08 | Phase 5 | Pending |
+| SP-07 | Phase 5 | Complete |
+| SP-08 | Phase 5 | Complete |
 | SP-09 | Phase 5 | Pending |
 | SP-10 | Phase 5 | Pending |
 | SP-11 | Phase 5 | Pending |

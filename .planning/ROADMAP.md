@@ -37,7 +37,7 @@
   3. `feature_store_v2.parquet` exists with all new SP columns (`sp_k_bb_pct_diff`, `sp_whip_diff`, `sp_era_diff`, `sp_recent_fip_diff`, `sp_pitch_count_last_diff`, `sp_days_rest_diff`) and the v1 feature store is preserved unchanged
   4. `feature_sets.py` exports three named constants (`TEAM_ONLY_FEATURE_COLS`, `SP_ENHANCED_FEATURE_COLS`, `V1_FULL_FEATURE_COLS`) and models can load either feature set from the v2 feature store without KeyError
   5. Cold-start pitchers (first start of season, rookies, mid-season call-ups) have imputed values -- no NaN rows propagate to model input for any game with a resolved starting pitcher
-**Plans:** 4 plans
+**Plans:** 2/4 plans executed
 
 Plans:
 - [ ] 05-01-PLAN.md -- Fix xwOBA bug and build ID-based SP name matching cross-reference (SP-01, SP-02)
@@ -120,7 +120,7 @@ Phases execute in numeric order: 5 -> 6 -> 7 -> 8 -> 9
 | 2. Feature Engineering and Feature Store | v1.0 | 3/3 | Complete | 2026-03-29 |
 | 3. Model Training and Backtesting | v1.0 | 2/2 | Complete | 2026-03-29 |
 | 4. Kalshi Market Comparison and Edge Analysis | v1.0 | 2/2 | Complete | 2026-03-29 |
-| 5. SP Feature Integration | v2.0 | 0/4 | Planning complete | - |
+| 5. SP Feature Integration | 2/4 | In Progress|  | - |
 | 6. Model Retrain and Calibration | v2.0 | 0/? | Not started | - |
 | 7. Live Pipeline and Database | v2.0 | 0/? | Not started | - |
 | 8. API and Dashboard | v2.0 | 0/? | Not started | - |

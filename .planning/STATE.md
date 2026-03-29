@@ -4,13 +4,13 @@ milestone: v2.0
 milestone_name: Live Platform
 status: executing
 last_updated: "2026-03-29T20:27:27.000Z"
-last_activity: 2026-03-29 -- Completed 05-01 (xwOBA bug fix + SP ID bridge)
+last_activity: 2026-03-29 -- Completed 05-02 (extended game log v2 + FIP + pitch count)
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 4
-  completed_plans: 1
-  percent: 5
+  completed_plans: 2
+  percent: 10
 ---
 
 # Project State
@@ -25,11 +25,11 @@ See: .planning/PROJECT.md (updated 2026-03-29 -- v2.0 milestone started)
 ## Current Position
 
 Phase: 5 of 9 (SP Feature Integration)
-Plan: 1 of 4 in current phase
+Plan: 2 of 4 in current phase
 Status: Executing
-Last activity: 2026-03-29 -- Completed 05-01 (xwOBA bug fix + SP ID bridge)
+Last activity: 2026-03-29 -- Completed 05-02 (extended game log v2 + FIP + pitch count)
 
-Progress: [==........] 5%
+Progress: [====......] 10%
 
 ## Performance Metrics
 
@@ -42,7 +42,7 @@ Progress: [==........] 5%
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 5 (SP Feature Integration) | 1/4 | 8min | 8min |
+| 5 (SP Feature Integration) | 2/4 | 11min | 5.5min |
 
 **Recent Trend (v1.0):**
 - Last 5 plans: 34min, 5min, 10min, 5min, 5min
@@ -65,6 +65,9 @@ Recent decisions affecting current work:
 - [v2.0 Roadmap]: Memory limit audit (INFRA-01) is a hard gate BEFORE first VPS deploy
 - [05-01]: 5-tier SP name resolution chain (exact -> override -> accent-strip -> ID bridge -> FG name lookup)
 - [05-01]: Chadwick register cached via existing cache infrastructure for ID bridge Tier 1
+- [05-02]: Versioned cache key (pitcher_game_log_v2_) prevents stale 3-column cache reuse
+- [05-02]: Raw FIP formula (no cFIP constant) -- cancels in home-away differentials
+- [05-02]: Cold-start imputation: 93 pitches (league avg), 7 days rest cap
 
 ### Pending Todos
 
@@ -80,5 +83,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-29
-Stopped at: Completed 05-01-PLAN.md (xwOBA bug fix + SP ID bridge)
+Stopped at: Completed 05-02-PLAN.md (extended game log v2 + FIP + pitch count)
 Resume file: None
