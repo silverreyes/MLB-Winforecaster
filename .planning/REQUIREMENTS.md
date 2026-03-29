@@ -8,8 +8,8 @@
 
 ### SP Feature Engineering (Track 1)
 
-- [ ] **SP-01**: FeatureBuilder fixes two bugs in `_add_advanced_features()`: (1) pybaseball statcast returns `'last_name, first_name'` as a single merged column — the join must split on `", "` and reverse to "First Last"; (2) xwOBA column in Baseball Savant output is `'est_woba'` not `'xwoba'`. Both bugs caused 100% NaN for `xwoba_diff` in v1.
-- [ ] **SP-02**: System builds `mlb_player_id → fangraphs_id` cross-reference (via pybaseball `playerid_lookup()` or Chadwick Bureau register) for ID-based SP name matching; eliminates ~17% NaN rate from MLB Stats API vs FanGraphs name format mismatches.
+- [x] **SP-01**: FeatureBuilder fixes two bugs in `_add_advanced_features()`: (1) pybaseball statcast returns `'last_name, first_name'` as a single merged column — the join must split on `", "` and reverse to "First Last"; (2) xwOBA column in Baseball Savant output is `'est_woba'` not `'xwoba'`. Both bugs caused 100% NaN for `xwoba_diff` in v1.
+- [x] **SP-02**: System builds `mlb_player_id → fangraphs_id` cross-reference (via pybaseball `playerid_lookup()` or Chadwick Bureau register) for ID-based SP name matching; eliminates ~17% NaN rate from MLB Stats API vs FanGraphs name format mismatches.
 - [ ] **SP-03**: FeatureBuilder converts all season-aggregate SP stats to season-to-date rolling (cumsum + shift(1) per pitcher per season); v1 used full-season FanGraphs totals as game-level features, meaning a June game saw September stats — temporal leakage that must be eliminated before any retraining.
 - [ ] **SP-04**: FeatureBuilder computes `sp_k_bb_pct_diff` (K-BB% differential) and removes `sp_k_pct_diff`; K-BB% explains 17.92% of future RA9 variance vs under 10% for K% alone.
 - [ ] **SP-05**: FeatureBuilder computes `sp_whip_diff` differential; WHIP provides independent signal from the FIP family.
@@ -118,8 +118,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SP-01 | Phase 5 | Pending |
-| SP-02 | Phase 5 | Pending |
+| SP-01 | Phase 5 | Complete |
+| SP-02 | Phase 5 | Complete |
 | SP-03 | Phase 5 | Pending |
 | SP-04 | Phase 5 | Pending |
 | SP-05 | Phase 5 | Pending |
