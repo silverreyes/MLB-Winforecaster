@@ -43,10 +43,10 @@ Requirements for initial release. Each maps to a roadmap phase.
 
 ### Kalshi Market Integration
 
-- [ ] **MARKET-01**: Kalshi resolved prices are joined to the feature matrix for 2025 season games where individual game-winner market data is available (partial coverage from 2025-04-16 onward)
-- [ ] **MARKET-02**: Each model's Brier score is benchmarked against the Kalshi implied probability Brier score on the same 2025 season games — explicitly treated as a partial benchmark, not a full backtest comparison
-- [ ] **MARKET-03**: Edge analysis identifies individual games where model probability diverges from Kalshi opening price by a meaningful margin
-- [ ] **MARKET-04**: Profitability analysis is fee-adjusted (Kalshi fee structure applied) before any model edge is reported
+- [x] **MARKET-01**: Kalshi resolved prices are joined to the feature matrix for 2025 season games where individual game-winner market data is available (partial coverage from 2025-04-16 onward)
+- [x] **MARKET-02**: Each model's Brier score is benchmarked against the Kalshi implied probability Brier score on the same 2025 season games — explicitly treated as a partial benchmark, not a full backtest comparison
+- [x] **MARKET-03**: Edge analysis identifies individual games where model probability diverges from Kalshi opening price by a meaningful margin
+- [x] **MARKET-04**: Profitability analysis is fee-adjusted (Kalshi fee structure applied) before any model edge is reported
 
 ## v2 Requirements
 
@@ -106,10 +106,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EVAL-02 | Phase 3 | Complete |
 | EVAL-03 | Phase 3 | Complete |
 | EVAL-04 | Phase 3 | Complete |
-| MARKET-01 | Phase 4 | Pending |
-| MARKET-02 | Phase 4 | Pending |
-| MARKET-03 | Phase 4 | Pending |
-| MARKET-04 | Phase 4 | Pending |
+| MARKET-01 | Phase 4 | Complete |
+| MARKET-02 | Phase 4 | Complete |
+| MARKET-03 | Phase 4 | Complete |
+| MARKET-04 | Phase 4 | Complete |
 
 **Coverage:**
 - v1 requirements: 22 total

@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planning
-stopped_at: Phase 4 context gathered
-last_updated: "2026-03-29T13:24:57.381Z"
-last_activity: 2026-03-29 -- Completed 03-02-PLAN.md (training and comparison notebooks)
+status: executing
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-03-29T14:17:18.000Z"
+last_activity: 2026-03-29 -- Completed 04-01-PLAN.md (Phase 4 library code)
 progress:
   total_phases: 4
   completed_phases: 3
-  total_plans: 8
-  completed_plans: 8
-  percent: 100
+  total_plans: 10
+  completed_plans: 9
+  percent: 90
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-28)
 
 **Core value:** Produce well-calibrated win probability estimates that can be rigorously compared against Kalshi market prices, surfacing where models agree, disagree, and where edges may exist.
-**Current focus:** Phase 3 complete -- ready for Phase 4 (Kalshi market comparison)
+**Current focus:** Phase 4 in progress -- library code complete, notebooks next
 
 ## Current Position
 
-Phase: 3 of 4 (Model Training and Backtesting) -- COMPLETE
-Plan: 2 of 2 in current phase (03-02 complete)
-Status: Phase 3 complete -- ready for Phase 4 planning
-Last activity: 2026-03-29 -- Completed 03-02-PLAN.md (training and comparison notebooks)
+Phase: 4 of 4 (Kalshi Market Comparison and Edge Analysis)
+Plan: 1 of 2 in current phase (04-01 complete)
+Status: Phase 4 library code complete -- ready for 04-02 (notebooks)
+Last activity: 2026-03-29 -- Completed 04-01-PLAN.md (Phase 4 library code)
 
-Progress: [==========] 100% (8/8 plans overall)
+Progress: [========= ] 90% (9/10 plans overall)
 
 ## Performance Metrics
 
@@ -58,6 +58,7 @@ Progress: [==========] 100% (8/8 plans overall)
 | Phase 02 P03 | 34min | 3 tasks | 5 files |
 | Phase 03 P01 | 5min | 3 tasks | 8 files |
 | Phase 03 P02 | 10min | 2 tasks | 3 files |
+| Phase 04 P01 | 5min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -94,6 +95,9 @@ Recent decisions affecting current work:
 - [Phase 03 P01]: XGBoost early stopping uses last 20% of training window (temporal split), not calibration season
 - [Phase 03 P01]: feature_set_name is explicit string parameter, not derived from column contents
 - [Phase 03 P02]: No new decisions -- notebooks follow established thin-wrapper pattern from Phases 1 and 2
+- [Phase 04 P01]: predict_2025 follows exact backtest.py pattern: rolling_ops_diff NaN filter, XGBoost early stopping on temporal 20% split, isotonic calibration
+- [Phase 04 P01]: fetch_kalshi_open_prices groups requests by date for batch candlestick API efficiency (one call per game day)
+- [Phase 04 P01]: Fixed np.True_ identity check in test assertions (use == instead of is for numpy booleans)
 
 ### Pending Todos
 
@@ -104,10 +108,10 @@ None yet.
 - [Research]: pandas must stay at 2.2.x (not 3.0) due to pybaseball incompatibility with PyArrow string dtypes
 - [Research]: Kalshi historical data only available from 2025 -- Phase 4 comparison limited to ~1 season
 - [Research]: 2020 60-game season may need exclusion or era-flagging -- decision needed during Phase 1
-- [Phase 4 Blocker]: `fetch_kalshi_markets()` stores `last_price_dollars` (settlement closing price). Phase 4 benchmark requires PRE-GAME market price to avoid look-ahead bias. Must investigate Kalshi API before Phase 4 planning -- specifically candlestick endpoint (series-level OHLCV) and trade history endpoint (per-market trade-by-trade feed); opening price or first-trade price pre-game is the target. See `<known_issues>` block in `01-03-PLAN.md`. Phase 4 CONTEXT.md must lock in the API approach before any comparison code is written.
+- [Phase 4 Blocker -- RESOLVED]: fetch_kalshi_open_prices() now fetches pre-game opening price via batch candlestick API (GET /markets/candlesticks with period_interval=1440). kalshi_open_price column added alongside existing kalshi_yes_price (closing). Falls back to NaN where no candlestick data available.
 
 ## Session Continuity
 
-Last session: 2026-03-29T13:24:57.378Z
-Stopped at: Phase 4 context gathered
-Resume file: .planning/phases/04-kalshi-market-comparison-and-edge-analysis/04-CONTEXT.md
+Last session: 2026-03-29T14:17:18.000Z
+Stopped at: Completed 04-01-PLAN.md
+Resume file: .planning/phases/04-kalshi-market-comparison-and-edge-analysis/04-02-PLAN.md
