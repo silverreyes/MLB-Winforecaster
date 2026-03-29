@@ -10,8 +10,10 @@ from pathlib import Path
 from datetime import datetime
 import pandas as pd
 
-# Cache root -- relative to repo root
-CACHE_DIR = Path("data/raw")
+# Cache root -- absolute path anchored to this file (src/data/cache.py).
+# Using __file__ means the cache location is always <project_root>/data/raw
+# regardless of the calling process's cwd (scripts, notebooks, tests all agree).
+CACHE_DIR = Path(__file__).resolve().parents[2] / "data" / "raw"
 MANIFEST_PATH = CACHE_DIR / "cache_manifest.json"
 
 
