@@ -807,6 +807,81 @@ class FeatureBuilder:
             columns=["home_sp_recent_era", "away_sp_recent_era"], errors="ignore"
         )
 
+        # --- SP recent FIP (30-day rolling from game logs) ---
+        sp_fip_recent_lookup: dict[tuple[str, str], float] = {}
+        for season in self.seasons:
+            season_games = df[df["season"] == season]
+            game_dates = season_games["game_date"].dt.strftime("%Y-%m-%d").unique().tolist()
+            season_sps = (
+                set(season_games["home_probable_pitcher"].dropna())
+                | set(season_games["away_probable_pitcher"].dropna())
+            )
+            if game_dates:
+                fip_results = compute_rolling_fip_bulk(game_dates, season, sp_names=season_sps)
+                for date_str, fip_df in fip_results.items():
+                    if fip_df is not None and not fip_df.empty:
+                        for _, row in fip_df.iterrows():
+                            fip_val = row.get("FIP")
+                            if fip_val is not None and not pd.isna(fip_val):
+                                sp_fip_recent_lookup[(date_str, row["Name"])] = fip_val
+
+        df["home_sp_recent_fip"] = df.apply(
+            lambda r: sp_fip_recent_lookup.get(
+                (r["game_date"].strftime("%Y-%m-%d"), r["home_probable_pitcher"])
+            ),
+            axis=1,
+        )
+        df["away_sp_recent_fip"] = df.apply(
+            lambda r: sp_fip_recent_lookup.get(
+                (r["game_date"].strftime("%Y-%m-%d"), r["away_probable_pitcher"])
+            ),
+            axis=1,
+        )
+        df["sp_recent_fip_diff"] = df["home_sp_recent_fip"] - df["away_sp_recent_fip"]
+        df = df.drop(columns=["home_sp_recent_fip", "away_sp_recent_fip"], errors="ignore")
+
+        # --- SP pitch count and days rest ---
+        sp_pcount_rest_lookup: dict[tuple[str, str], dict] = {}
+        for season in self.seasons:
+            season_games = df[df["season"] == season]
+            game_dates = season_games["game_date"].dt.strftime("%Y-%m-%d").unique().tolist()
+            season_sps = (
+                set(season_games["home_probable_pitcher"].dropna())
+                | set(season_games["away_probable_pitcher"].dropna())
+            )
+            if game_dates:
+                pc_results = compute_pitch_count_and_rest_bulk(game_dates, season, sp_names=season_sps)
+                for date_str, pc_df in pc_results.items():
+                    if pc_df is not None and not pc_df.empty:
+                        for _, row in pc_df.iterrows():
+                            sp_pcount_rest_lookup[(date_str, row["Name"])] = {
+                                "pitch_count_last": row.get("pitch_count_last"),
+                                "days_rest": row.get("days_rest"),
+                            }
+
+        for prefix, pitcher_col in [("home_sp", "home_probable_pitcher"),
+                                     ("away_sp", "away_probable_pitcher")]:
+            df[f"{prefix}_pitch_count_last"] = df.apply(
+                lambda r, pc=pitcher_col: sp_pcount_rest_lookup.get(
+                    (r["game_date"].strftime("%Y-%m-%d"), r[pc]), {}
+                ).get("pitch_count_last"),
+                axis=1,
+            )
+            df[f"{prefix}_days_rest"] = df.apply(
+                lambda r, pc=pitcher_col: sp_pcount_rest_lookup.get(
+                    (r["game_date"].strftime("%Y-%m-%d"), r[pc]), {}
+                ).get("days_rest"),
+                axis=1,
+            )
+
+        df["sp_pitch_count_last_diff"] = df["home_sp_pitch_count_last"] - df["away_sp_pitch_count_last"]
+        df["sp_days_rest_diff"] = df["home_sp_days_rest"] - df["away_sp_days_rest"]
+        df = df.drop(
+            columns=["home_sp_pitch_count_last", "away_sp_pitch_count_last",
+                     "home_sp_days_rest", "away_sp_days_rest"],
+            errors="ignore",
+        )
+
         # --- Log5 win probability ---
         # Derived from game-by-game results with shift(1), NOT from season-level data
         # Build per-team cumulative win% from schedule results
@@ -929,4 +1004,19 @@ class FeatureBuilder:
             how="left",
         )
 
+        return df
+
+    def build_and_save_v2(
+        self, output_path: str = "data/features/feature_store_v2.parquet"
+    ) -> pd.DataFrame:
+        """Build features and save as v2 feature store.
+
+        Preserves v1 feature store unchanged. Saves v2 as a new file.
+        """
+        df = self.build()
+        df.to_parquet(output_path, index=False)
+        logger.info(
+            "Saved feature_store_v2.parquet: %d games, %d columns",
+            df.shape[0], df.shape[1],
+        )
         return df
