@@ -212,6 +212,29 @@ def _make_sp_recent_form_bulk(game_dates, season, sp_names=None):
     return result
 
 
+def _make_rolling_fip_bulk(game_dates, season, sp_names=None):
+    """Create synthetic rolling FIP bulk data for compute_rolling_fip_bulk mock."""
+    result = {}
+    for date in sorted(set(game_dates)):
+        result[date] = pd.DataFrame({
+            "Name": ["Pitcher A", "Pitcher B", "Pitcher C", "Pitcher D"],
+            "FIP": [3.10, 4.30, 3.50, 4.60],
+        })
+    return result
+
+
+def _make_pitch_count_and_rest_bulk(game_dates, season, sp_names=None):
+    """Create synthetic pitch count and rest bulk data."""
+    result = {}
+    for date in sorted(set(game_dates)):
+        result[date] = pd.DataFrame({
+            "Name": ["Pitcher A", "Pitcher B", "Pitcher C", "Pitcher D"],
+            "pitch_count_last": [95, 90, 92, 85],
+            "days_rest": [5, 4, 5, 4],
+        })
+    return result
+
+
 def _make_kalshi_markets():
     """Create empty Kalshi markets (no 2022/2023 coverage)."""
     return pd.DataFrame(columns=[
@@ -342,6 +365,8 @@ PATCH_TARGETS = {
     "src.features.feature_builder.fetch_sp_recent_form_bulk": _make_sp_recent_form_bulk,
     "src.features.feature_builder._get_pitcher_id_map": _make_pitcher_id_map,
     "src.features.feature_builder._fetch_pitcher_game_log_v2": _make_pitcher_game_log_v2,
+    "src.features.feature_builder.compute_rolling_fip_bulk": _make_rolling_fip_bulk,
+    "src.features.feature_builder.compute_pitch_count_and_rest_bulk": _make_pitch_count_and_rest_bulk,
 }
 
 
@@ -356,7 +381,9 @@ def built_features():
          patch("src.features.feature_builder.fetch_kalshi_markets", side_effect=_mock_fetch_kalshi_markets), \
          patch("src.features.feature_builder.fetch_sp_recent_form_bulk", side_effect=_make_sp_recent_form_bulk), \
          patch("src.features.feature_builder._get_pitcher_id_map", side_effect=_make_pitcher_id_map), \
-         patch("src.features.feature_builder._fetch_pitcher_game_log_v2", side_effect=_make_pitcher_game_log_v2):
+         patch("src.features.feature_builder._fetch_pitcher_game_log_v2", side_effect=_make_pitcher_game_log_v2), \
+         patch("src.features.feature_builder.compute_rolling_fip_bulk", side_effect=_make_rolling_fip_bulk), \
+         patch("src.features.feature_builder.compute_pitch_count_and_rest_bulk", side_effect=_make_pitch_count_and_rest_bulk):
         fb = FeatureBuilder(seasons=[2022, 2023])
         df = fb.build()
     return df
@@ -709,7 +736,9 @@ def test_xwoba_fix():
          patch("src.features.feature_builder.fetch_kalshi_markets", side_effect=_make_kalshi_markets), \
          patch("src.features.feature_builder.fetch_sp_recent_form_bulk", side_effect=_make_sp_recent_form_xwoba), \
          patch("src.features.feature_builder._get_pitcher_id_map", side_effect=_make_pitcher_id_map_xwoba), \
-         patch("src.features.feature_builder._fetch_pitcher_game_log_v2", side_effect=_make_pitcher_game_log_v2_xwoba):
+         patch("src.features.feature_builder._fetch_pitcher_game_log_v2", side_effect=_make_pitcher_game_log_v2_xwoba), \
+         patch("src.features.feature_builder.compute_rolling_fip_bulk", side_effect=_make_rolling_fip_bulk), \
+         patch("src.features.feature_builder.compute_pitch_count_and_rest_bulk", side_effect=_make_pitch_count_and_rest_bulk):
         fb = FeatureBuilder(seasons=[2024])
         df = fb.build()
 
@@ -750,7 +779,9 @@ def test_k_bb_pct_diff():
          patch("src.features.feature_builder.fetch_kalshi_markets", side_effect=_mock_fetch_kalshi_markets), \
          patch("src.features.feature_builder.fetch_sp_recent_form_bulk", side_effect=_make_sp_recent_form_bulk), \
          patch("src.features.feature_builder._get_pitcher_id_map", side_effect=_make_pitcher_id_map), \
-         patch("src.features.feature_builder._fetch_pitcher_game_log_v2", side_effect=_make_pitcher_game_log_v2):
+         patch("src.features.feature_builder._fetch_pitcher_game_log_v2", side_effect=_make_pitcher_game_log_v2), \
+         patch("src.features.feature_builder.compute_rolling_fip_bulk", side_effect=_make_rolling_fip_bulk), \
+         patch("src.features.feature_builder.compute_pitch_count_and_rest_bulk", side_effect=_make_pitch_count_and_rest_bulk):
         fb = FeatureBuilder(seasons=[2022])
         df = fb.build()
 
@@ -772,7 +803,9 @@ def test_whip_diff():
          patch("src.features.feature_builder.fetch_kalshi_markets", side_effect=_mock_fetch_kalshi_markets), \
          patch("src.features.feature_builder.fetch_sp_recent_form_bulk", side_effect=_make_sp_recent_form_bulk), \
          patch("src.features.feature_builder._get_pitcher_id_map", side_effect=_make_pitcher_id_map), \
-         patch("src.features.feature_builder._fetch_pitcher_game_log_v2", side_effect=_make_pitcher_game_log_v2):
+         patch("src.features.feature_builder._fetch_pitcher_game_log_v2", side_effect=_make_pitcher_game_log_v2), \
+         patch("src.features.feature_builder.compute_rolling_fip_bulk", side_effect=_make_rolling_fip_bulk), \
+         patch("src.features.feature_builder.compute_pitch_count_and_rest_bulk", side_effect=_make_pitch_count_and_rest_bulk):
         fb = FeatureBuilder(seasons=[2022])
         df = fb.build()
 
@@ -820,7 +853,9 @@ def test_era_diff():
          patch("src.features.feature_builder.fetch_kalshi_markets", side_effect=_mock_fetch_kalshi_markets), \
          patch("src.features.feature_builder.fetch_sp_recent_form_bulk", side_effect=_make_sp_recent_form_bulk), \
          patch("src.features.feature_builder._get_pitcher_id_map", side_effect=_make_pitcher_id_map), \
-         patch("src.features.feature_builder._fetch_pitcher_game_log_v2", side_effect=_make_pitcher_game_log_v2):
+         patch("src.features.feature_builder._fetch_pitcher_game_log_v2", side_effect=_make_pitcher_game_log_v2), \
+         patch("src.features.feature_builder.compute_rolling_fip_bulk", side_effect=_make_rolling_fip_bulk), \
+         patch("src.features.feature_builder.compute_pitch_count_and_rest_bulk", side_effect=_make_pitch_count_and_rest_bulk):
         fb = FeatureBuilder(seasons=[2022])
         df = fb.build()
 
@@ -914,7 +949,9 @@ def test_cold_start():
          patch("src.features.feature_builder.fetch_kalshi_markets", side_effect=_mock_fetch_kalshi_markets), \
          patch("src.features.feature_builder.fetch_sp_recent_form_bulk", side_effect=_make_sp_recent_form_bulk), \
          patch("src.features.feature_builder._get_pitcher_id_map", side_effect=_cold_start_id_map), \
-         patch("src.features.feature_builder._fetch_pitcher_game_log_v2", side_effect=_cold_start_game_log_v2):
+         patch("src.features.feature_builder._fetch_pitcher_game_log_v2", side_effect=_cold_start_game_log_v2), \
+         patch("src.features.feature_builder.compute_rolling_fip_bulk", side_effect=_make_rolling_fip_bulk), \
+         patch("src.features.feature_builder.compute_pitch_count_and_rest_bulk", side_effect=_make_pitch_count_and_rest_bulk):
         fb = FeatureBuilder(seasons=[2023, 2024])
         df = fb.build()
 
@@ -939,8 +976,296 @@ def test_cold_start():
 
 
 def test_feature_set_constants():
-    """Wave 0 stub: feature set constants exist (implemented in Plan 04)."""
-    from src.models.feature_sets import FULL_FEATURE_COLS
-    # Stub: at minimum the existing constants exist
-    assert isinstance(FULL_FEATURE_COLS, list)
-    assert len(FULL_FEATURE_COLS) > 0
+    """SP-09: Three named feature set constants with correct sizes and contents."""
+    from src.models.feature_sets import (
+        TEAM_ONLY_FEATURE_COLS, SP_ENHANCED_FEATURE_COLS,
+        V1_FULL_FEATURE_COLS, FULL_FEATURE_COLS, TARGET_COL,
+    )
+
+    # V1 preservation
+    assert V1_FULL_FEATURE_COLS == FULL_FEATURE_COLS  # backward compat
+    assert len(V1_FULL_FEATURE_COLS) == 14
+    assert 'sp_k_pct_diff' in V1_FULL_FEATURE_COLS  # v1 had K%
+
+    # Team-only (no SP columns)
+    assert len(TEAM_ONLY_FEATURE_COLS) == 9
+    for col in TEAM_ONLY_FEATURE_COLS:
+        assert not col.startswith('sp_'), f"Team-only should not have SP col: {col}"
+        assert col != 'xwoba_diff', "Team-only should not have xwoba_diff"
+
+    # SP-enhanced (includes all new columns)
+    assert 'sp_k_bb_pct_diff' in SP_ENHANCED_FEATURE_COLS
+    assert 'sp_whip_diff' in SP_ENHANCED_FEATURE_COLS
+    assert 'sp_era_diff' in SP_ENHANCED_FEATURE_COLS
+    assert 'sp_recent_fip_diff' in SP_ENHANCED_FEATURE_COLS
+    assert 'sp_pitch_count_last_diff' in SP_ENHANCED_FEATURE_COLS
+    assert 'sp_days_rest_diff' in SP_ENHANCED_FEATURE_COLS
+    assert 'xwoba_diff' in SP_ENHANCED_FEATURE_COLS
+
+    # SP-enhanced should NOT have v1-only columns
+    assert 'sp_k_pct_diff' not in SP_ENHANCED_FEATURE_COLS
+
+    # All feature sets should be subsets of what FeatureBuilder produces
+    assert set(TEAM_ONLY_FEATURE_COLS).issubset(set(SP_ENHANCED_FEATURE_COLS))
+
+    assert TARGET_COL == 'home_win'
+
+
+# ---------------------------------------------------------------------------
+# SP-07, SP-08, SP-09, SP-11 tests (Plan 04)
+# ---------------------------------------------------------------------------
+
+
+def _make_fip_schedule(season, n_games=1):
+    """Schedule with one game for FIP test: Pitcher A (home) vs Pitcher B (away)."""
+    return pd.DataFrame([{
+        "game_id": 600000 + season * 10,
+        "game_date": f"{season}-06-15",
+        "home_team": "NYY", "away_team": "BOS",
+        "home_probable_pitcher": "Pitcher A",
+        "away_probable_pitcher": "Pitcher B",
+        "home_score": 5, "away_score": 3,
+        "winning_team": "NYY", "losing_team": "BOS",
+        "status": "Final",
+        "is_shortened_season": False, "season_games": 162,
+        "season": season,
+    }])
+
+
+def _make_fip_game_log_v2(player_id, season):
+    """v2 game logs for FIP test.
+
+    Pitcher A (1001): 3 starts in 30-day window before Jun 15.
+        May 20: K=20 (spread across 3 starts), BB=6, HR=3, IP=18
+        We split: 3 starts on May 20, May 25, Jun 01.
+    Pitcher B (1002): 2 starts in 30-day window.
+        May 22, Jun 05: K=10, BB=8, HR=4, IP=12
+    """
+    if player_id == 1001:  # Pitcher A
+        return pd.DataFrame({
+            "date": pd.to_datetime([
+                f"{season}-05-20", f"{season}-05-25", f"{season}-06-01",
+            ]),
+            "innings_pitched": [6.0, 6.0, 6.0],
+            "earned_runs": [2, 1, 3],
+            "strikeouts": [7, 7, 6],         # total K=20
+            "base_on_balls": [2, 2, 2],       # total BB=6
+            "home_runs": [1, 1, 1],           # total HR=3
+            "number_of_pitches": [95, 100, 88],
+            "games_started": [1, 1, 1],
+        })
+    elif player_id == 1002:  # Pitcher B
+        return pd.DataFrame({
+            "date": pd.to_datetime([
+                f"{season}-05-22", f"{season}-06-05",
+            ]),
+            "innings_pitched": [6.0, 6.0],
+            "earned_runs": [3, 4],
+            "strikeouts": [5, 5],             # total K=10
+            "base_on_balls": [4, 4],          # total BB=8
+            "home_runs": [2, 2],              # total HR=4
+            "number_of_pitches": [90, 92],
+            "games_started": [1, 1],
+        })
+    return pd.DataFrame(columns=[
+        "date", "innings_pitched", "earned_runs", "strikeouts",
+        "base_on_balls", "home_runs", "number_of_pitches", "games_started",
+    ])
+
+
+def _make_sp_form_fip(game_dates, season, sp_names=None):
+    """SP recent form (ERA) for FIP test."""
+    result = {}
+    for date in sorted(set(game_dates)):
+        result[date] = pd.DataFrame({
+            "Name": ["Pitcher A", "Pitcher B"],
+            "ERA": [3.00, 4.50],
+            "game_date": [date] * 2,
+        })
+    return result
+
+
+def test_recent_fip_diff():
+    """SP-07: sp_recent_fip_diff computed from 30-day rolling raw FIP.
+
+    Pitcher A: 3 starts in window. K=20, BB=6, HR=3, IP=18.
+    Raw FIP = ((13*3) + (3*6) - (2*20)) / 18 = (39 + 18 - 40) / 18 = 0.944
+
+    Pitcher B: 2 starts in window. K=10, BB=8, HR=4, IP=12.
+    Raw FIP = ((13*4) + (3*8) - (2*10)) / 12 = (52 + 24 - 20) / 12 = 4.667
+
+    sp_recent_fip_diff = 0.944 - 4.667 = -3.722
+    """
+    # Mock at both feature_builder and sp_recent_form namespaces so
+    # compute_rolling_fip_bulk (called in _add_advanced_features) uses mock data.
+    with patch("src.features.feature_builder.fetch_schedule", side_effect=_make_fip_schedule), \
+         patch("src.features.feature_builder.fetch_sp_stats", side_effect=_mock_fetch_sp_stats), \
+         patch("src.features.feature_builder.fetch_team_batting", side_effect=_mock_fetch_team_batting), \
+         patch("src.features.feature_builder.fetch_team_game_log", side_effect=_mock_fetch_team_game_log), \
+         patch("src.features.feature_builder.fetch_statcast_pitcher", side_effect=_mock_fetch_statcast_pitcher), \
+         patch("src.features.feature_builder.fetch_kalshi_markets", side_effect=_mock_fetch_kalshi_markets), \
+         patch("src.features.feature_builder.fetch_sp_recent_form_bulk", side_effect=_make_sp_form_fip), \
+         patch("src.features.feature_builder._get_pitcher_id_map", side_effect=_make_pitcher_id_map), \
+         patch("src.features.feature_builder._fetch_pitcher_game_log_v2", side_effect=_make_fip_game_log_v2), \
+         patch("src.features.sp_recent_form._get_pitcher_id_map", side_effect=_make_pitcher_id_map), \
+         patch("src.features.sp_recent_form._fetch_pitcher_game_log_v2", side_effect=_make_fip_game_log_v2), \
+         patch("src.features.feature_builder.compute_pitch_count_and_rest_bulk", side_effect=_make_pitch_count_and_rest_bulk):
+        fb = FeatureBuilder(seasons=[2024])
+        df = fb.build()
+
+    assert "sp_recent_fip_diff" in df.columns
+    assert len(df) == 1
+    actual = df["sp_recent_fip_diff"].iloc[0]
+    assert actual == pytest.approx(-3.722, abs=0.01), (
+        f"Expected sp_recent_fip_diff ~ -3.722 but got {actual}"
+    )
+
+
+def _make_pcount_schedule(season, n_games=1):
+    """Schedule for pitch count / days rest test: game on May 12."""
+    return pd.DataFrame([{
+        "game_id": 700000 + season * 10,
+        "game_date": f"{season}-05-12",
+        "home_team": "NYY", "away_team": "BOS",
+        "home_probable_pitcher": "Pitcher A",
+        "away_probable_pitcher": "Pitcher B",
+        "home_score": 4, "away_score": 2,
+        "winning_team": "NYY", "losing_team": "BOS",
+        "status": "Final",
+        "is_shortened_season": False, "season_games": 162,
+        "season": season,
+    }])
+
+
+def _make_pcount_game_log_v2(player_id, season):
+    """v2 game logs for pitch count / days rest test.
+
+    Pitcher A (1001): starts May 1 (95p), May 6 (102p), May 11 (88p).
+    Pitcher B (1002): starts May 2 (90p), May 7 (100p).
+    Game on May 12.
+    Expected A: pitch_count_last=88, days_rest=min(12-11,7)=1
+    Expected B: pitch_count_last=100, days_rest=min(12-7,7)=5
+    """
+    if player_id == 1001:
+        return pd.DataFrame({
+            "date": pd.to_datetime([
+                f"{season}-05-01", f"{season}-05-06", f"{season}-05-11",
+            ]),
+            "innings_pitched": [6.0, 7.0, 5.0],
+            "earned_runs": [2, 1, 3],
+            "strikeouts": [7, 8, 5],
+            "base_on_balls": [2, 1, 3],
+            "home_runs": [1, 0, 1],
+            "number_of_pitches": [95, 102, 88],
+            "games_started": [1, 1, 1],
+        })
+    elif player_id == 1002:
+        return pd.DataFrame({
+            "date": pd.to_datetime([
+                f"{season}-05-02", f"{season}-05-07",
+            ]),
+            "innings_pitched": [5.0, 6.0],
+            "earned_runs": [3, 2],
+            "strikeouts": [5, 6],
+            "base_on_balls": [3, 2],
+            "home_runs": [1, 1],
+            "number_of_pitches": [90, 100],
+            "games_started": [1, 1],
+        })
+    return pd.DataFrame(columns=[
+        "date", "innings_pitched", "earned_runs", "strikeouts",
+        "base_on_balls", "home_runs", "number_of_pitches", "games_started",
+    ])
+
+
+def _make_sp_form_pcount(game_dates, season, sp_names=None):
+    """SP recent form for pitch count test."""
+    result = {}
+    for date in sorted(set(game_dates)):
+        result[date] = pd.DataFrame({
+            "Name": ["Pitcher A", "Pitcher B"],
+            "ERA": [3.00, 4.50],
+            "game_date": [date] * 2,
+        })
+    return result
+
+
+def test_pitch_count_days_rest():
+    """SP-08: sp_pitch_count_last_diff and sp_days_rest_diff from most recent start.
+
+    Pitcher A: last start May 11 (88p). days_rest = 12 - 11 = 1.
+    Pitcher B: last start May 7 (100p). days_rest = min(12 - 7, 7) = 5.
+    sp_pitch_count_last_diff = 88 - 100 = -12.
+    sp_days_rest_diff = 1 - 5 = -4.
+    """
+    # Mock at both feature_builder and sp_recent_form namespaces so
+    # compute_pitch_count_and_rest_bulk (called in _add_advanced_features) uses mock data.
+    with patch("src.features.feature_builder.fetch_schedule", side_effect=_make_pcount_schedule), \
+         patch("src.features.feature_builder.fetch_sp_stats", side_effect=_mock_fetch_sp_stats), \
+         patch("src.features.feature_builder.fetch_team_batting", side_effect=_mock_fetch_team_batting), \
+         patch("src.features.feature_builder.fetch_team_game_log", side_effect=_mock_fetch_team_game_log), \
+         patch("src.features.feature_builder.fetch_statcast_pitcher", side_effect=_mock_fetch_statcast_pitcher), \
+         patch("src.features.feature_builder.fetch_kalshi_markets", side_effect=_mock_fetch_kalshi_markets), \
+         patch("src.features.feature_builder.fetch_sp_recent_form_bulk", side_effect=_make_sp_form_pcount), \
+         patch("src.features.feature_builder._get_pitcher_id_map", side_effect=_make_pitcher_id_map), \
+         patch("src.features.feature_builder._fetch_pitcher_game_log_v2", side_effect=_make_pcount_game_log_v2), \
+         patch("src.features.sp_recent_form._get_pitcher_id_map", side_effect=_make_pitcher_id_map), \
+         patch("src.features.sp_recent_form._fetch_pitcher_game_log_v2", side_effect=_make_pcount_game_log_v2), \
+         patch("src.features.feature_builder.compute_rolling_fip_bulk", side_effect=_make_rolling_fip_bulk):
+        fb = FeatureBuilder(seasons=[2024])
+        df = fb.build()
+
+    assert "sp_pitch_count_last_diff" in df.columns
+    assert "sp_days_rest_diff" in df.columns
+    assert len(df) == 1
+
+    actual_pc = df["sp_pitch_count_last_diff"].iloc[0]
+    actual_dr = df["sp_days_rest_diff"].iloc[0]
+    assert actual_pc == pytest.approx(-12, abs=0.01), (
+        f"Expected sp_pitch_count_last_diff = -12 but got {actual_pc}"
+    )
+    assert actual_dr == pytest.approx(-4, abs=0.01), (
+        f"Expected sp_days_rest_diff = -4 but got {actual_dr}"
+    )
+
+
+def test_v2_parquet_output():
+    """SP-11: FeatureBuilder.build() output contains all SP_ENHANCED_FEATURE_COLS."""
+    from src.models.feature_sets import SP_ENHANCED_FEATURE_COLS, TARGET_COL
+
+    with patch("src.features.feature_builder.fetch_schedule", side_effect=_mock_fetch_schedule), \
+         patch("src.features.feature_builder.fetch_sp_stats", side_effect=_mock_fetch_sp_stats), \
+         patch("src.features.feature_builder.fetch_team_batting", side_effect=_mock_fetch_team_batting), \
+         patch("src.features.feature_builder.fetch_team_game_log", side_effect=_mock_fetch_team_game_log), \
+         patch("src.features.feature_builder.fetch_statcast_pitcher", side_effect=_mock_fetch_statcast_pitcher), \
+         patch("src.features.feature_builder.fetch_kalshi_markets", side_effect=_mock_fetch_kalshi_markets), \
+         patch("src.features.feature_builder.fetch_sp_recent_form_bulk", side_effect=_make_sp_recent_form_bulk), \
+         patch("src.features.feature_builder._get_pitcher_id_map", side_effect=_make_pitcher_id_map), \
+         patch("src.features.feature_builder._fetch_pitcher_game_log_v2", side_effect=_make_pitcher_game_log_v2), \
+         patch("src.features.feature_builder.compute_rolling_fip_bulk", side_effect=_make_rolling_fip_bulk), \
+         patch("src.features.feature_builder.compute_pitch_count_and_rest_bulk", side_effect=_make_pitch_count_and_rest_bulk):
+        fb = FeatureBuilder(seasons=[2024])
+        df = fb.build()
+
+    # DataFrame should contain all SP_ENHANCED columns
+    for col in SP_ENHANCED_FEATURE_COLS:
+        assert col in df.columns, f"Missing SP_ENHANCED column: {col}"
+
+    # Target column present
+    assert TARGET_COL in df.columns
+
+    # Non-empty
+    assert df.shape[0] > 0, "DataFrame is empty"
+
+    # Columns that are expected to have non-NaN values with mock data.
+    # Excluded: xwoba_diff (mock uses old Statcast schema, tested in test_xwoba_fix),
+    #   rolling_ops_diff (needs 11+ games, mock only has 10 per season),
+    #   kalshi_yes_price (empty mock, pre-2025 games)
+    known_nan_in_mock = {'xwoba_diff', 'rolling_ops_diff'}
+    for col in SP_ENHANCED_FEATURE_COLS:
+        if col in known_nan_in_mock:
+            continue
+        if col in df.columns:
+            assert df[col].notna().any(), (
+                f"SP_ENHANCED column '{col}' is entirely NaN"
+            )

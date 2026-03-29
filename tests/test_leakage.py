@@ -218,6 +218,29 @@ def _make_pitcher_game_log_v2_leakage(player_id, season):
     return pd.DataFrame(rows)
 
 
+def _make_rolling_fip_bulk_leakage(game_dates, season, sp_names=None):
+    """Rolling FIP bulk mock for leakage tests."""
+    result = {}
+    for date in sorted(set(game_dates)):
+        result[date] = pd.DataFrame({
+            "Name": ["Pitcher A", "Pitcher B", "Pitcher C", "Pitcher D"],
+            "FIP": [3.10, 4.30, 3.50, 4.60],
+        })
+    return result
+
+
+def _make_pitch_count_rest_bulk_leakage(game_dates, season, sp_names=None):
+    """Pitch count and rest bulk mock for leakage tests."""
+    result = {}
+    for date in sorted(set(game_dates)):
+        result[date] = pd.DataFrame({
+            "Name": ["Pitcher A", "Pitcher B", "Pitcher C", "Pitcher D"],
+            "pitch_count_last": [95, 90, 92, 85],
+            "days_rest": [5, 4, 5, 4],
+        })
+    return result
+
+
 def _build_with_mocks(seasons, schedule_fn=None):
     """Build features with mocked loaders. Optionally override schedule."""
     sched_fn = schedule_fn or _make_schedule_for_leakage
@@ -229,7 +252,9 @@ def _build_with_mocks(seasons, schedule_fn=None):
          patch("src.features.feature_builder.fetch_kalshi_markets", side_effect=_make_kalshi_leakage), \
          patch("src.features.feature_builder.fetch_sp_recent_form_bulk", side_effect=_make_sp_form_bulk_leakage), \
          patch("src.features.feature_builder._get_pitcher_id_map", side_effect=_make_pitcher_id_map_leakage), \
-         patch("src.features.feature_builder._fetch_pitcher_game_log_v2", side_effect=_make_pitcher_game_log_v2_leakage):
+         patch("src.features.feature_builder._fetch_pitcher_game_log_v2", side_effect=_make_pitcher_game_log_v2_leakage), \
+         patch("src.features.feature_builder.compute_rolling_fip_bulk", side_effect=_make_rolling_fip_bulk_leakage), \
+         patch("src.features.feature_builder.compute_pitch_count_and_rest_bulk", side_effect=_make_pitch_count_rest_bulk_leakage):
         fb = FeatureBuilder(seasons=seasons)
         return fb.build()
 
@@ -451,7 +476,11 @@ def _make_pitcher_game_log_v2_temporal(player_id, season):
 
 
 def _build_sp_temporal(seasons, schedule_fn=None):
-    """Build features for SP temporal safety tests."""
+    """Build features for SP temporal safety tests.
+
+    Uses real compute_rolling_fip_bulk and compute_pitch_count_and_rest_bulk
+    with mocked sp_recent_form internals, so temporal variation is tested end-to-end.
+    """
     sched_fn = schedule_fn or _make_schedule_sp_temporal
     with patch("src.features.feature_builder.fetch_schedule", side_effect=sched_fn), \
          patch("src.features.feature_builder.fetch_sp_stats", side_effect=_make_sp_stats_leakage), \
@@ -461,7 +490,9 @@ def _build_sp_temporal(seasons, schedule_fn=None):
          patch("src.features.feature_builder.fetch_kalshi_markets", side_effect=_make_kalshi_leakage), \
          patch("src.features.feature_builder.fetch_sp_recent_form_bulk", side_effect=_make_sp_form_bulk_leakage), \
          patch("src.features.feature_builder._get_pitcher_id_map", side_effect=_make_pitcher_id_map_leakage), \
-         patch("src.features.feature_builder._fetch_pitcher_game_log_v2", side_effect=_make_pitcher_game_log_v2_temporal):
+         patch("src.features.feature_builder._fetch_pitcher_game_log_v2", side_effect=_make_pitcher_game_log_v2_temporal), \
+         patch("src.features.sp_recent_form._get_pitcher_id_map", side_effect=_make_pitcher_id_map_leakage), \
+         patch("src.features.sp_recent_form._fetch_pitcher_game_log_v2", side_effect=_make_pitcher_game_log_v2_temporal):
         fb = FeatureBuilder(seasons=seasons)
         return fb.build()
 
@@ -556,3 +587,68 @@ def test_sp_temporal_safety():
                 f"Game {game_date.date()}: expected sp_era_diff ~ {expected_diff:.3f} "
                 f"but got {actual:.3f}. Shift(1) may not be working correctly."
             )
+
+    # -----------------------------------------------------------------------
+    # SP-12 extended: all new SP columns must vary game-to-game
+    # -----------------------------------------------------------------------
+
+    # sp_k_bb_pct_diff should vary (season-to-date rolling)
+    k_bb_vals = df["sp_k_bb_pct_diff"].dropna().values
+    if len(k_bb_vals) >= 3:
+        assert np.std(k_bb_vals) > 0, (
+            "sp_k_bb_pct_diff is constant across all games -- "
+            "season-to-date rolling K-BB not varying game-to-game."
+        )
+
+    # sp_recent_fip_diff should vary (30-day rolling window changes)
+    fip_vals = df["sp_recent_fip_diff"].dropna().values
+    if len(fip_vals) >= 3:
+        assert np.std(fip_vals) > 0, (
+            "sp_recent_fip_diff is constant across all games -- "
+            "30-day rolling FIP window not shifting game-to-game."
+        )
+
+    # sp_pitch_count_last_diff should have at least 2 distinct values
+    pc_vals = df["sp_pitch_count_last_diff"].dropna().values
+    if len(pc_vals) >= 2:
+        assert len(set(pc_vals)) >= 2, (
+            "sp_pitch_count_last_diff has only 1 distinct value -- "
+            "pitch count from last start should vary."
+        )
+
+    # sp_days_rest_diff: verify non-NaN values exist.
+    # Note: in this mock both pitchers start every 2 days, so the diff
+    # is constant (0). With real data, different pitcher schedules produce
+    # variation. The key temporal safety property is that the value comes
+    # from the PRIOR start (not the current game).
+    dr_vals = df["sp_days_rest_diff"].dropna().values
+    assert len(dr_vals) >= 2, (
+        "sp_days_rest_diff should have non-NaN values for games with prior starts"
+    )
+
+    # sp_whip_diff and sp_siera_diff use FanGraphs season-level data (by design).
+    # They are expected to be constant within a season per pitcher pair.
+    # This is a known limitation documented in Plan 03.
+
+
+def test_no_v1_feature_store_modification():
+    """SP-11 guard: v1 feature store file should not be modified.
+
+    If data/features/feature_matrix.parquet exists, verify its columns
+    match V1_FULL_FEATURE_COLS (plus metadata). If it doesn't exist
+    (test environment), skip.
+    """
+    import os
+    v1_path = os.path.join("data", "features", "feature_matrix.parquet")
+    if not os.path.exists(v1_path):
+        pytest.skip("v1 feature store not present in test environment")
+
+    from src.models.feature_sets import V1_FULL_FEATURE_COLS, META_COLS
+    v1_df = pd.read_parquet(v1_path)
+    expected_feature_cols = set(V1_FULL_FEATURE_COLS)
+    actual_cols = set(v1_df.columns)
+    # V1 feature store should contain all V1 feature columns
+    missing = expected_feature_cols - actual_cols
+    assert not missing, (
+        f"v1 feature store is missing expected columns: {missing}"
+    )
