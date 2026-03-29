@@ -406,3 +406,182 @@ def test_game_date_column_present(built_features):
     df = built_features
     assert "game_date" in df.columns
     assert pd.api.types.is_datetime64_any_dtype(df["game_date"])
+
+
+# ---------------------------------------------------------------------------
+# xwOBA bug fix test (SP-01)
+# ---------------------------------------------------------------------------
+
+
+def _make_statcast_pitcher_fixed(season):
+    """Statcast data with correct column schema: 'last_name, first_name' and 'est_woba'."""
+    return pd.DataFrame({
+        "last_name, first_name": ["Webb, Logan", "Cole, Gerrit", "C, Pitcher", "D, Pitcher"],
+        "est_woba": [0.280, 0.290, 0.300, 0.330],
+        "player_id": [543321, 543037, 500003, 500004],
+        "is_shortened_season": [season == 2020] * 4,
+        "season_games": [60 if season == 2020 else 162] * 4,
+        "season": [season] * 4,
+    })
+
+
+def _make_schedule_xwoba(season, n_games=10):
+    """Schedule with Logan Webb vs Gerrit Cole matchups for xwOBA test."""
+    rows = []
+    for i in range(n_games):
+        game_date = f"{season}-06-{(i + 1):02d}"
+        if i % 2 == 0:
+            home_sp, away_sp = "Logan Webb", "Gerrit Cole"
+            home, away = "SFG", "NYY"
+        else:
+            home_sp, away_sp = "Gerrit Cole", "Logan Webb"
+            home, away = "NYY", "SFG"
+        winner = home if i % 2 == 0 else away
+        loser = away if i % 2 == 0 else home
+        rows.append({
+            "game_id": 300000 + season * 1000 + i,
+            "game_date": game_date,
+            "home_team": home,
+            "away_team": away,
+            "home_probable_pitcher": home_sp,
+            "away_probable_pitcher": away_sp,
+            "home_score": 5 if winner == home else 3,
+            "away_score": 5 if winner == away else 3,
+            "winning_team": winner,
+            "losing_team": loser,
+            "status": "Final",
+            "is_shortened_season": season == 2020,
+            "season_games": 60 if season == 2020 else 162,
+            "season": season,
+        })
+    return pd.DataFrame(rows)
+
+
+def _make_sp_stats_xwoba(season, min_gs=1):
+    """SP stats including Logan Webb and Gerrit Cole."""
+    data = {
+        "Name": ["Logan Webb", "Gerrit Cole", "Pitcher C", "Pitcher D"],
+        "Team": ["SFG", "NYY", "SFG", "NYY"],
+        "W": [15, 12, 10, 8],
+        "L": [5, 8, 7, 10],
+        "ERA": [3.00, 3.50, 3.50, 4.50],
+        "GS": [30, 28, 25, 22],
+        "IP": [200, 180, 170, 150],
+        "FIP": [3.20, 3.60, 3.80, 4.60],
+        "xFIP": [3.10, 3.50, 3.70, 4.50],
+        "SIERA": [3.00, 3.40, 3.60, 4.40],
+        "K%": [0.28, 0.25, 0.25, 0.20],
+        "BB%": [0.06, 0.07, 0.07, 0.09],
+        "WHIP": [1.10, 1.15, 1.15, 1.30],
+        "WAR": [5.0, 4.0, 4.0, 2.0],
+        "IDfg": [19052, 13125, 99901, 99902],
+        "is_shortened_season": [season == 2020] * 4,
+        "season_games": [60 if season == 2020 else 162] * 4,
+        "season": [season] * 4,
+    }
+    if min_gs == 0:
+        reliever_data = {
+            "Name": ["Reliever X", "Reliever Y", "Reliever Z", "Reliever W"],
+            "Team": ["SFG", "SFG", "NYY", "NYY"],
+            "W": [3, 2, 4, 1], "L": [2, 3, 1, 4],
+            "ERA": [3.00, 3.50, 4.00, 4.50],
+            "GS": [0, 1, 0, 2],
+            "IP": [60, 55, 65, 50],
+            "FIP": [2.80, 3.20, 3.80, 4.20],
+            "xFIP": [2.90, 3.30, 3.90, 4.30],
+            "SIERA": [2.70, 3.10, 3.70, 4.10],
+            "K%": [0.30, 0.27, 0.24, 0.21],
+            "BB%": [0.05, 0.06, 0.07, 0.08],
+            "WHIP": [1.00, 1.10, 1.20, 1.30],
+            "WAR": [2.0, 1.5, 1.0, 0.5],
+            "IDfg": [99903, 99904, 99905, 99906],
+            "is_shortened_season": [season == 2020] * 4,
+            "season_games": [60 if season == 2020 else 162] * 4,
+            "season": [season] * 4,
+        }
+        combined = {k: data[k] + reliever_data[k] for k in data}
+        return pd.DataFrame(combined)
+    return pd.DataFrame(data)
+
+
+def _make_team_batting_xwoba(season):
+    """Team batting for SFG and NYY."""
+    return pd.DataFrame({
+        "Team": ["SFG", "NYY"],
+        "G": [162, 162], "PA": [6200, 6100], "HR": [200, 250],
+        "R": [700, 800], "RBI": [680, 780], "SB": [80, 100],
+        "BB%": [0.08, 0.09], "K%": [0.21, 0.22],
+        "ISO": [0.180, 0.200], "BABIP": [0.295, 0.300],
+        "AVG": [0.255, 0.260], "OBP": [0.330, 0.340],
+        "SLG": [0.390, 0.410], "wOBA": [0.310, 0.320],
+        "wRC+": [105, 110], "WAR": [35.0, 40.0],
+        "is_shortened_season": [season == 2020] * 2,
+        "season_games": [60 if season == 2020 else 162] * 2,
+        "season": [season] * 2,
+    })
+
+
+def _make_game_logs_xwoba(season, team, n_games=15):
+    """Game logs for xwOBA test."""
+    rows = []
+    for i in range(n_games):
+        rows.append({
+            "Date": f"{season}-06-{(i + 1):02d}",
+            "OBP": 0.330 + i * 0.005,
+            "SLG": 0.370 + i * 0.005,
+            "OPS": 0.700 + i * 0.010,
+            "team": team,
+            "season": season,
+            "is_shortened_season": season == 2020,
+        })
+    return pd.DataFrame(rows)
+
+
+def _make_sp_recent_form_xwoba(game_dates, season, sp_names=None):
+    """SP recent form for xwOBA test."""
+    result = {}
+    for date in sorted(set(game_dates)):
+        result[date] = pd.DataFrame({
+            "Name": ["Logan Webb", "Gerrit Cole", "Pitcher C", "Pitcher D"],
+            "ERA": [3.00, 3.50, 3.60, 4.80],
+            "FIP": [3.10, 3.40, 3.50, 4.60],
+            "IP": [25.0, 22.0, 20.0, 18.0],
+            "game_date": [date] * 4,
+        })
+    return result
+
+
+def test_xwoba_fix():
+    """SP-01: xwoba_diff is non-NaN when both pitchers have Statcast data.
+
+    Verifies the fix for the v1 bug where:
+    - 'last_name, first_name' (single merged column) was incorrectly parsed
+      as separate 'last_name' and 'first_name' columns
+    - 'est_woba' column was incorrectly accessed as 'xwoba'
+    """
+    with patch("src.features.feature_builder.fetch_schedule", side_effect=_make_schedule_xwoba), \
+         patch("src.features.feature_builder.fetch_sp_stats", side_effect=_make_sp_stats_xwoba), \
+         patch("src.features.feature_builder.fetch_team_batting", side_effect=_make_team_batting_xwoba), \
+         patch("src.features.feature_builder.fetch_team_game_log", side_effect=_make_game_logs_xwoba), \
+         patch("src.features.feature_builder.fetch_statcast_pitcher", side_effect=_make_statcast_pitcher_fixed), \
+         patch("src.features.feature_builder.fetch_kalshi_markets", side_effect=_make_kalshi_markets), \
+         patch("src.features.feature_builder.fetch_sp_recent_form_bulk", side_effect=_make_sp_recent_form_xwoba):
+        fb = FeatureBuilder(seasons=[2024])
+        df = fb.build()
+
+    # xwoba_diff should have non-NaN values
+    assert df["xwoba_diff"].notna().any(), (
+        "xwoba_diff is all NaN -- the est_woba / 'last_name, first_name' bug is not fixed"
+    )
+
+    # For Webb (home, xwoba=0.280) vs Cole (away, xwoba=0.290):
+    # xwoba_diff = 0.280 - 0.290 = -0.010
+    webb_home = df[
+        (df["home_probable_pitcher"] == "Logan Webb")
+        & (df["away_probable_pitcher"] == "Gerrit Cole")
+    ]
+    if len(webb_home) > 0:
+        row = webb_home.iloc[0]
+        assert row["xwoba_diff"] == pytest.approx(-0.010, abs=0.001), (
+            f"Expected xwoba_diff ~ -0.010 but got {row['xwoba_diff']}"
+        )
