@@ -299,22 +299,31 @@ class FeatureBuilder:
 
         logs_df = pd.concat(all_logs, ignore_index=True)
 
-        # Ensure Date column is datetime for sorting
-        if "Date" in logs_df.columns:
-            logs_df["game_date"] = pd.to_datetime(logs_df["Date"])
-        elif "game_date" not in logs_df.columns:
-            df["rolling_ops_diff"] = np.nan
-            return df
+        # Ensure game_date column is datetime for sorting.
+        # MLB Stats API schema uses "game_date" (lowercase, already datetime).
+        # Legacy BRef schema used "Date" — handle both for compatibility.
+        if "game_date" not in logs_df.columns:
+            if "Date" in logs_df.columns:
+                logs_df["game_date"] = pd.to_datetime(logs_df["Date"])
+            else:
+                df["rolling_ops_diff"] = np.nan
+                return df
         else:
             logs_df["game_date"] = pd.to_datetime(logs_df["game_date"])
 
-        # Compute OPS from OBP + SLG if not directly available
-        if "OPS" not in logs_df.columns:
-            obp = pd.to_numeric(logs_df.get("OBP", 0), errors="coerce")
-            slg = pd.to_numeric(logs_df.get("SLG", 0), errors="coerce")
-            logs_df["OPS"] = obp + slg
-        else:
+        # Resolve OPS column — MLB Stats API uses lowercase "ops";
+        # legacy BRef schema used uppercase "OPS".  Compute from components
+        # if neither is present.
+        if "ops" in logs_df.columns:
+            logs_df["OPS"] = pd.to_numeric(logs_df["ops"], errors="coerce")
+        elif "OPS" in logs_df.columns:
             logs_df["OPS"] = pd.to_numeric(logs_df["OPS"], errors="coerce")
+        else:
+            obp_col = "obp" if "obp" in logs_df.columns else "OBP"
+            slg_col = "slg" if "slg" in logs_df.columns else "SLG"
+            obp = pd.to_numeric(logs_df.get(obp_col, pd.Series(0, index=logs_df.index)), errors="coerce")
+            slg = pd.to_numeric(logs_df.get(slg_col, pd.Series(0, index=logs_df.index)), errors="coerce")
+            logs_df["OPS"] = obp + slg
 
         # Sort and compute rolling OPS with shift(1) within season groups
         logs_df = logs_df.sort_values(["team", "season", "game_date"])
