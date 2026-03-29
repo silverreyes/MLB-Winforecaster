@@ -18,10 +18,10 @@ Requirements for initial release. Each maps to a roadmap phase.
 
 ### Feature Engineering
 
-- [ ] **FEAT-01**: FeatureBuilder computes starting pitcher differential (FIP, xFIP, K%) between confirmed home and away SPs
-- [ ] **FEAT-02**: FeatureBuilder computes team offensive differential (wOBA, OPS, Pythagorean win percentage) between home and away teams
+- [x] **FEAT-01**: FeatureBuilder computes starting pitcher differential (FIP, xFIP, K%) between confirmed home and away SPs
+- [x] **FEAT-02**: FeatureBuilder computes team offensive differential (wOBA, OPS, Pythagorean win percentage) between home and away teams
 - [x] **FEAT-03**: FeatureBuilder computes rolling 10-game team OPS differential to capture recent form
-- [ ] **FEAT-04**: FeatureBuilder computes bullpen ERA differential between home and away bullpens
+- [x] **FEAT-04**: FeatureBuilder computes bullpen ERA differential between home and away bullpens
 - [x] **FEAT-05**: FeatureBuilder includes home/away indicator and 3-year rolling park run factor
 - [x] **FEAT-06**: FeatureBuilder computes differentiator features: SIERA differential, xwOBA differential, SP recent form (last 3 starts), Log5 win probability, bullpen FIP differential
 - [x] **FEAT-07**: All rolling features enforce temporal safety via `shift(1)` and `as_of_date` parameter; unit tests verify no look-ahead leakage
@@ -90,10 +90,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DATA-04 | Phase 1 | Complete |
 | DATA-05 | Phase 1 | Complete |
 | DATA-06 | Phase 1 | Complete |
-| FEAT-01 | Phase 2 | Pending |
-| FEAT-02 | Phase 2 | Pending |
+| FEAT-01 | Phase 2 | Complete |
+| FEAT-02 | Phase 2 | Complete |
 | FEAT-03 | Phase 2 | Complete |
-| FEAT-04 | Phase 2 | Pending |
+| FEAT-04 | Phase 2 | Complete |
 | FEAT-05 | Phase 2 | Complete |
 | FEAT-06 | Phase 2 | Complete |
 | FEAT-07 | Phase 2 | Complete |
