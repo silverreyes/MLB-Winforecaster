@@ -97,7 +97,7 @@ pip install pybaseball==2.2.7 MLB-StatsAPI==1.9.0 "pandas>=2.2.3,<2.3" pyarrow>=
 
 ### Recommended Project Structure
 ```
-MLB-WinForcater/
+MLB-WinForecaster/
 ├── requirements.txt              # All dependencies pinned
 ├── .gitignore                    # data/ excluded
 ├── .env                          # KALSHI_API_KEY (optional, gitignored)

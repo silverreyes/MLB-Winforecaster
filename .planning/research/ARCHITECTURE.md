@@ -77,7 +77,7 @@
 ## Recommended Project Structure
 
 ```
-MLB-WinForcater/
+MLB-WinForecaster/
 ├── notebooks/                    # Jupyter notebooks (the user interface)
 │   ├── 01_data_exploration.ipynb     # Explore raw data, sanity checks
 │   ├── 02_feature_engineering.ipynb  # Develop and validate features
