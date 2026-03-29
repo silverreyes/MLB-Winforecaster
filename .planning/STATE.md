@@ -90,7 +90,7 @@ Recent decisions affecting current work:
 - [Phase 02 P03]: OPS column resolution in _add_rolling_features() uses lowercase 'ops' with fallback to uppercase and obp+slg computation for backward compatibility
 - [Phase 03 P01]: Used IsotonicRegression directly instead of deprecated CalibratedClassifierCV(cv='prefit') for sklearn 1.8.0 compatibility
 - [Phase 03 P01]: Omitted penalty= from LogisticRegression (deprecated sklearn 1.8.0) and use_label_encoder from XGBClassifier (removed xgboost 2.x)
-- [Phase 03 P01]: Excluded xwoba_diff from all feature sets (100% NaN); core set differentiates on sp_recent_era_diff only
+- [Phase 03 P01]: Excluded xwoba_diff from all feature sets (100% NaN); core set differentiates on sp_recent_era_diff only. Root cause confirmed post-Phase 3: two bugs in feature_builder.py _add_advanced_features() -- (1) pybaseball statcast_pitcher_expected_stats returns a single column named 'last_name, first_name' (not separate 'last_name'/'first_name' cols), so both branch conditions are always False and xwoba_lookup is never populated; (2) xwOBA column is 'est_woba' not 'xwoba'/'xwOBA'. Decision: leave excluded; fix deferred to post-Phase 4 iteration or V2 to avoid Phase 3/Phase 4 feature set inconsistency.
 - [Phase 03 P01]: XGBoost early stopping uses last 20% of training window (temporal split), not calibration season
 - [Phase 03 P01]: feature_set_name is explicit string parameter, not derived from column contents
 - [Phase 03 P02]: No new decisions -- notebooks follow established thin-wrapper pattern from Phases 1 and 2
@@ -104,7 +104,7 @@ None yet.
 - [Research]: pandas must stay at 2.2.x (not 3.0) due to pybaseball incompatibility with PyArrow string dtypes
 - [Research]: Kalshi historical data only available from 2025 -- Phase 4 comparison limited to ~1 season
 - [Research]: 2020 60-game season may need exclusion or era-flagging -- decision needed during Phase 1
-- [Phase 4 Blocker]: `fetch_kalshi_markets()` stores `last_price_dollars` (settlement closing price). Phase 4 benchmark requires PRE-GAME market price to avoid look-ahead bias. Must investigate Kalshi candlestick/trade-history API before Phase 4 planning. See `<known_issues>` block in `01-03-PLAN.md`.
+- [Phase 4 Blocker]: `fetch_kalshi_markets()` stores `last_price_dollars` (settlement closing price). Phase 4 benchmark requires PRE-GAME market price to avoid look-ahead bias. Must investigate Kalshi API before Phase 4 planning -- specifically candlestick endpoint (series-level OHLCV) and trade history endpoint (per-market trade-by-trade feed); opening price or first-trade price pre-game is the target. See `<known_issues>` block in `01-03-PLAN.md`. Phase 4 CONTEXT.md must lock in the API approach before any comparison code is written.
 
 ## Session Continuity
 
