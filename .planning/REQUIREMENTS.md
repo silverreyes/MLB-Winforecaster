@@ -39,7 +39,7 @@
 - [ ] **PIPE-04**: Confirmation pipeline runs at 5pm ET daily; re-fetches current SP assignments; if starter differs from 1pm prediction, marks old row `is_latest = FALSE`, inserts updated row, and sets `sp_may_have_changed = TRUE` on the new row.
 - [ ] **PIPE-05**: Kalshi live opening price fetched and `edge_signal` (BUY_YES/BUY_NO/NO_EDGE) computed at insert time per prediction row; stored in `predictions` table (not computed at query time).
 - [ ] **PIPE-06**: SP name stored in each `predictions` row; `sp_may_have_changed` boolean flag set by 5pm confirmation run when starter differs from 1pm run.
-- [ ] **PIPE-07**: Pipeline falls back to `TEAM_ONLY_FEATURE_COLS` with `sp_uncertainty = TRUE` flag when starters are TBD or unresolvable at run time; does not insert a post-lineup prediction until starters are confirmed.
+- [ ] **PIPE-07**: Pipeline falls back to `TEAM_ONLY_FEATURE_COLS` with `sp_uncertainty = TRUE` flag when starters are TBD or unresolvable at run time; does not insert a `post_lineup` prediction until starters are confirmed. The `predictions` table schema enforces this at the database level — either a `prediction_status` enum (`confirmed`, `pending_sp`, `tbd`) with a CHECK constraint, or a nullable `sp_confirmed_at` timestamp — so the invariant cannot be violated by application-level bugs.
 - [ ] **PIPE-08**: All pipeline runs log to a persistent file; `GET /api/v1/health` returns `last_pipeline_run` timestamp and run status for each version.
 
 ### API Layer (Track 2)
@@ -118,57 +118,57 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SP-01 | — | Pending |
-| SP-02 | — | Pending |
-| SP-03 | — | Pending |
-| SP-04 | — | Pending |
-| SP-05 | — | Pending |
-| SP-06 | — | Pending |
-| SP-07 | — | Pending |
-| SP-08 | — | Pending |
-| SP-09 | — | Pending |
-| SP-10 | — | Pending |
-| SP-11 | — | Pending |
-| SP-12 | — | Pending |
-| MDL-01 | — | Pending |
-| MDL-02 | — | Pending |
-| MDL-03 | — | Pending |
-| MDL-04 | — | Pending |
-| MDL-05 | — | Pending |
-| MDL-06 | — | Pending |
-| MDL-07 | — | Pending |
-| PIPE-01 | — | Pending |
-| PIPE-02 | — | Pending |
-| PIPE-03 | — | Pending |
-| PIPE-04 | — | Pending |
-| PIPE-05 | — | Pending |
-| PIPE-06 | — | Pending |
-| PIPE-07 | — | Pending |
-| PIPE-08 | — | Pending |
-| API-01 | — | Pending |
-| API-02 | — | Pending |
-| API-03 | — | Pending |
-| API-04 | — | Pending |
-| API-05 | — | Pending |
-| API-06 | — | Pending |
-| DASH-01 | — | Pending |
-| DASH-02 | — | Pending |
-| DASH-03 | — | Pending |
-| DASH-04 | — | Pending |
-| DASH-05 | — | Pending |
-| DASH-06 | — | Pending |
-| DASH-07 | — | Pending |
-| INFRA-01 | — | Pending |
-| INFRA-02 | — | Pending |
-| INFRA-03 | — | Pending |
-| INFRA-04 | — | Pending |
-| PORT-01 | — | Pending |
+| SP-01 | Phase 5 | Pending |
+| SP-02 | Phase 5 | Pending |
+| SP-03 | Phase 5 | Pending |
+| SP-04 | Phase 5 | Pending |
+| SP-05 | Phase 5 | Pending |
+| SP-06 | Phase 5 | Pending |
+| SP-07 | Phase 5 | Pending |
+| SP-08 | Phase 5 | Pending |
+| SP-09 | Phase 5 | Pending |
+| SP-10 | Phase 5 | Pending |
+| SP-11 | Phase 5 | Pending |
+| SP-12 | Phase 5 | Pending |
+| MDL-01 | Phase 6 | Pending |
+| MDL-02 | Phase 6 | Pending |
+| MDL-03 | Phase 6 | Pending |
+| MDL-04 | Phase 6 | Pending |
+| MDL-05 | Phase 6 | Pending |
+| MDL-06 | Phase 6 | Pending |
+| MDL-07 | Phase 6 | Pending |
+| PIPE-01 | Phase 7 | Pending |
+| PIPE-02 | Phase 7 | Pending |
+| PIPE-03 | Phase 7 | Pending |
+| PIPE-04 | Phase 7 | Pending |
+| PIPE-05 | Phase 7 | Pending |
+| PIPE-06 | Phase 7 | Pending |
+| PIPE-07 | Phase 7 | Pending |
+| PIPE-08 | Phase 7 | Pending |
+| API-01 | Phase 8 | Pending |
+| API-02 | Phase 8 | Pending |
+| API-03 | Phase 8 | Pending |
+| API-04 | Phase 8 | Pending |
+| API-05 | Phase 8 | Pending |
+| API-06 | Phase 8 | Pending |
+| DASH-01 | Phase 8 | Pending |
+| DASH-02 | Phase 8 | Pending |
+| DASH-03 | Phase 8 | Pending |
+| DASH-04 | Phase 8 | Pending |
+| DASH-05 | Phase 8 | Pending |
+| DASH-06 | Phase 8 | Pending |
+| DASH-07 | Phase 8 | Pending |
+| INFRA-01 | Phase 9 | Pending |
+| INFRA-02 | Phase 9 | Pending |
+| INFRA-03 | Phase 9 | Pending |
+| INFRA-04 | Phase 9 | Pending |
+| PORT-01 | Phase 9 | Pending |
 
 **Coverage:**
 - v2.0 requirements: 45 total
-- Mapped to phases: 0
-- Unmapped: 45 ⚠️
+- Mapped to phases: 45/45
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-29*
-*Last updated: 2026-03-29 — initial definition*
+*Last updated: 2026-03-29 -- roadmap phase mappings applied*
