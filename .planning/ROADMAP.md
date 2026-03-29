@@ -37,12 +37,13 @@
   3. `feature_store_v2.parquet` exists with all new SP columns (`sp_k_bb_pct_diff`, `sp_whip_diff`, `sp_era_diff`, `sp_recent_fip_diff`, `sp_pitch_count_last_diff`, `sp_days_rest_diff`) and the v1 feature store is preserved unchanged
   4. `feature_sets.py` exports three named constants (`TEAM_ONLY_FEATURE_COLS`, `SP_ENHANCED_FEATURE_COLS`, `V1_FULL_FEATURE_COLS`) and models can load either feature set from the v2 feature store without KeyError
   5. Cold-start pitchers (first start of season, rookies, mid-season call-ups) have imputed values -- no NaN rows propagate to model input for any game with a resolved starting pitcher
-**Plans**: TBD
+**Plans:** 4 plans
 
 Plans:
-- [ ] 05-01: TBD
-- [ ] 05-02: TBD
-- [ ] 05-03: TBD
+- [ ] 05-01-PLAN.md -- Fix xwOBA bug and build ID-based SP name matching cross-reference (SP-01, SP-02)
+- [ ] 05-02-PLAN.md -- Extend pitcher game log extraction and add FIP/pitch-count/days-rest computation (SP-07, SP-08)
+- [ ] 05-03-PLAN.md -- Convert SP stats to season-to-date rolling, add K-BB%/WHIP/ERA differentials, cold-start handling (SP-03, SP-04, SP-05, SP-06, SP-10)
+- [ ] 05-04-PLAN.md -- Wire remaining features, define feature set constants, build v2 store, complete temporal safety tests (SP-07, SP-08, SP-09, SP-11, SP-12)
 
 ### Phase 6: Model Retrain and Calibration
 **Goal**: Six validated model artifacts (LR/RF/XGBoost x team-only/SP-enhanced) exist with verified calibration and documented Brier score improvements over v1
@@ -119,7 +120,7 @@ Phases execute in numeric order: 5 -> 6 -> 7 -> 8 -> 9
 | 2. Feature Engineering and Feature Store | v1.0 | 3/3 | Complete | 2026-03-29 |
 | 3. Model Training and Backtesting | v1.0 | 2/2 | Complete | 2026-03-29 |
 | 4. Kalshi Market Comparison and Edge Analysis | v1.0 | 2/2 | Complete | 2026-03-29 |
-| 5. SP Feature Integration | v2.0 | 0/? | Not started | - |
+| 5. SP Feature Integration | v2.0 | 0/4 | Planning complete | - |
 | 6. Model Retrain and Calibration | v2.0 | 0/? | Not started | - |
 | 7. Live Pipeline and Database | v2.0 | 0/? | Not started | - |
 | 8. API and Dashboard | v2.0 | 0/? | Not started | - |
