@@ -506,15 +506,26 @@ class FeatureBuilder:
                     "R": row.get("R"),
                 }
 
+        def _team_stat(lookup, season, team, stat):
+            """Look up a team stat, falling back to season-1 if current season missing.
+
+            Handles Opening Day cold-start: no current-season batting stats exist
+            yet, so we use the previous season's values as a baseline.
+            """
+            val = lookup.get((season, team), {}).get(stat)
+            if val is None or pd.isna(val):
+                val = lookup.get((season - 1, team), {}).get(stat)
+            return val
+
         # Map team stats for home and away
         for prefix, team_col in [("home", "home_team"), ("away", "away_team")]:
             for stat, col_name in [("wOBA", f"{prefix}_woba"),
                                     ("OPS", f"{prefix}_ops"),
                                     ("R", f"{prefix}_r")]:
                 df[col_name] = df.apply(
-                    lambda r, s=stat, tc=team_col: team_lookup.get(
-                        (r["season"], r[tc]), {}
-                    ).get(s),
+                    lambda r, s=stat, tc=team_col: _team_stat(
+                        team_lookup, r["season"], r[tc], s
+                    ),
                     axis=1,
                 )
 
@@ -709,14 +720,21 @@ class FeatureBuilder:
                 for team, stats in team_bullpen.items():
                     bullpen_lookup[(season, team)] = stats
 
+        def _bullpen_stat(lookup, season, team, stat):
+            """Look up a bullpen stat, falling back to season-1 if current season missing."""
+            val = lookup.get((season, team), {}).get(stat)
+            if val is None or pd.isna(val):
+                val = lookup.get((season - 1, team), {}).get(stat)
+            return val
+
         # Map bullpen stats
         for prefix, team_col in [("home", "home_team"), ("away", "away_team")]:
             for stat, col_name in [("bullpen_era", f"{prefix}_bullpen_era"),
                                     ("bullpen_fip", f"{prefix}_bullpen_fip")]:
                 df[col_name] = df.apply(
-                    lambda r, s=stat, tc=team_col: bullpen_lookup.get(
-                        (r["season"], r[tc]), {}
-                    ).get(s),
+                    lambda r, s=stat, tc=team_col: _bullpen_stat(
+                        bullpen_lookup, r["season"], r[tc], s
+                    ),
                     axis=1,
                 )
 
