@@ -99,6 +99,7 @@ None yet.
 
 ### Blockers/Concerns
 
+- [Phase 07, Tech Debt]: LiveFeatureBuilder.build_features_for_game() calls private methods on FeatureBuilder (_add_sp_features, _add_offense_features, etc.). Any rename or signature change to FeatureBuilder internals silently breaks the live pipeline at runtime. Acceptable for v1 pipeline; refactor to a stable adapter interface in a future phase if FeatureBuilder internals change.
 - [Carry-forward]: pandas must stay at 2.2.x (not 3.0) due to pybaseball incompatibility
 - [Carry-forward]: Kalshi historical data only available from 2025 -- edge comparison limited to ~1 season
 - [Research]: pybaseball curl_cffi fix may not be in pinned v2.2.7 -- test before Phase 5 begins
