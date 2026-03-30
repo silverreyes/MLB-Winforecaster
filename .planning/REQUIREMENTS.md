@@ -44,12 +44,12 @@
 
 ### API Layer (Track 2)
 
-- [ ] **API-01**: `GET /api/v1/predictions/today` — returns all games for current date with both prediction versions (pre and post lineup where available), model probabilities (LR/RF/XGB), Kalshi price, edge signal, SP names, and staleness flags.
-- [ ] **API-02**: `GET /api/v1/predictions/{date}` — same shape as today endpoint; returns historical predictions for a given date.
-- [ ] **API-03**: `GET /api/v1/predictions/latest-timestamp` — lightweight endpoint returning only the most recent `created_at` timestamp; used by client-side polling to detect new predictions without fetching full payload.
-- [ ] **API-04**: `GET /api/v1/results/accuracy` — historical Brier scores and model accuracy metrics aggregated by date range.
-- [ ] **API-05**: `GET /api/v1/health` — returns pipeline status, `last_pipeline_run` per version, and service uptime.
-- [ ] **API-06**: All 6 model artifacts loaded at FastAPI startup via lifespan context manager; no model loading occurs inside request handlers; API fails to start (not silently) if any artifact is missing.
+- [x] **API-01**: `GET /api/v1/predictions/today` — returns all games for current date with both prediction versions (pre and post lineup where available), model probabilities (LR/RF/XGB), Kalshi price, edge signal, SP names, and staleness flags.
+- [x] **API-02**: `GET /api/v1/predictions/{date}` — same shape as today endpoint; returns historical predictions for a given date.
+- [x] **API-03**: `GET /api/v1/predictions/latest-timestamp` — lightweight endpoint returning only the most recent `created_at` timestamp; used by client-side polling to detect new predictions without fetching full payload.
+- [x] **API-04**: `GET /api/v1/results/accuracy` — historical Brier scores and model accuracy metrics aggregated by date range.
+- [x] **API-05**: `GET /api/v1/health` — returns pipeline status, `last_pipeline_run` per version, and service uptime.
+- [x] **API-06**: All 6 model artifacts loaded at FastAPI startup via lifespan context manager; no model loading occurs inside request handlers; API fails to start (not silently) if any artifact is missing.
 
 ### Dashboard Frontend (Track 2)
 
@@ -145,12 +145,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PIPE-06 | Phase 7 | Complete |
 | PIPE-07 | Phase 7 | Complete |
 | PIPE-08 | Phase 7 | Complete |
-| API-01 | Phase 8 | Pending |
-| API-02 | Phase 8 | Pending |
-| API-03 | Phase 8 | Pending |
-| API-04 | Phase 8 | Pending |
-| API-05 | Phase 8 | Pending |
-| API-06 | Phase 8 | Pending |
+| API-01 | Phase 8 | Complete |
+| API-02 | Phase 8 | Complete |
+| API-03 | Phase 8 | Complete |
+| API-04 | Phase 8 | Complete |
+| API-05 | Phase 8 | Complete |
+| API-06 | Phase 8 | Complete |
 | DASH-01 | Phase 8 | Pending |
 | DASH-02 | Phase 8 | Pending |
 | DASH-03 | Phase 8 | Pending |

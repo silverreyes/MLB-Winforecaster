@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Live Platform
-status: completed
-stopped_at: Phase 8 context gathered
-last_updated: "2026-03-30T04:12:18.352Z"
+status: in_progress
+stopped_at: Completed 08-01 (FastAPI backend)
+last_updated: "2026-03-30T04:27:42.063Z"
 last_activity: 2026-03-30 -- Completed 07-03 (Pipeline runner, scheduler, health)
 progress:
   total_phases: 5
   completed_phases: 3
-  total_plans: 10
-  completed_plans: 10
-  percent: 100
+  total_plans: 13
+  completed_plans: 11
+  percent: 84
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-29 -- v2.0 milestone started)
 
 **Core value:** Produce well-calibrated win probability estimates that can be rigorously compared against Kalshi market prices, surfacing where models agree, disagree, and where edges may exist.
-**Current focus:** Phase 7 complete -- Live Pipeline and Database (plan 3 of 3 complete)
+**Current focus:** Phase 8 in progress -- API and Dashboard (plan 1 of 3 complete)
 
 ## Current Position
 
-Phase: 7 of 9 (Live Pipeline and Database) -- COMPLETE
-Plan: 3 of 3 in current phase (07-03 complete)
-Status: Phase 7 complete, ready for Phase 8 (API and Dashboard)
-Last activity: 2026-03-30 -- Completed 07-03 (Pipeline runner, scheduler, health)
+Phase: 8 of 9 (API and Dashboard)
+Plan: 1 of 3 in current phase (08-01 complete)
+Status: Plan 08-01 complete, ready for 08-02 (React dashboard frontend)
+Last activity: 2026-03-30 -- Completed 08-01 (FastAPI backend with 5 endpoints)
 
-Progress: [██████████] 100%
+Progress: [████████░░] 81%
 
 ## Performance Metrics
 
@@ -57,6 +57,7 @@ Progress: [██████████] 100%
 | Phase 07 P01 | 4min | 2 tasks | 7 files |
 | Phase 07 P02 | 4min | 2 tasks | 6 files |
 | Phase 07 P03 | 4min | 2 tasks | 6 files |
+| Phase 08 P01 | 7min | 3 tasks | 17 files |
 
 ## Accumulated Context
 
@@ -107,6 +108,9 @@ Recent decisions affecting current work:
 - [07-03]: TBD starters skip post_lineup entirely (PIPE-07); no fallback insertion as post_lineup
 - [07-03]: Confirmation run marks old post_lineup rows is_latest=FALSE on SP change
 - [07-03]: APScheduler BlockingScheduler (3.x) with 5-minute misfire_grace_time per job
+- [08-01]: Sync def handlers (not async def) for all API routes -- psycopg3 sync connections run in FastAPI thread pool
+- [08-01]: Ensemble prob and edge magnitude computed per-request in route handler, not stored in DB
+- [08-01]: Route ordering enforced: /latest-timestamp before /{date} to prevent path parameter capture
 
 ### Pending Todos
 
@@ -122,6 +126,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T04:12:18.349Z
-Stopped at: Phase 8 context gathered
-Resume file: .planning/phases/08-api-and-dashboard/08-CONTEXT.md
+Last session: 2026-03-30T05:07:36Z
+Stopped at: Completed 08-01 (FastAPI backend with 5 endpoints)
+Resume file: .planning/phases/08-api-and-dashboard/08-02-PLAN.md
