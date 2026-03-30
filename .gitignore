@@ -27,3 +27,8 @@ env/
 .idea/
 *.swp
 *.swo
+
+# Frontend (Phase 8)
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
