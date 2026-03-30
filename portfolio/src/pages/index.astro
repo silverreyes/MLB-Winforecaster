@@ -1,0 +1,89 @@
+---
+import Layout from '../layouts/Layout.astro';
+import MethodologySection from '../components/MethodologySection.astro';
+import BrierTable from '../components/BrierTable.astro';
+import CalibrationCurves from '../components/CalibrationCurves.astro';
+---
+
+<Layout title="MLB Win Forecaster -- Silver Reyes">
+  <header class="hero">
+    <h1>MLB Win Probability Forecaster</h1>
+    <p class="subtitle">
+      A machine learning system that produces calibrated pre-game win probabilities
+      for every MLB game, compared against Kalshi prediction market prices.
+    </p>
+  </header>
+
+  <MethodologySection />
+  <BrierTable />
+  <CalibrationCurves />
+
+  <section class="dashboard-cta">
+    <h2>Live Dashboard</h2>
+    <p>
+      View today's predictions, model probabilities, and Kalshi market comparisons
+      updated throughout the day as lineups are confirmed.
+    </p>
+    <a href="https://mlbforecaster.silverreyes.net" class="cta-button">
+      View Live Dashboard
+    </a>
+  </section>
+
+  <footer class="site-footer">
+    <p>
+      Built by Silver Reyes. Model trained on 2015&ndash;2024 MLB data.<br />
+      Source: pybaseball, MLB Stats API, FanGraphs, Baseball Savant.
+    </p>
+  </footer>
+</Layout>
+
+<style>
+  .hero {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #2a2a35;
+  }
+
+  .subtitle {
+    font-size: 1.15rem;
+    margin-top: 0.75rem;
+    color: #a0a0a0;
+  }
+
+  .dashboard-cta {
+    text-align: center;
+    padding: 2rem 0;
+    margin-top: 1rem;
+  }
+
+  .cta-button {
+    display: inline-block;
+    margin-top: 0.75rem;
+    padding: 0.85rem 2rem;
+    background: #d4a843;
+    color: #0a0a0f;
+    font-weight: 700;
+    font-size: 1rem;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: background 0.2s ease, transform 0.1s ease;
+  }
+
+  .cta-button:hover {
+    background: #e8c060;
+    color: #0a0a0f;
+    transform: translateY(-1px);
+  }
+
+  .site-footer {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #2a2a35;
+    text-align: center;
+  }
+
+  .site-footer p {
+    font-size: 0.85rem;
+    color: #6a6a6a;
+  }
+</style>

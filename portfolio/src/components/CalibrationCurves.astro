@@ -1,0 +1,70 @@
+---
+---
+
+<section class="calibration-section">
+  <h2>Calibration Curves</h2>
+
+  <div class="image-row">
+    <figure>
+      <img
+        src={`${import.meta.env.BASE_URL}/images/reliability_team_only.png`}
+        alt="Reliability diagram for TEAM_ONLY models"
+        loading="lazy"
+      />
+      <figcaption>TEAM_ONLY (9 features)</figcaption>
+    </figure>
+    <figure>
+      <img
+        src={`${import.meta.env.BASE_URL}/images/reliability_sp_enhanced.png`}
+        alt="Reliability diagram for SP_ENHANCED models"
+        loading="lazy"
+      />
+      <figcaption>SP_ENHANCED (17 features)</figcaption>
+    </figure>
+  </div>
+
+  <p class="caption">
+    Reliability diagrams showing predicted vs. observed win probability.
+    Closer to the diagonal = better calibrated.
+  </p>
+</section>
+
+<style>
+  .calibration-section {
+    margin-bottom: 2rem;
+  }
+
+  .image-row {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 0.75rem;
+  }
+
+  figure {
+    flex: 1 1 380px;
+    max-width: 420px;
+  }
+
+  img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    border: 1px solid #2a2a35;
+  }
+
+  figcaption {
+    text-align: center;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: #8a8880;
+  }
+
+  .caption {
+    font-size: 0.85rem;
+    color: #8a8880;
+    font-style: italic;
+    text-align: center;
+  }
+</style>

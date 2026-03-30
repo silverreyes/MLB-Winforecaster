@@ -1,0 +1,41 @@
+---
+---
+
+<section class="methodology">
+  <h2>Methodology</h2>
+
+  <p>
+    Walk-forward 5-fold backtesting on 2015&ndash;2024 MLB seasons (2020 excluded due to
+    the shortened COVID season). Three model types are trained: Logistic Regression,
+    Random Forest, and XGBoost. Two feature sets are evaluated: <strong>TEAM_ONLY</strong>
+    (9 team-level features including Pythagorean win percentage, OPS, wOBA, bullpen ERA/FIP,
+    park factor, and log5 baseline) and <strong>SP_ENHANCED</strong> (17 features including
+    starting pitcher metrics after VIF multicollinearity pruning).
+  </p>
+
+  <p>
+    All models are calibrated using isotonic regression per fold. No temperature scaling
+    was needed&mdash;reliability diagrams confirmed that isotonic calibration produces
+    well-calibrated probability estimates across the full range.
+  </p>
+
+  <p>
+    The v2 SP_ENHANCED feature set adds K-BB%, WHIP, ERA, recent 30-day FIP, pitch count,
+    and days rest&mdash;all computed as home-away differentials. VIF analysis removed 3
+    multicollinear features (is_home, team_woba_diff, sp_siera_diff), leaving 17 features.
+    SHAP importance analysis confirmed all 17 remaining features contribute meaningfully
+    to predictions.
+  </p>
+
+  <p>
+    Model probabilities are compared against Kalshi prediction market opening prices on the
+    same 2025 game set. The best model (LR SP_ENHANCED, Brier 0.2331) outperforms the
+    market (Brier 0.2434) by 0.0103 on 2,128 common games.
+  </p>
+</section>
+
+<style>
+  .methodology {
+    margin-bottom: 2rem;
+  }
+</style>
