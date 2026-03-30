@@ -48,10 +48,10 @@
   2. Each game card displays the start time converted to Eastern Time in "7:05 PM ET" format
   3. Game cards with no scheduled time display "Time TBD" instead of a time string
   4. Mobile layout does not break with the added game time element
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 10-01: TBD
+- [ ] 10-01-PLAN.md — Add game_time to API response and display on game cards in ET
 
 ### Phase 11: Header Date and Clock
 **Goal**: Users always know today's date and current time in the context of the game schedule (Eastern Time)
@@ -97,6 +97,6 @@ Phases 10, 11, and 12 have no inter-dependencies and can execute in any order.
 | 7. Live Pipeline and Database | v2.0 | 3/3 | Complete | 2026-03-30 |
 | 8. API and Dashboard | v2.0 | 3/3 | Complete | 2026-03-30 |
 | 9. Infrastructure and Go-Live | v2.0 | 3/3 | Complete | 2026-03-30 |
-| 10. Game Time Display | v2.1 | 0/? | Not started | - |
+| 10. Game Time Display | v2.1 | 0/1 | Planning complete | - |
 | 11. Header Date and Clock | v2.1 | 0/? | Not started | - |
 | 12. Explanatory Content and Tooltips | v2.1 | 0/? | Not started | - |
