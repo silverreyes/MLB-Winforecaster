@@ -18,10 +18,10 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-30 -- v2.1 roadmap created)
+See: .planning/PROJECT.md (updated 2026-03-30 -- after Phase 11)
 
 **Core value:** Produce well-calibrated win probability estimates that can be rigorously compared against Kalshi market prices, surfacing where models agree, disagree, and where edges may exist.
-**Current focus:** v2.1 Phase 11 -- Header Date and Clock (complete)
+**Current focus:** v2.1 Phase 12 -- Explanatory Content and Tooltips
 
 ## Current Position
 
@@ -57,8 +57,7 @@ Recent decisions affecting current work:
 - [v2.1 Roadmap]: EXPLAIN + TLTP grouped into single phase (both informational UI, 9 requirements)
 - [v2.1 Scope]: No pipeline/DB changes; match existing dark amber aesthetic; mobile must not break
 - [Phase 10]: game_time field uses datetime|None in Pydantic (not str|None) for server-side validation; ET conversion done client-side via Intl.DateTimeFormat
-- [Phase 11]: Static RUN_LABELS lookup for pipeline schedule; drift-corrected timer via setTimeout+setInterval alignment; column header layout with topRow+clockRow
-- [Phase 11]: Static RUN_LABELS lookup for pipeline schedule; drift-corrected setTimeout+setInterval timer; column header layout with topRow+clockRow
+- [Phase 11]: Static RUN_LABELS lookup for pipeline schedule; drift-corrected timer (setTimeout to second boundary + setInterval); column header layout with topRow+clockRow
 
 ### Pending Todos
 
@@ -72,6 +71,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T21:37:19.684Z
-Stopped at: Completed 11-01-PLAN.md
+Last session: 2026-03-30
+Stopped at: Phase 11 complete, ready to plan Phase 12
 Resume file: None

@@ -62,11 +62,14 @@ Produce well-calibrated win probability estimates that can be rigorously compare
 - Kalshi market explanation with fee disclosure (no trading recommendation)
 - Buy Yes / Buy No inline tooltip on each game card
 
+### Validated (v2.1)
+
+- ✓ Add game_time to prediction response model, populated from game_datetime (UTC ISO string) — Phase 10
+- ✓ Display game time in ET on each game card ("7:05 PM ET" / "Time TBD" when null) — Phase 10
+- ✓ Dashboard header: today's date, live clock (every second), and next-update countdown in Eastern Time — Phase 11
+
 ### Active
 
-- [ ] Add game_time to prediction response model, populated from game_datetime (UTC ISO string)
-- [ ] Display game time in ET on each game card ("7:05 PM ET" / "Time TBD" when null)
-- [ ] Dashboard header: today's date and live clock updating every second (Eastern Time)
 - [ ] Collapsible "About the Models" section covering all 4 explanation points
 - [ ] Buy Yes / Buy No inline (?) tooltip on game cards
 
@@ -142,6 +145,10 @@ Produce well-calibrated win probability estimates that can be rigorously compare
 | Model artifacts bind-mounted read-only | Artifacts not baked into image; updated without rebuild | ✓ Good — flexible for model updates |
 | CSS custom properties for design tokens | Hex values never hard-coded in component CSS | ✓ Good — consistent theming |
 | No retry button in ErrorState | React Query auto-recovers when API responds | ✓ Good — less UI complexity |
+| game_time field as datetime\|None (Pydantic) | Server validates ISO format; ET conversion done client-side via Intl.DateTimeFormat | ✓ Good — no server-side TZ logic needed |
+| Static RUN_LABELS lookup for pipeline schedule | Avoids constructing Date objects for 10/13/17 hour labels; simpler and no TZ edge cases | ✓ Good — readable and correct |
+| Drift-corrected clock: setTimeout to second boundary + setInterval | Date.now() % 1000 aligns first tick to wall-clock second, then 1000ms interval; no visual lag | ✓ Good — smooth, no drift |
+| Column layout for header (topRow + clockRow) | Separates title/badges from date/clock/next-update; mobile-responsive at 768px breakpoint | ✓ Good — clean layout hierarchy |
 
 ---
-*Last updated: 2026-03-30 — v2.1 milestone started*
+*Last updated: 2026-03-30 — after Phase 11 (Header Date and Clock)*
