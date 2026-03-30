@@ -54,13 +54,14 @@ Plans:
 - [ ] 10-01-PLAN.md — Add game_time to API response and display on game cards in ET
 
 ### Phase 11: Header Date and Clock
-**Goal**: Users always know today's date and current time in the context of the game schedule (Eastern Time)
+**Goal**: Users always know today's date, current time, and when the next data refresh will happen — all in Eastern Time
 **Depends on**: Nothing (no backend dependency; can execute in parallel with Phase 10)
-**Requirements**: HEADER-01, HEADER-02
+**Requirements**: HEADER-01, HEADER-02, HEADER-03
 **Success Criteria** (what must be TRUE):
   1. Dashboard header displays today's date in Eastern Time (e.g., "Monday, March 30")
   2. Dashboard header displays a live clock that updates every second showing current Eastern Time (e.g., "2:34 PM ET")
   3. Clock continues updating accurately after the page has been open for extended periods (no drift from setInterval accumulation)
+  4. Dashboard header displays "Next update: H:MM AM/PM ET" for the nearest future pipeline run (10:00 AM, 1:00 PM, or 5:00 PM ET); shows "Next update: 10:00 AM ET tomorrow" after 5:00 PM ET
 **Plans**: TBD
 
 Plans:
