@@ -3,9 +3,13 @@
 Loads all 6 model artifacts (LR/RF/XGB x team_only/sp_enhanced) at startup.
 Provides predict_game() for running inference on a single game's features.
 """
+import logging
+
 import joblib
 import numpy as np
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 from pathlib import Path
 
 ARTIFACT_DIR = Path("models/artifacts")
@@ -66,8 +70,10 @@ def predict_game(
         # Build 1-row DataFrame with correct column order
         X = pd.DataFrame([features])[feature_cols]
 
-        # Check for NaN in features -- skip if critical features missing
+        # Check for NaN in features -- skip if any are missing
         if X.isna().any().any():
+            nan_cols = X.columns[X.isna().any()].tolist()
+            logger.warning(f"Skipping {name}: NaN in features {nan_cols}")
             continue
 
         raw_prob = model.predict_proba(X)[:, 1]

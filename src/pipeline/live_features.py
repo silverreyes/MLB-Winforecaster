@@ -42,8 +42,11 @@ class LiveFeatureBuilder:
         self.today_str = today.strftime("%Y-%m-%d")
         self.season = today.year
         # FeatureBuilder processes all games BEFORE today (temporal safety)
+        # Include prior season so rolling stats are non-NaN at the start of a new season.
+        # Without this, Opening Day predictions fail because the current-season feature
+        # matrix has zero completed games and all rolling averages are NaN.
         self._builder = FeatureBuilder(
-            seasons=[self.season],
+            seasons=[self.season - 1, self.season],
             as_of_date=self.today_str,
         )
         self._feature_matrix = None
