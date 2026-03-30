@@ -3,6 +3,7 @@ import { usePredictions } from './hooks/usePredictions';
 import { useLatestTimestamp } from './hooks/useLatestTimestamp';
 import { Header } from './components/Header';
 import { AccuracyStrip } from './components/AccuracyStrip';
+import { AboutModels } from './components/AboutModels';
 import { NewPredictionsBanner } from './components/NewPredictionsBanner';
 import { GameCardGrid } from './components/GameCardGrid';
 import { SkeletonCard } from './components/SkeletonCard';
@@ -56,6 +57,7 @@ function App() {
         isOffline={isOffline}
       />
       <AccuracyStrip />
+      <AboutModels />
       <NewPredictionsBanner
         visible={hasNewPredictions}
         onRefresh={handleRefresh}
