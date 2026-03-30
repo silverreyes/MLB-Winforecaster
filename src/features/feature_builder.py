@@ -494,8 +494,12 @@ class FeatureBuilder:
         for season in self.seasons:
             bat_df = fetch_team_batting(season)
             for _, row in bat_df.iterrows():
-                # Normalize FanGraphs codes to our canonical codes (e.g. ATH -> OAK)
-                team = normalize_team(row["Team"])
+                # Normalize FanGraphs codes to our canonical codes (e.g. ATH -> OAK).
+                # Skip aggregate/multi-team rows (FanGraphs uses '- - -' for traded players).
+                try:
+                    team = normalize_team(row["Team"])
+                except ValueError:
+                    continue
                 # OPS = OBP + SLG if not directly available
                 ops = row.get("OPS")
                 if ops is None or pd.isna(ops):
@@ -720,8 +724,12 @@ class FeatureBuilder:
                 ).to_dict("index")
 
                 for team, stats in team_bullpen.items():
-                    # Normalize FanGraphs codes to our canonical codes (e.g. ATH -> OAK)
-                    bullpen_lookup[(season, normalize_team(team))] = stats
+                    # Normalize FanGraphs codes to our canonical codes (e.g. ATH -> OAK).
+                    # Skip aggregate/multi-team rows (FanGraphs uses '- - -' for traded players).
+                    try:
+                        bullpen_lookup[(season, normalize_team(team))] = stats
+                    except ValueError:
+                        continue
 
         def _bullpen_stat(lookup, season, team, stat):
             """Look up a bullpen stat, falling back to season-1 if current season missing."""
