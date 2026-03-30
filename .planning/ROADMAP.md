@@ -54,11 +54,12 @@ Plans:
   2. Brier score comparison table shows v2 SP_ENHANCED vs v2 TEAM_ONLY vs v1 vs Kalshi market on identical 2025 out-of-sample games -- the comparison is apples-to-apples on the same game set
   3. Reliability diagrams (calibration curves) for all 6 model/feature-set combinations have been generated and visually inspected; no model is declared production-ready without this step
   4. VIF analysis confirms no feature in the final SP_ENHANCED set has VIF > 10, and SHAP TreeExplainer confirms no XGBoost feature has near-zero gain -- redundant/useless features have been dropped before final training
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 06-01: TBD
-- [ ] 06-02: TBD
+- [ ] 06-01-PLAN.md -- VIF and SHAP analysis modules + build v2 feature store + feature selection (MDL-05, MDL-06)
+- [ ] 06-02-PLAN.md -- Walk-forward v2 backtest, 2025 predictions, artifact persistence (MDL-01, MDL-02, MDL-07)
+- [ ] 06-03-PLAN.md -- Brier comparison table, reliability diagrams, visual inspection checkpoint (MDL-03, MDL-04)
 
 ### Phase 7: Live Pipeline and Database
 **Goal**: A three-run daily pipeline (pre-lineup, post-lineup, confirmation) populates Postgres with predictions, Kalshi edges, and SP metadata that downstream API endpoints can query
@@ -120,8 +121,8 @@ Phases execute in numeric order: 5 -> 6 -> 7 -> 8 -> 9
 | 2. Feature Engineering and Feature Store | v1.0 | 3/3 | Complete | 2026-03-29 |
 | 3. Model Training and Backtesting | v1.0 | 2/2 | Complete | 2026-03-29 |
 | 4. Kalshi Market Comparison and Edge Analysis | v1.0 | 2/2 | Complete | 2026-03-29 |
-| 5. SP Feature Integration | 4/4 | Complete   | 2026-03-29 | - |
-| 6. Model Retrain and Calibration | v2.0 | 0/? | Not started | - |
+| 5. SP Feature Integration | v2.0 | 4/4 | Complete | 2026-03-29 |
+| 6. Model Retrain and Calibration | v2.0 | 0/3 | Planning complete | - |
 | 7. Live Pipeline and Database | v2.0 | 0/? | Not started | - |
 | 8. API and Dashboard | v2.0 | 0/? | Not started | - |
 | 9. Infrastructure and Go-Live | v2.0 | 0/? | Not started | - |
