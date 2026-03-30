@@ -59,26 +59,26 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| GMTIME-01 | — | Pending |
-| GMTIME-02 | — | Pending |
-| GMTIME-03 | — | Pending |
-| HEADER-01 | — | Pending |
-| HEADER-02 | — | Pending |
-| EXPLAIN-01 | — | Pending |
-| EXPLAIN-02 | — | Pending |
-| EXPLAIN-03 | — | Pending |
-| EXPLAIN-04 | — | Pending |
-| EXPLAIN-05 | — | Pending |
-| EXPLAIN-06 | — | Pending |
-| EXPLAIN-07 | — | Pending |
-| TLTP-01 | — | Pending |
-| TLTP-02 | — | Pending |
+| GMTIME-01 | Phase 10 | Pending |
+| GMTIME-02 | Phase 10 | Pending |
+| GMTIME-03 | Phase 10 | Pending |
+| HEADER-01 | Phase 11 | Pending |
+| HEADER-02 | Phase 11 | Pending |
+| EXPLAIN-01 | Phase 12 | Pending |
+| EXPLAIN-02 | Phase 12 | Pending |
+| EXPLAIN-03 | Phase 12 | Pending |
+| EXPLAIN-04 | Phase 12 | Pending |
+| EXPLAIN-05 | Phase 12 | Pending |
+| EXPLAIN-06 | Phase 12 | Pending |
+| EXPLAIN-07 | Phase 12 | Pending |
+| TLTP-01 | Phase 12 | Pending |
+| TLTP-02 | Phase 12 | Pending |
 
 **Coverage:**
 - v2.1 requirements: 14 total
-- Mapped to phases: 0
-- Unmapped: 14 ⚠️
+- Mapped to phases: 14
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-30*
-*Last updated: 2026-03-30 after initial definition*
+*Last updated: 2026-03-30 after roadmap creation*
