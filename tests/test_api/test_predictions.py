@@ -2,8 +2,10 @@
 
 Tests cover:
 - GET /api/v1/predictions/today with empty and populated results
-- GET /api/v1/predictions/{date} for historical dates
+- GET /api/v1/predictions/today game_time from schedule lookup
+- GET /api/v1/predictions/{date} for historical dates (game_time null)
 - GET /api/v1/predictions/latest-timestamp with and without data
+- Graceful degradation when schedule fetch fails
 """
 
 from datetime import date, datetime, timezone
@@ -54,6 +56,21 @@ SAMPLE_ROW_2 = {
     "created_at": datetime(2025, 6, 15, 14, 0, tzinfo=timezone.utc),
 }
 
+MOCK_SCHEDULE = [
+    {
+        "home_name": "New York Yankees",
+        "away_name": "Boston Red Sox",
+        "game_datetime": "2025-06-15T23:05:00Z",
+        "game_type": "R",
+    },
+    {
+        "home_name": "Los Angeles Dodgers",
+        "away_name": "San Francisco Giants",
+        "game_datetime": "2025-06-16T01:10:00Z",
+        "game_type": "R",
+    },
+]
+
 
 def _mock_pool_fetchall(mock_pool, rows):
     """Configure mock_pool so pool.connection().cursor().fetchall() returns rows."""
@@ -90,7 +107,8 @@ class TestTodayEndpoint:
 
     def test_today_endpoint_empty(self, client, mock_pool):
         _mock_pool_fetchall(mock_pool, [])
-        resp = client.get("/api/v1/predictions/today")
+        with patch("api.routes.predictions.fetch_today_schedule", return_value=[]):
+            resp = client.get("/api/v1/predictions/today")
         assert resp.status_code == 200
         data = resp.json()
         assert data["predictions"] == []
@@ -99,7 +117,8 @@ class TestTodayEndpoint:
 
     def test_today_endpoint_with_data(self, client, mock_pool):
         _mock_pool_fetchall(mock_pool, [SAMPLE_ROW, SAMPLE_ROW_2])
-        resp = client.get("/api/v1/predictions/today")
+        with patch("api.routes.predictions.fetch_today_schedule", return_value=MOCK_SCHEDULE):
+            resp = client.get("/api/v1/predictions/today")
         assert resp.status_code == 200
         data = resp.json()
         assert len(data["predictions"]) == 2
@@ -113,6 +132,10 @@ class TestTodayEndpoint:
         assert p1["home_team"] == "NYY"
         assert p1["away_team"] == "BOS"
 
+        # game_time should be populated from schedule data
+        assert p1["game_time"] is not None
+        assert "2025-06-15T23:05:00" in p1["game_time"]
+
         # Check second prediction (LAD vs SFG) -- no kalshi price
         p2 = data["predictions"][1]
         expected_ensemble_2 = round((0.65 + 0.62 + 0.68) / 3, 4)
@@ -120,8 +143,32 @@ class TestTodayEndpoint:
         assert p2["edge_magnitude"] is None  # No kalshi price
         assert p2["kalshi_yes_price"] is None
 
+        # game_time should also be populated for second matchup
+        assert p2["game_time"] is not None
+        assert "2025-06-16T01:10:00" in p2["game_time"]
+
         # latest_prediction_at should be the max created_at
         assert data["latest_prediction_at"] is not None
+
+    def test_today_endpoint_game_time_null_when_no_schedule(self, client, mock_pool):
+        """When schedule returns no games, game_time should be null for all predictions."""
+        _mock_pool_fetchall(mock_pool, [SAMPLE_ROW, SAMPLE_ROW_2])
+        with patch("api.routes.predictions.fetch_today_schedule", return_value=[]):
+            resp = client.get("/api/v1/predictions/today")
+        assert resp.status_code == 200
+        data = resp.json()
+        for pred in data["predictions"]:
+            assert pred["game_time"] is None
+
+    def test_today_endpoint_schedule_fetch_fails_gracefully(self, client, mock_pool):
+        """When schedule fetch raises an exception, endpoint still returns 200 with game_time null."""
+        _mock_pool_fetchall(mock_pool, [SAMPLE_ROW])
+        with patch("api.routes.predictions.fetch_today_schedule", side_effect=Exception("API down")):
+            resp = client.get("/api/v1/predictions/today")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data["predictions"]) == 1
+        assert data["predictions"][0]["game_time"] is None
 
 
 class TestDateEndpoint:
@@ -134,6 +181,8 @@ class TestDateEndpoint:
         data = resp.json()
         assert len(data["predictions"]) == 1
         assert data["predictions"][0]["home_team"] == "NYY"
+        # Historical date endpoint does NOT do schedule lookup -- game_time is null
+        assert data["predictions"][0]["game_time"] is None
 
     def test_date_endpoint_invalid_format(self, client, mock_pool):
         resp = client.get("/api/v1/predictions/not-a-date")
