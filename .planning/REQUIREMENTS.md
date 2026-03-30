@@ -64,13 +64,13 @@
 ### Infrastructure & Deployment (Track 2)
 
 - [x] **INFRA-01**: Docker Compose stack (services: `api`, `worker`, `db`) deployed on port 8082; explicit memory limits set in `docker-compose.yml` before first VPS deploy (`api: 512M`, `worker: 1G`, `db: 512M`); before deploying, audit GamePredictor container memory consumption via `docker stats --no-stream` to confirm remaining headroom is sufficient (shared VPS: 8GB total, Ghost CMS + GamePredictor + OS baseline already consuming ~2.4GB).
-- [ ] **INFRA-02**: Host Nginx server block for `mlbforecaster.silverreyes.net` proxying to port 8082; config validated with `nginx -t` and tested in a staging pass before `nginx -s reload` on production.
-- [ ] **INFRA-03**: Certbot SSL certificate issued for `mlbforecaster.silverreyes.net`; renewal dry-run tested (`certbot renew --dry-run`) before go-live.
+- [x] **INFRA-02**: Host Nginx server block for `mlbforecaster.silverreyes.net` proxying to port 8082; config validated with `nginx -t` and tested in a staging pass before `nginx -s reload` on production.
+- [x] **INFRA-03**: Certbot SSL certificate issued for `mlbforecaster.silverreyes.net`; renewal dry-run tested (`certbot renew --dry-run`) before go-live.
 - [x] **INFRA-04**: Postgres data in a named Docker volume (`mlb_pgdata`); volume persistence verified by stop/start cycle before go-live; daily `pg_dump` backup cron to `/opt/backups/mlb/` with 7-day retention.
 
 ### Portfolio Page (Track 2)
 
-- [ ] **PORT-01**: Static Astro page at `silverreyes.net/mlb-winforecaster` — methodology overview, Brier score comparison table (v1 vs v2 TEAM\_ONLY vs v2 SP\_ENHANCED vs Kalshi), calibration curve images, link to live dashboard at `mlbforecaster.silverreyes.net`; no backend API calls from the portfolio page.
+- [x] **PORT-01**: Static Astro page at `silverreyes.net/mlb-winforecaster` — methodology overview, Brier score comparison table (v1 vs v2 TEAM\_ONLY vs v2 SP\_ENHANCED vs Kalshi), calibration curve images, link to live dashboard at `mlbforecaster.silverreyes.net`; no backend API calls from the portfolio page.
 
 ---
 
@@ -159,10 +159,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DASH-06 | Phase 8 | Complete |
 | DASH-07 | Phase 8 | Complete |
 | INFRA-01 | Phase 9 | Complete |
-| INFRA-02 | Phase 9 | Pending |
-| INFRA-03 | Phase 9 | Pending |
+| INFRA-02 | Phase 9 | Complete |
+| INFRA-03 | Phase 9 | Complete |
 | INFRA-04 | Phase 9 | Complete |
-| PORT-01 | Phase 9 | Pending |
+| PORT-01 | Phase 9 | Complete |
 
 **Coverage:**
 - v2.0 requirements: 45 total
