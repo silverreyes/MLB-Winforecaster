@@ -27,6 +27,7 @@ from src.data.sp_stats import fetch_sp_stats
 from src.data.team_batting import fetch_team_batting
 from src.data.statcast import fetch_statcast_pitcher
 from src.data.kalshi import fetch_kalshi_markets
+from src.data.team_mappings import normalize_team
 from src.features.formulas import (
     log5_probability,
     pythagorean_win_pct,
@@ -493,7 +494,8 @@ class FeatureBuilder:
         for season in self.seasons:
             bat_df = fetch_team_batting(season)
             for _, row in bat_df.iterrows():
-                team = row["Team"]
+                # Normalize FanGraphs codes to our canonical codes (e.g. ATH -> OAK)
+                team = normalize_team(row["Team"])
                 # OPS = OBP + SLG if not directly available
                 ops = row.get("OPS")
                 if ops is None or pd.isna(ops):
@@ -718,7 +720,8 @@ class FeatureBuilder:
                 ).to_dict("index")
 
                 for team, stats in team_bullpen.items():
-                    bullpen_lookup[(season, team)] = stats
+                    # Normalize FanGraphs codes to our canonical codes (e.g. ATH -> OAK)
+                    bullpen_lookup[(season, normalize_team(team))] = stats
 
         def _bullpen_stat(lookup, season, team, stat):
             """Look up a bullpen stat, falling back to season-1 if current season missing."""
