@@ -7,7 +7,12 @@ import logging
 import pandas as pd
 from src.models.train import make_lr_pipeline, make_rf_pipeline, make_xgb_model
 from src.models.calibrate import calibrate_model
-from src.models.feature_sets import CORE_FEATURE_COLS, TARGET_COL
+from src.models.feature_sets import (
+    CORE_FEATURE_COLS,
+    SP_ENHANCED_PRUNED_COLS,
+    TARGET_COL,
+    TEAM_ONLY_FEATURE_COLS,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -78,6 +83,73 @@ def predict_2025(df: pd.DataFrame) -> pd.DataFrame:
                 "home_win": row["home_win"],
                 "model_name": model_name,
                 "feature_set": "core",
+                "fold_test_year": TEST_SEASON,
+                "prob_calibrated": cal_probs[i],
+                "prob_raw": raw_probs[i],
+            })
+
+    return pd.DataFrame(results)
+
+
+# v2 model/feature-set combinations for 2025 predictions
+V2_PREDICT_COMBINATIONS = [
+    ("lr", make_lr_pipeline, TEAM_ONLY_FEATURE_COLS, "team_only", False),
+    ("lr", make_lr_pipeline, SP_ENHANCED_PRUNED_COLS, "sp_enhanced", False),
+    ("rf", make_rf_pipeline, TEAM_ONLY_FEATURE_COLS, "team_only", False),
+    ("rf", make_rf_pipeline, SP_ENHANCED_PRUNED_COLS, "sp_enhanced", False),
+    ("xgb", make_xgb_model, TEAM_ONLY_FEATURE_COLS, "team_only", True),
+    ("xgb", make_xgb_model, SP_ENHANCED_PRUNED_COLS, "sp_enhanced", True),
+]
+
+
+def predict_2025_v2(df: pd.DataFrame) -> pd.DataFrame:
+    """Run all 6 v2 models on the 2025 fold.
+
+    Train 2015-2023, calibrate 2024, test 2025.
+    Returns DataFrame with same schema as predict_2025 but with 6 model/feature-set combos.
+    """
+    df_clean = df[df["rolling_ops_diff"].notna()].copy()
+    train_df = df_clean[df_clean["season"].isin(TRAIN_SEASONS)]
+    cal_df = df_clean[df_clean["season"] == CAL_SEASON]
+    test_df = df_clean[df_clean["season"] == TEST_SEASON]
+
+    logger.info(
+        "2025 v2 fold: %d train, %d cal, %d test rows",
+        len(train_df), len(cal_df), len(test_df),
+    )
+
+    results = []
+    for model_name, factory, feature_cols, feature_set_name, is_xgb in V2_PREDICT_COMBINATIONS:
+        logger.info("Training v2 %s (%s) for 2025 fold...", model_name, feature_set_name)
+        model = factory()
+
+        X_train = train_df[feature_cols]
+        y_train = train_df[TARGET_COL]
+        X_cal = cal_df[feature_cols]
+        y_cal = cal_df[TARGET_COL]
+        X_test = test_df[feature_cols]
+
+        if is_xgb:
+            n_val = int(len(X_train) * 0.2)
+            X_tr = X_train.iloc[:-n_val]
+            y_tr = y_train.iloc[:-n_val]
+            X_val = X_train.iloc[-n_val:]
+            y_val = y_train.iloc[-n_val:]
+            model.fit(X_tr, y_tr, eval_set=[(X_val, y_val)], verbose=False)
+        else:
+            model.fit(X_train, y_train)
+
+        cal_probs, raw_probs = calibrate_model(model, X_cal, y_cal, X_test)
+
+        for i, (_, row) in enumerate(test_df.iterrows()):
+            results.append({
+                "game_date": row["game_date"],
+                "home_team": row["home_team"],
+                "away_team": row["away_team"],
+                "season": row["season"],
+                "home_win": row["home_win"],
+                "model_name": model_name,
+                "feature_set": feature_set_name,
                 "fold_test_year": TEST_SEASON,
                 "prob_calibrated": cal_probs[i],
                 "prob_raw": raw_probs[i],

@@ -16,11 +16,15 @@ import logging
 
 import pandas as pd
 
+from sklearn.isotonic import IsotonicRegression
+
 from src.models.calibrate import calibrate_model
 from src.models.feature_sets import (
     CORE_FEATURE_COLS,
     FULL_FEATURE_COLS,
+    SP_ENHANCED_PRUNED_COLS,
     TARGET_COL,
+    TEAM_ONLY_FEATURE_COLS,
 )
 from src.models.train import make_lr_pipeline, make_rf_pipeline, make_xgb_model
 
@@ -34,6 +38,20 @@ FOLD_MAP = [
     (2022, list(range(2015, 2021)), 2021),   # train 2015-2020, cal 2021, test 2022
     (2023, list(range(2015, 2022)), 2022),   # train 2015-2021, cal 2022, test 2023
     (2024, list(range(2015, 2023)), 2023),   # train 2015-2022, cal 2023, test 2024
+]
+
+# v2 uses the same 5-fold walk-forward structure
+V2_FOLD_MAP = FOLD_MAP
+
+# v2 model/feature-set combinations: 3 models x 2 feature sets = 6 combos
+# SP_ENHANCED uses the pruned 17-feature set from Plan 06-01 VIF/SHAP analysis
+V2_COMBINATIONS = [
+    ('lr', make_lr_pipeline, TEAM_ONLY_FEATURE_COLS, 'team_only', False),
+    ('lr', make_lr_pipeline, SP_ENHANCED_PRUNED_COLS, 'sp_enhanced', False),
+    ('rf', make_rf_pipeline, TEAM_ONLY_FEATURE_COLS, 'team_only', False),
+    ('rf', make_rf_pipeline, SP_ENHANCED_PRUNED_COLS, 'sp_enhanced', False),
+    ('xgb', make_xgb_model, TEAM_ONLY_FEATURE_COLS, 'team_only', True),
+    ('xgb', make_xgb_model, SP_ENHANCED_PRUNED_COLS, 'sp_enhanced', True),
 ]
 
 
@@ -168,3 +186,109 @@ def run_all_models(df: pd.DataFrame) -> pd.DataFrame:
         all_results.append(result_df)
 
     return pd.concat(all_results, ignore_index=True)
+
+
+def run_backtest_with_artifact(
+    df: pd.DataFrame,
+    model_factory,
+    model_name: str,
+    feature_cols: list[str],
+    feature_set_name: str,
+    is_xgb: bool = False,
+) -> tuple[pd.DataFrame, dict]:
+    """Run walk-forward backtest and return results + final fold artifact.
+
+    Identical to run_backtest, but also captures the fitted model and
+    calibrator from the last fold for artifact persistence.
+
+    Returns:
+        Tuple of (results_df, artifact_dict) where artifact_dict contains:
+        - 'model': fitted model from last fold
+        - 'calibrator': fitted IsotonicRegression from last fold
+        - 'feature_cols': list of feature column names
+        - 'model_name': str
+        - 'feature_set': str
+    """
+    folds = generate_folds(df)
+    results = []
+    last_model = None
+    last_calibrator = None
+
+    for fold_idx, (train_df, cal_df, test_df) in enumerate(folds):
+        test_year = FOLD_MAP[fold_idx][0]
+
+        X_train = train_df[feature_cols]
+        y_train = train_df[TARGET_COL]
+        X_cal = cal_df[feature_cols]
+        y_cal = cal_df[TARGET_COL]
+        X_test = test_df[feature_cols]
+
+        # Train base model
+        model = model_factory()
+        if is_xgb:
+            n_val = int(len(X_train) * 0.2)
+            X_tr = X_train.iloc[:-n_val]
+            y_tr = y_train.iloc[:-n_val]
+            X_val = X_train.iloc[-n_val:]
+            y_val = y_train.iloc[-n_val:]
+            model.fit(
+                X_tr, y_tr,
+                eval_set=[(X_val, y_val)],
+                verbose=False,
+            )
+        else:
+            model.fit(X_train, y_train)
+
+        # Inline calibration to capture the IsotonicRegression object
+        raw_probs_cal = model.predict_proba(X_cal)[:, 1]
+        iso = IsotonicRegression(out_of_bounds='clip')
+        iso.fit(raw_probs_cal, y_cal.values)
+        raw_probs_test = model.predict_proba(X_test)[:, 1]
+        cal_probs = iso.predict(raw_probs_test)
+
+        # Capture artifacts from each fold (last fold wins)
+        last_model = model
+        last_calibrator = iso
+
+        # Collect per-game results
+        for i, (_, row) in enumerate(test_df.iterrows()):
+            results.append({
+                'game_date': row['game_date'],
+                'home_team': row['home_team'],
+                'away_team': row['away_team'],
+                'season': row['season'],
+                'home_win': row['home_win'],
+                'model_name': model_name,
+                'feature_set': feature_set_name,
+                'fold_test_year': test_year,
+                'prob_calibrated': cal_probs[i],
+                'prob_raw': raw_probs_test[i],
+            })
+
+    artifact = {
+        'model': last_model,
+        'calibrator': last_calibrator,
+        'feature_cols': list(feature_cols),
+        'model_name': model_name,
+        'feature_set': feature_set_name,
+    }
+
+    return pd.DataFrame(results), artifact
+
+
+def run_all_v2_models(df: pd.DataFrame) -> tuple[pd.DataFrame, list[dict]]:
+    """Run backtest for all 6 v2 model/feature-set combinations.
+
+    Returns:
+        Tuple of (all_results_df, list_of_artifact_dicts).
+    """
+    all_results = []
+    all_artifacts = []
+    for model_name, factory, feature_cols, feature_set_name, is_xgb in V2_COMBINATIONS:
+        logger.info(f"Running v2 {model_name} on {feature_set_name}...")
+        result_df, artifact = run_backtest_with_artifact(
+            df, factory, model_name, feature_cols, feature_set_name, is_xgb
+        )
+        all_results.append(result_df)
+        all_artifacts.append(artifact)
+    return pd.concat(all_results, ignore_index=True), all_artifacts
