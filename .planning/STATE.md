@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: Dashboard UX / Contextual Clarity
-status: ready_to_plan
-stopped_at: Roadmap created for v2.1 (3 phases, 14 requirements mapped)
-last_updated: "2026-03-30T00:00:00.000Z"
-last_activity: 2026-03-30 -- v2.1 roadmap created
+status: completed
+stopped_at: Completed 10-01-PLAN.md
+last_updated: "2026-03-30T20:45:26.045Z"
+last_activity: 2026-03-30 -- Phase 10 Plan 01 completed (game_time in API + ET display)
 progress:
   total_phases: 3
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  completed_phases: 1
+  total_plans: 1
+  completed_plans: 1
+  percent: 100
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-30 -- v2.1 roadmap created)
 
 **Core value:** Produce well-calibrated win probability estimates that can be rigorously compared against Kalshi market prices, surfacing where models agree, disagree, and where edges may exist.
-**Current focus:** v2.1 Phase 10 -- Game Time Display (ready to plan)
+**Current focus:** v2.1 Phase 10 -- Game Time Display (complete)
 
 ## Current Position
 
 Phase: 10 of 12 (Game Time Display)
-Plan: 0 of ? in current phase
-Status: Ready to plan
-Last activity: 2026-03-30 -- v2.1 roadmap created (3 phases, 14 requirements)
+Plan: 1 of 1 in current phase (complete)
+Status: Phase 10 complete -- ready for Phase 11
+Last activity: 2026-03-30 -- Phase 10 Plan 01 completed (game_time in API + ET display)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -56,6 +56,7 @@ Recent decisions affecting current work:
 - [v2.1 Roadmap]: GMTIME-01 is the only backend change (api/routes/predictions.py); all other requirements are pure frontend
 - [v2.1 Roadmap]: EXPLAIN + TLTP grouped into single phase (both informational UI, 9 requirements)
 - [v2.1 Scope]: No pipeline/DB changes; match existing dark amber aesthetic; mobile must not break
+- [Phase 10]: game_time field uses datetime|None in Pydantic (not str|None) for server-side validation; ET conversion done client-side via Intl.DateTimeFormat
 
 ### Pending Todos
 
@@ -69,6 +70,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30
-Stopped at: v2.1 roadmap created -- ready to plan Phase 10
+Last session: 2026-03-30T20:45:26.042Z
+Stopped at: Completed 10-01-PLAN.md
 Resume file: None

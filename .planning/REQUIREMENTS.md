@@ -10,9 +10,9 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Game Time (GMTIME)
 
-- [ ] **GMTIME-01**: Backend exposes `game_time` (UTC ISO string or null) in prediction response, sourced from `game_datetime` in schedule data — entry point: `api/routes/predictions.py`
-- [ ] **GMTIME-02**: Game card displays game time converted to Eastern Time ("7:05 PM ET") using `Intl.DateTimeFormat` with `timeZone: "America/New_York"`
-- [ ] **GMTIME-03**: Game card displays "Time TBD" when `game_time` is null
+- [x] **GMTIME-01**: Backend exposes `game_time` (UTC ISO string or null) in prediction response, sourced from `game_datetime` in schedule data — entry point: `api/routes/predictions.py`
+- [x] **GMTIME-02**: Game card displays game time converted to Eastern Time ("7:05 PM ET") using `Intl.DateTimeFormat` with `timeZone: "America/New_York"`
+- [x] **GMTIME-03**: Game card displays "Time TBD" when `game_time` is null
 
 ### Header Clock (HEADER)
 
@@ -59,9 +59,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| GMTIME-01 | Phase 10 | Pending |
-| GMTIME-02 | Phase 10 | Pending |
-| GMTIME-03 | Phase 10 | Pending |
+| GMTIME-01 | Phase 10 | Complete |
+| GMTIME-02 | Phase 10 | Complete |
+| GMTIME-03 | Phase 10 | Complete |
 | HEADER-01 | Phase 11 | Pending |
 | HEADER-02 | Phase 11 | Pending |
 | EXPLAIN-01 | Phase 12 | Pending |
