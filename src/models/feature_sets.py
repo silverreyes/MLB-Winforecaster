@@ -59,6 +59,28 @@ SP_ENHANCED_FEATURE_COLS = [
     'log5_home_wp',
 ]
 
+# --- v2 SP-Enhanced Pruned Feature Set (post VIF/SHAP analysis from Plan 06-01) ---
+# Removed: is_home (constant=inf VIF), team_woba_diff (VIF=163), sp_siera_diff (VIF=18)
+SP_ENHANCED_PRUNED_COLS = [
+    'sp_fip_diff',
+    'sp_xfip_diff',
+    'sp_k_bb_pct_diff',
+    'sp_whip_diff',
+    'sp_era_diff',
+    'sp_recent_era_diff',
+    'sp_recent_fip_diff',
+    'sp_pitch_count_last_diff',
+    'sp_days_rest_diff',
+    'xwoba_diff',
+    'team_ops_diff',
+    'pyth_win_pct_diff',
+    'rolling_ops_diff',
+    'bullpen_era_diff',
+    'bullpen_fip_diff',
+    'park_factor',
+    'log5_home_wp',
+]
+
 # Backward-compatible aliases (FULL_FEATURE_COLS = V1 for existing code)
 FULL_FEATURE_COLS = V1_FULL_FEATURE_COLS
 CORE_FEATURE_COLS = [c for c in V1_FULL_FEATURE_COLS if c != 'sp_recent_era_diff']
