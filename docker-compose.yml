@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:16-bookworm
+    mem_limit: 512m
+    environment:
+      POSTGRES_DB: mlb_forecaster
+      POSTGRES_USER: mlb
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - mlb_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "mlb", "-d", "mlb_forecaster"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  api:
+    build: .
+    mem_limit: 512m
+    ports:
+      - "8082:8000"
+    environment:
+      DATABASE_URL: postgresql://mlb:${POSTGRES_PASSWORD}@db:5432/mlb_forecaster
+      KALSHI_API_KEY: ${KALSHI_API_KEY:-}
+    volumes:
+      - ./models/artifacts:/app/models/artifacts:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  worker:
+    build: .
+    command: ["python", "scripts/run_pipeline.py"]
+    mem_limit: 1024m
+    environment:
+      DATABASE_URL: postgresql://mlb:${POSTGRES_PASSWORD}@db:5432/mlb_forecaster
+      KALSHI_API_KEY: ${KALSHI_API_KEY:-}
+    volumes:
+      - ./models/artifacts:/app/models/artifacts:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  mlb_pgdata:
