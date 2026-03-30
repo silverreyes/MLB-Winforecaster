@@ -40,7 +40,7 @@ RUN pip install --no-cache-dir --no-deps .
 
 # Pre-warm pybaseball's Chadwick register cache so the first pipeline run
 # doesn't stall downloading the ZIP from GitHub at container startup.
-RUN python -c "from pybaseball.playerid_lookup import chadwick_register; chadwick_register()"
+RUN python -c "from pybaseball.playerid_lookup import chadwick_register; chadwick_register(save=True)"
 
 EXPOSE 8000
 
