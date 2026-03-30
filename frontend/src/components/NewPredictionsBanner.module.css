@@ -1,0 +1,32 @@
+.banner {
+  background: rgba(217, 119, 6, 0.15);
+  padding: 12px var(--space-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+}
+
+.message {
+  font-family: var(--font-ui);
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--color-accent-muted);
+}
+
+.button {
+  font-family: var(--font-ui);
+  font-size: 16px;
+  font-weight: 600;
+  color: #0A0A0F;
+  background: var(--color-accent);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.button:hover {
+  background: var(--color-accent-muted);
+}

@@ -1,0 +1,26 @@
+.container {
+  max-width: 480px;
+  margin: var(--space-2xl) auto;
+  padding: var(--space-lg);
+  background: #12121A;
+  border: 1px solid #1E1E2A;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.heading {
+  font-family: var(--font-ui);
+  font-size: 20px;
+  font-weight: 600;
+  color: #E8E8ED;
+  margin: 0 0 var(--space-sm);
+}
+
+.body {
+  font-family: var(--font-ui);
+  font-size: 16px;
+  font-weight: 400;
+  color: #8A8A9A;
+  margin: 0;
+  line-height: 1.5;
+}
