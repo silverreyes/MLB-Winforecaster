@@ -88,12 +88,12 @@ Plans:
   3. Client-side polling fires every 60 seconds against `/api/v1/predictions/latest-timestamp` when `document.visibilityState === 'visible'`, suspends on `visibilitychange` to `'hidden'`, and resumes on return to `'visible'`; a "New predictions available -- refresh" banner appears when the polled timestamp is newer than displayed data
   4. When the API is unreachable, the dashboard renders an explicit error state (not a blank page or infinite spinner) showing last-known data with a "Dashboard offline" indicator and timestamp of last successful fetch
   5. All 6 model artifacts are loaded at FastAPI startup via lifespan context manager; no model loading inside request handlers; API fails to start (not silently) if any artifact is missing
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 08-01: TBD
-- [ ] 08-02: TBD
-- [ ] 08-03: TBD
+- [ ] 08-01-PLAN.md -- FastAPI app scaffold, all 5 API endpoints, test suite (API-01, API-02, API-03, API-04, API-05, API-06)
+- [ ] 08-02-PLAN.md -- React 19 frontend scaffold, all dashboard UI components, game cards (DASH-01, DASH-02, DASH-03, DASH-04)
+- [ ] 08-03-PLAN.md -- Polling, staleness, error states, visual verification checkpoint (DASH-05, DASH-06, DASH-07)
 
 ### Phase 9: Infrastructure and Go-Live
 **Goal**: The complete stack is deployed to the Hostinger KVM 2 VPS with verified memory headroom, SSL, backups, and a portfolio page linking to the live dashboard
@@ -123,6 +123,6 @@ Phases execute in numeric order: 5 -> 6 -> 7 -> 8 -> 9
 | 4. Kalshi Market Comparison and Edge Analysis | v1.0 | 2/2 | Complete | 2026-03-29 |
 | 5. SP Feature Integration | v2.0 | 4/4 | Complete | 2026-03-29 |
 | 6. Model Retrain and Calibration | v2.0 | 3/3 | Complete | 2026-03-30 |
-| 7. Live Pipeline and Database | 3/3 | Complete   | 2026-03-30 | - |
-| 8. API and Dashboard | v2.0 | 0/? | Not started | - |
+| 7. Live Pipeline and Database | v2.0 | 3/3 | Complete | 2026-03-30 |
+| 8. API and Dashboard | v2.0 | 0/3 | Not started | - |
 | 9. Infrastructure and Go-Live | v2.0 | 0/? | Not started | - |
