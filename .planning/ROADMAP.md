@@ -3,7 +3,7 @@
 ## Milestones
 
 - ✅ **v1.0 MVP** -- Phases 1-4 (shipped 2026-03-29) -- [Archive](.planning/milestones/v1.0-ROADMAP.md)
-- 🚧 **v2.0 Live Platform** -- Phases 5-9 (in progress)
+- ✅ **v2.0 Live Platform** -- Phases 5-9 (shipped 2026-03-30)
 
 ## Phases
 
@@ -17,13 +17,13 @@
 
 </details>
 
-### v2.0 Live Platform (In Progress)
+### v2.0 Live Platform (Complete)
 
 - [x] **Phase 5: SP Feature Integration** - Fix data bugs, convert SP stats to rolling season-to-date, add new SP features, produce v2 feature store (completed 2026-03-29)
 - [x] **Phase 6: Model Retrain and Calibration** - Train 6 model artifacts (3 models x 2 feature sets), calibrate, validate, persist (completed 2026-03-30)
 - [x] **Phase 7: Live Pipeline and Database** - Postgres schema, three-run daily pipeline (10am/1pm/5pm), Kalshi edge computation at insert time (completed 2026-03-30)
 - [x] **Phase 8: API and Dashboard** - FastAPI read layer over Postgres, React frontend with dark/amber aesthetic, client-side polling, error states (completed 2026-03-30)
-- [ ] **Phase 9: Infrastructure and Go-Live** - Docker Compose on VPS with memory limits, Nginx + SSL, Postgres backups, portfolio page
+- [x] **Phase 9: Infrastructure and Go-Live** - Docker Compose on VPS with memory limits, Nginx + SSL, Postgres backups, portfolio page (completed 2026-03-30)
 
 ## Phase Details
 
@@ -104,12 +104,12 @@ Plans:
   2. `https://mlbforecaster.silverreyes.net` serves the dashboard over SSL; Nginx server block is validated with `nginx -t` before reload; Certbot renewal dry-run (`certbot renew --dry-run`) passes
   3. Postgres data persists in named Docker volume `mlb_pgdata` (verified by stop/start cycle before go-live); daily `pg_dump` backup cron writes to `/opt/backups/mlb/` with 7-day retention
   4. Portfolio page at `silverreyes.net/mlb-winforecaster` displays methodology overview, Brier score comparison table (v1 vs v2 TEAM_ONLY vs v2 SP_ENHANCED vs Kalshi), calibration curve images, and links to the live dashboard -- no backend API calls from the portfolio page
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
-- [ ] 09-01-PLAN.md -- Docker configuration: Dockerfile, docker-compose.yml, .dockerignore, memory audit and backup scripts (INFRA-01, INFRA-04)
-- [ ] 09-02-PLAN.md -- Nginx config template and Astro portfolio page with methodology and Brier scores (INFRA-02, INFRA-03, PORT-01)
-- [ ] 09-03-PLAN.md -- Environment template and VPS deployment verification checkpoint (INFRA-01, INFRA-02, INFRA-03, INFRA-04)
+- [x] 09-01-PLAN.md -- Docker configuration: Dockerfile, docker-compose.yml, .dockerignore, memory audit and backup scripts (INFRA-01, INFRA-04)
+- [x] 09-02-PLAN.md -- Nginx config template and Astro portfolio page with methodology and Brier scores (INFRA-02, INFRA-03, PORT-01)
+- [x] 09-03-PLAN.md -- Environment template and VPS deployment verification checkpoint (INFRA-01, INFRA-02, INFRA-03, INFRA-04)
 
 ## Progress
 
@@ -126,4 +126,4 @@ Phases execute in numeric order: 5 -> 6 -> 7 -> 8 -> 9
 | 6. Model Retrain and Calibration | v2.0 | 3/3 | Complete | 2026-03-30 |
 | 7. Live Pipeline and Database | v2.0 | 3/3 | Complete | 2026-03-30 |
 | 8. API and Dashboard | v2.0 | 3/3 | Complete | 2026-03-30 |
-| 9. Infrastructure and Go-Live | v2.0 | 1/3 | In Progress | - |
+| 9. Infrastructure and Go-Live | v2.0 | 3/3 | Complete | 2026-03-30 |
