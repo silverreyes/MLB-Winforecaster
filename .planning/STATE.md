@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Live Platform
-status: completed
-stopped_at: Completed 05-04-PLAN.md (SP feature integration capstone - Phase 5 complete)
-last_updated: "2026-03-29T23:18:58.624Z"
-last_activity: 2026-03-29 -- Completed 05-04 (SP feature integration capstone - Phase 5 complete)
+status: in-progress
+stopped_at: Completed 06-01-PLAN.md (VIF/SHAP feature selection analysis)
+last_updated: "2026-03-30T01:17:24Z"
+last_activity: 2026-03-30 -- Completed 06-01 (VIF/SHAP feature selection analysis)
 progress:
   total_phases: 5
   completed_phases: 1
-  total_plans: 4
-  completed_plans: 4
-  percent: 20
+  total_plans: 3
+  completed_plans: 1
+  percent: 27
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-29 -- v2.0 milestone started)
 
 **Core value:** Produce well-calibrated win probability estimates that can be rigorously compared against Kalshi market prices, surfacing where models agree, disagree, and where edges may exist.
-**Current focus:** Phase 5 -- SP Feature Integration
+**Current focus:** Phase 6 -- Model Retrain and Calibration
 
 ## Current Position
 
-Phase: 5 of 9 (SP Feature Integration) -- COMPLETE
-Plan: 4 of 4 in current phase (phase complete)
-Status: Phase 5 complete, ready for Phase 6
-Last activity: 2026-03-29 -- Completed 05-04 (SP feature integration capstone - Phase 5 complete)
+Phase: 6 of 9 (Model Retrain and Calibration) -- IN PROGRESS
+Plan: 1 of 3 in current phase (06-01 complete)
+Status: Plan 06-01 complete, ready for 06-02
+Last activity: 2026-03-30 -- Completed 06-01 (VIF/SHAP feature selection analysis)
 
-Progress: [==........] 20%
+Progress: [===.......] 27%
 
 ## Performance Metrics
 
@@ -51,6 +51,7 @@ Progress: [==........] 20%
 
 *Updated after each plan completion*
 | Phase 05 P04 | 12min | 2 tasks | 4 files |
+| Phase 06 P01 | 6min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -79,6 +80,9 @@ Recent decisions affecting current work:
 - [05-04]: sp_k_pct_diff replaced by sp_k_bb_pct_diff in v2 SP_ENHANCED set
 - [05-04]: build_and_save_v2 is a FeatureBuilder method (not standalone) for consistency
 - [Phase 05]: Three named feature set constants: TEAM_ONLY (9 cols), SP_ENHANCED (20 cols), V1_FULL (14 cols)
+- [06-01]: VIF pruned 3 features: is_home (constant=inf), team_woba_diff (VIF=163, redundant), sp_siera_diff (VIF=18, redundant FIP-family)
+- [06-01]: SHAP kept all 17 post-VIF features (none below 0.1% importance threshold)
+- [06-01]: Final v2 pruned set: 17 features (from 20 SP_ENHANCED); top SHAP: pyth_win_pct_diff (27%), sp_whip_diff (27%)
 
 ### Pending Todos
 
@@ -93,6 +97,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-29T23:12:17.438Z
-Stopped at: Completed 05-04-PLAN.md (SP feature integration capstone - Phase 5 complete)
+Last session: 2026-03-30T01:17:24Z
+Stopped at: Completed 06-01-PLAN.md (VIF/SHAP feature selection analysis)
 Resume file: None

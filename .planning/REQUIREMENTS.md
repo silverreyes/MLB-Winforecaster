@@ -27,8 +27,8 @@
 - [ ] **MDL-02**: All 6 models calibrated using `IsotonicRegression` directly (the settled v1 approach after `CalibratedClassifierCV(cv='prefit')` was deprecated in sklearn 1.8.0). Temperature scaling evaluated as an alternative only if reliability diagrams show poor calibration on small folds (e.g., the 2020 fold with ~891 games).
 - [ ] **MDL-03**: Brier score comparison table generated: v2 SP_ENHANCED vs v2 TEAM_ONLY vs v1 vs Kalshi market, on identical 2025 out-of-sample games.
 - [ ] **MDL-04**: Reliability diagrams (calibration curves) generated and visually inspected for all 6 model/feature-set combinations before declaring any model production-ready.
-- [ ] **MDL-05**: VIF analysis run on the expanded SP feature set; features with VIF > 10 dropped before final model training.
-- [ ] **MDL-06**: SHAP `TreeExplainer` feature importance ranking computed for XGBoost models; features with near-zero gain removed before final models.
+- [x] **MDL-05**: VIF analysis run on the expanded SP feature set; features with VIF > 10 dropped before final model training.
+- [x] **MDL-06**: SHAP `TreeExplainer` feature importance ranking computed for XGBoost models; features with near-zero gain removed before final models.
 - [ ] **MDL-07**: All 6 model artifacts persisted as joblib files in `models/artifacts/`; `model_metadata.json` records training date, feature column list, fold Brier scores, and calibration method used.
 
 ### Live Pipeline & Database (Track 2)
@@ -134,8 +134,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MDL-02 | Phase 6 | Pending |
 | MDL-03 | Phase 6 | Pending |
 | MDL-04 | Phase 6 | Pending |
-| MDL-05 | Phase 6 | Pending |
-| MDL-06 | Phase 6 | Pending |
+| MDL-05 | Phase 6 | Complete |
+| MDL-06 | Phase 6 | Complete |
 | MDL-07 | Phase 6 | Pending |
 | PIPE-01 | Phase 7 | Pending |
 | PIPE-02 | Phase 7 | Pending |
