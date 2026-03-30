@@ -20,7 +20,7 @@
 ### v2.0 Live Platform (In Progress)
 
 - [x] **Phase 5: SP Feature Integration** - Fix data bugs, convert SP stats to rolling season-to-date, add new SP features, produce v2 feature store (completed 2026-03-29)
-- [ ] **Phase 6: Model Retrain and Calibration** - Train 6 model artifacts (3 models x 2 feature sets), calibrate, validate, persist
+- [x] **Phase 6: Model Retrain and Calibration** - Train 6 model artifacts (3 models x 2 feature sets), calibrate, validate, persist (completed 2026-03-30)
 - [ ] **Phase 7: Live Pipeline and Database** - Postgres schema, three-run daily pipeline (10am/1pm/5pm), Kalshi edge computation at insert time
 - [ ] **Phase 8: API and Dashboard** - FastAPI read layer over Postgres, React frontend with dark/amber aesthetic, client-side polling, error states
 - [ ] **Phase 9: Infrastructure and Go-Live** - Docker Compose on VPS with memory limits, Nginx + SSL, Postgres backups, portfolio page
@@ -54,7 +54,7 @@ Plans:
   2. Brier score comparison table shows v2 SP_ENHANCED vs v2 TEAM_ONLY vs v1 vs Kalshi market on identical 2025 out-of-sample games -- the comparison is apples-to-apples on the same game set
   3. Reliability diagrams (calibration curves) for all 6 model/feature-set combinations have been generated and visually inspected; no model is declared production-ready without this step
   4. VIF analysis confirms no feature in the final SP_ENHANCED set has VIF > 10, and SHAP TreeExplainer confirms no XGBoost feature has near-zero gain -- redundant/useless features have been dropped before final training
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
 - [ ] 06-01-PLAN.md -- VIF and SHAP analysis modules + build v2 feature store + feature selection (MDL-05, MDL-06)
@@ -122,7 +122,7 @@ Phases execute in numeric order: 5 -> 6 -> 7 -> 8 -> 9
 | 3. Model Training and Backtesting | v1.0 | 2/2 | Complete | 2026-03-29 |
 | 4. Kalshi Market Comparison and Edge Analysis | v1.0 | 2/2 | Complete | 2026-03-29 |
 | 5. SP Feature Integration | v2.0 | 4/4 | Complete | 2026-03-29 |
-| 6. Model Retrain and Calibration | v2.0 | 0/3 | Planning complete | - |
+| 6. Model Retrain and Calibration | v2.0 | 3/3 | Complete | 2026-03-30 |
 | 7. Live Pipeline and Database | v2.0 | 0/? | Not started | - |
 | 8. API and Dashboard | v2.0 | 0/? | Not started | - |
 | 9. Infrastructure and Go-Live | v2.0 | 0/? | Not started | - |

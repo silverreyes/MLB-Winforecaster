@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Live Platform
-status: in-progress
-stopped_at: Completed 06-02-PLAN.md (v2 model training and artifact persistence)
-last_updated: "2026-03-30T01:30:22Z"
-last_activity: 2026-03-30 -- Completed 06-02 (v2 model training and artifact persistence)
+status: completed
+stopped_at: Completed 06-03-PLAN.md (Phase 6 complete, all v2 models production-ready)
+last_updated: "2026-03-30T02:09:56.277Z"
+last_activity: 2026-03-30 -- Completed 06-03 (Brier comparison, reliability diagrams approved)
 progress:
   total_phases: 5
-  completed_phases: 1
-  total_plans: 3
-  completed_plans: 2
-  percent: 47
+  completed_phases: 2
+  total_plans: 7
+  completed_plans: 7
+  percent: 100
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-29 -- v2.0 milestone started)
 
 **Core value:** Produce well-calibrated win probability estimates that can be rigorously compared against Kalshi market prices, surfacing where models agree, disagree, and where edges may exist.
-**Current focus:** Phase 6 -- Model Retrain and Calibration
+**Current focus:** Phase 6 complete -- ready for Phase 7 (Live Pipeline and Database)
 
 ## Current Position
 
-Phase: 6 of 9 (Model Retrain and Calibration) -- IN PROGRESS
-Plan: 2 of 3 in current phase (06-02 complete)
-Status: Plan 06-02 complete, ready for 06-03
-Last activity: 2026-03-30 -- Completed 06-02 (v2 model training and artifact persistence)
+Phase: 6 of 9 (Model Retrain and Calibration) -- COMPLETE
+Plan: 3 of 3 in current phase (all complete)
+Status: Phase 6 complete, all 6 v2 models production-ready
+Last activity: 2026-03-30 -- Completed 06-03 (Brier comparison, reliability diagrams approved)
 
-Progress: [=====.....] 47%
+Progress: [==========] 100%
 
 ## Performance Metrics
 
@@ -53,6 +53,7 @@ Progress: [=====.....] 47%
 | Phase 05 P04 | 12min | 2 tasks | 4 files |
 | Phase 06 P01 | 6min | 2 tasks | 6 files |
 | Phase 06 P02 | 9min | 2 tasks | 14 files |
+| Phase 06 P03 | 12min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -88,6 +89,9 @@ Recent decisions affecting current work:
 - [06-02]: Artifact dict bundles model + IsotonicRegression calibrator + feature_cols for Phase 7 pipeline consumption
 - [06-02]: SP_ENHANCED consistently beats TEAM_ONLY by 0.004-0.005 Brier across all model types
 - [06-02]: Best model: LR sp_enhanced (0.2331 aggregate Brier); worst: XGB team_only (0.2397)
+- [06-03]: v2 SP_ENHANCED RF is best on 2,128-game common set (Brier 0.2371), beats Kalshi market (0.2434) by 0.0063
+- [06-03]: All 6 v2 models declared production-ready after human visual inspection of reliability diagrams
+- [06-03]: IsotonicRegression calibration confirmed sufficient -- no temperature scaling needed
 
 ### Pending Todos
 
@@ -102,6 +106,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T01:30:22Z
-Stopped at: Completed 06-02-PLAN.md (v2 model training and artifact persistence)
+Last session: 2026-03-30T02:09:56.274Z
+Stopped at: Completed 06-03-PLAN.md (Phase 6 complete, all v2 models production-ready)
 Resume file: None
