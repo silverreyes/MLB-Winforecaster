@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Live Platform
 status: in_progress
-stopped_at: Completed 07-02-PLAN.md
-last_updated: "2026-03-30T03:24:59.065Z"
-last_activity: 2026-03-30 -- Completed 07-02 (LiveFeatureBuilder, inference, data adapters)
+stopped_at: Completed 07-03-PLAN.md
+last_updated: "2026-03-30T03:31:05.000Z"
+last_activity: 2026-03-30 -- Completed 07-03 (Pipeline runner, scheduler, health)
 progress:
   total_phases: 5
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 10
-  completed_plans: 9
-  percent: 90
+  completed_plans: 10
+  percent: 100
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-29 -- v2.0 milestone started)
 
 **Core value:** Produce well-calibrated win probability estimates that can be rigorously compared against Kalshi market prices, surfacing where models agree, disagree, and where edges may exist.
-**Current focus:** Phase 7 in progress -- Live Pipeline and Database (plan 2 of 3 complete)
+**Current focus:** Phase 7 complete -- Live Pipeline and Database (plan 3 of 3 complete)
 
 ## Current Position
 
-Phase: 7 of 9 (Live Pipeline and Database)
-Plan: 2 of 3 in current phase (07-02 complete)
-Status: LiveFeatureBuilder and inference adapters complete, proceeding to pipeline runner
-Last activity: 2026-03-30 -- Completed 07-02 (LiveFeatureBuilder, inference, data adapters)
+Phase: 7 of 9 (Live Pipeline and Database) -- COMPLETE
+Plan: 3 of 3 in current phase (07-03 complete)
+Status: Phase 7 complete, ready for Phase 8 (API and Dashboard)
+Last activity: 2026-03-30 -- Completed 07-03 (Pipeline runner, scheduler, health)
 
-Progress: [█████████░] 90%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -56,6 +56,7 @@ Progress: [█████████░] 90%
 | Phase 06 P03 | 12min | 2 tasks | 6 files |
 | Phase 07 P01 | 4min | 2 tasks | 7 files |
 | Phase 07 P02 | 4min | 2 tasks | 6 files |
+| Phase 07 P03 | 4min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -102,6 +103,10 @@ Recent decisions affecting current work:
 - [07-02]: fetch_kalshi_live_prices returns empty dict on API failure (graceful degradation, not exception)
 - [07-02]: predict_game clips probabilities to [0.01, 0.99] for numerical safety
 - [07-02]: Inference module fails hard on missing artifacts at startup (not at prediction time)
+- [07-03]: Edge threshold 0.05 (5pp) for BUY_YES/BUY_NO signals
+- [07-03]: TBD starters skip post_lineup entirely (PIPE-07); no fallback insertion as post_lineup
+- [07-03]: Confirmation run marks old post_lineup rows is_latest=FALSE on SP change
+- [07-03]: APScheduler BlockingScheduler (3.x) with 5-minute misfire_grace_time per job
 
 ### Pending Todos
 
@@ -117,6 +122,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T03:24:59.062Z
-Stopped at: Completed 07-02-PLAN.md
+Last session: 2026-03-30T03:31:05Z
+Stopped at: Completed 07-03-PLAN.md
 Resume file: None
