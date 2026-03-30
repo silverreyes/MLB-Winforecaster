@@ -35,7 +35,7 @@
 
 - [x] **Phase 10: Game Time Display** - Backend game_time field + ET conversion on game cards (completed 2026-03-30)
 - [x] **Phase 11: Header Date and Clock** - Dashboard header with today's date and live ET clock (completed 2026-03-30)
-- [ ] **Phase 12: Explanatory Content and Tooltips** - Collapsible model/Kalshi explanation + Buy Yes/No tooltips
+- [x] **Phase 12: Explanatory Content and Tooltips** - Collapsible model/Kalshi explanation + Buy Yes/No tooltips (completed 2026-03-30)
 
 ## Phase Details
 
@@ -100,4 +100,4 @@ Phases 10, 11, and 12 have no inter-dependencies and can execute in any order.
 | 9. Infrastructure and Go-Live | v2.0 | 3/3 | Complete | 2026-03-30 |
 | 10. Game Time Display | v2.1 | 1/1 | Complete | 2026-03-30 |
 | 11. Header Date and Clock | v2.1 | 1/1 | Complete | 2026-03-30 |
-| 12. Explanatory Content and Tooltips | v2.1 | 0/1 | Not started | - |
+| 12. Explanatory Content and Tooltips | 1/1 | Complete   | 2026-03-30 | - |

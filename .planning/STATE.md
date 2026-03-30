@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: Dashboard UX / Contextual Clarity
 status: completed
-stopped_at: Completed 11-01-PLAN.md
-last_updated: "2026-03-30T21:40:39.709Z"
-last_activity: 2026-03-30 -- Phase 11 Plan 01 completed (header date, clock, next-update display)
+stopped_at: Completed 12-01-PLAN.md
+last_updated: "2026-03-30T22:32:39.717Z"
+last_activity: 2026-03-30 -- Phase 12 Plan 01 completed (explanatory content and tooltips)
 progress:
   total_phases: 3
-  completed_phases: 2
-  total_plans: 2
-  completed_plans: 2
+  completed_phases: 3
+  total_plans: 3
+  completed_plans: 3
   percent: 100
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-30 -- after Phase 11)
 
 **Core value:** Produce well-calibrated win probability estimates that can be rigorously compared against Kalshi market prices, surfacing where models agree, disagree, and where edges may exist.
-**Current focus:** v2.1 Phase 12 -- Explanatory Content and Tooltips
+**Current focus:** v2.1 complete -- all 3 phases (10-12) delivered
 
 ## Current Position
 
-Phase: 11 of 12 (Header Date and Clock)
+Phase: 12 of 12 (Explanatory Content and Tooltips)
 Plan: 1 of 1 in current phase (complete)
-Status: Phase 11 complete -- ready for Phase 12
-Last activity: 2026-03-30 -- Phase 11 Plan 01 completed (header date, clock, next-update display)
+Status: v2.1 milestone complete -- all phases delivered
+Last activity: 2026-03-30 -- Phase 12 Plan 01 completed (explanatory content and tooltips)
 
 Progress: [██████████] 100%
 
@@ -58,6 +58,7 @@ Recent decisions affecting current work:
 - [v2.1 Scope]: No pipeline/DB changes; match existing dark amber aesthetic; mobile must not break
 - [Phase 10]: game_time field uses datetime|None in Pydantic (not str|None) for server-side validation; ET conversion done client-side via Intl.DateTimeFormat
 - [Phase 11]: Static RUN_LABELS lookup for pipeline schedule; drift-corrected timer (setTimeout to second boundary + setInterval); column header layout with topRow+clockRow
+- [Phase 12]: Native <details>/<summary> for collapsible section (zero JS); CSS-only tooltip over library for two static tooltips
 
 ### Pending Todos
 
@@ -71,6 +72,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30
-Stopped at: Phase 11 complete, ready to plan Phase 12
+Last session: 2026-03-30T22:32:30.470Z
+Stopped at: Completed 12-01-PLAN.md
 Resume file: None

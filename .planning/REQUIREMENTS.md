@@ -22,18 +22,18 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Explanatory UI (EXPLAIN)
 
-- [ ] **EXPLAIN-01**: Dashboard includes a collapsible "About the Models" section
-- [ ] **EXPLAIN-02**: Section explains Logistic Regression, Random Forest, and XGBoost in one plain-English sentence each
-- [ ] **EXPLAIN-03**: Section explains what the probability number means ("68% means the home team wins in 68 out of 100 similar matchups")
-- [ ] **EXPLAIN-04**: Section explains calibration: a 70% prediction wins roughly 70% of the time historically
-- [ ] **EXPLAIN-05**: Section distinguishes PRE-LINEUP (team-level stats only, more uncertainty) from POST-LINEUP (confirmed SP data, primary signal)
-- [ ] **EXPLAIN-06**: Section explains Kalshi as a regulated prediction market with implied probability derivation (e.g., 62% → market pricing home win contract at $0.62)
-- [ ] **EXPLAIN-07**: Kalshi explanation includes 7% fee disclosure; no language recommending or encouraging trading
+- [x] **EXPLAIN-01**: Dashboard includes a collapsible "About the Models" section
+- [x] **EXPLAIN-02**: Section explains Logistic Regression, Random Forest, and XGBoost in one plain-English sentence each
+- [x] **EXPLAIN-03**: Section explains what the probability number means ("68% means the home team wins in 68 out of 100 similar matchups")
+- [x] **EXPLAIN-04**: Section explains calibration: a 70% prediction wins roughly 70% of the time historically
+- [x] **EXPLAIN-05**: Section distinguishes PRE-LINEUP (team-level stats only, more uncertainty) from POST-LINEUP (confirmed SP data, primary signal)
+- [x] **EXPLAIN-06**: Section explains Kalshi as a regulated prediction market with implied probability derivation (e.g., 62% → market pricing home win contract at $0.62)
+- [x] **EXPLAIN-07**: Kalshi explanation includes 7% fee disclosure; no language recommending or encouraging trading
 
 ### Tooltips (TLTP)
 
-- [ ] **TLTP-01**: Buy Yes label has inline (?) tooltip: pays $1 if home team wins; user pays the displayed price
-- [ ] **TLTP-02**: Buy No label has inline (?) tooltip: pays $1 if home team loses; user pays (1 − Yes price)
+- [x] **TLTP-01**: Buy Yes label has inline (?) tooltip: pays $1 if home team wins; user pays the displayed price
+- [x] **TLTP-02**: Buy No label has inline (?) tooltip: pays $1 if home team loses; user pays (1 − Yes price)
 
 ## Future Requirements
 
@@ -66,15 +66,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HEADER-01 | Phase 11 | Complete |
 | HEADER-02 | Phase 11 | Complete |
 | HEADER-03 | Phase 11 | Complete |
-| EXPLAIN-01 | Phase 12 | Pending |
-| EXPLAIN-02 | Phase 12 | Pending |
-| EXPLAIN-03 | Phase 12 | Pending |
-| EXPLAIN-04 | Phase 12 | Pending |
-| EXPLAIN-05 | Phase 12 | Pending |
-| EXPLAIN-06 | Phase 12 | Pending |
-| EXPLAIN-07 | Phase 12 | Pending |
-| TLTP-01 | Phase 12 | Pending |
-| TLTP-02 | Phase 12 | Pending |
+| EXPLAIN-01 | Phase 12 | Complete |
+| EXPLAIN-02 | Phase 12 | Complete |
+| EXPLAIN-03 | Phase 12 | Complete |
+| EXPLAIN-04 | Phase 12 | Complete |
+| EXPLAIN-05 | Phase 12 | Complete |
+| EXPLAIN-06 | Phase 12 | Complete |
+| EXPLAIN-07 | Phase 12 | Complete |
+| TLTP-01 | Phase 12 | Complete |
+| TLTP-02 | Phase 12 | Complete |
 
 **Coverage:**
 - v2.1 requirements: 15 total
