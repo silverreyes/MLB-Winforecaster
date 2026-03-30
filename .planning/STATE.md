@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Live Platform
 status: in-progress
-stopped_at: Completed 06-01-PLAN.md (VIF/SHAP feature selection analysis)
-last_updated: "2026-03-30T01:17:24Z"
-last_activity: 2026-03-30 -- Completed 06-01 (VIF/SHAP feature selection analysis)
+stopped_at: Completed 06-02-PLAN.md (v2 model training and artifact persistence)
+last_updated: "2026-03-30T01:30:22Z"
+last_activity: 2026-03-30 -- Completed 06-02 (v2 model training and artifact persistence)
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 3
-  completed_plans: 1
-  percent: 27
+  completed_plans: 2
+  percent: 47
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-03-29 -- v2.0 milestone started)
 ## Current Position
 
 Phase: 6 of 9 (Model Retrain and Calibration) -- IN PROGRESS
-Plan: 1 of 3 in current phase (06-01 complete)
-Status: Plan 06-01 complete, ready for 06-02
-Last activity: 2026-03-30 -- Completed 06-01 (VIF/SHAP feature selection analysis)
+Plan: 2 of 3 in current phase (06-02 complete)
+Status: Plan 06-02 complete, ready for 06-03
+Last activity: 2026-03-30 -- Completed 06-02 (v2 model training and artifact persistence)
 
-Progress: [===.......] 27%
+Progress: [=====.....] 47%
 
 ## Performance Metrics
 
@@ -52,6 +52,7 @@ Progress: [===.......] 27%
 *Updated after each plan completion*
 | Phase 05 P04 | 12min | 2 tasks | 4 files |
 | Phase 06 P01 | 6min | 2 tasks | 6 files |
+| Phase 06 P02 | 9min | 2 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -83,6 +84,10 @@ Recent decisions affecting current work:
 - [06-01]: VIF pruned 3 features: is_home (constant=inf), team_woba_diff (VIF=163, redundant), sp_siera_diff (VIF=18, redundant FIP-family)
 - [06-01]: SHAP kept all 17 post-VIF features (none below 0.1% importance threshold)
 - [06-01]: Final v2 pruned set: 17 features (from 20 SP_ENHANCED); top SHAP: pyth_win_pct_diff (27%), sp_whip_diff (27%)
+- [06-02]: SP_ENHANCED_PRUNED_COLS (17 features) used for v2 training; TEAM_ONLY kept at 9 features
+- [06-02]: Artifact dict bundles model + IsotonicRegression calibrator + feature_cols for Phase 7 pipeline consumption
+- [06-02]: SP_ENHANCED consistently beats TEAM_ONLY by 0.004-0.005 Brier across all model types
+- [06-02]: Best model: LR sp_enhanced (0.2331 aggregate Brier); worst: XGB team_only (0.2397)
 
 ### Pending Todos
 
@@ -97,6 +102,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T01:17:24Z
-Stopped at: Completed 06-01-PLAN.md (VIF/SHAP feature selection analysis)
+Last session: 2026-03-30T01:30:22Z
+Stopped at: Completed 06-02-PLAN.md (v2 model training and artifact persistence)
 Resume file: None

@@ -23,13 +23,13 @@
 
 ### Model Retrain & Calibration (Track 1)
 
-- [ ] **MDL-01**: Six model artifacts trained: LR/RF/XGBoost × TEAM\_ONLY\_FEATURE\_COLS/SP\_ENHANCED\_FEATURE\_COLS via walk-forward backtest on 2015–2024 data (same FOLD\_MAP as v1, 2020 excluded as test year).
-- [ ] **MDL-02**: All 6 models calibrated using `IsotonicRegression` directly (the settled v1 approach after `CalibratedClassifierCV(cv='prefit')` was deprecated in sklearn 1.8.0). Temperature scaling evaluated as an alternative only if reliability diagrams show poor calibration on small folds (e.g., the 2020 fold with ~891 games).
+- [x] **MDL-01**: Six model artifacts trained: LR/RF/XGBoost × TEAM\_ONLY\_FEATURE\_COLS/SP\_ENHANCED\_FEATURE\_COLS via walk-forward backtest on 2015–2024 data (same FOLD\_MAP as v1, 2020 excluded as test year).
+- [x] **MDL-02**: All 6 models calibrated using `IsotonicRegression` directly (the settled v1 approach after `CalibratedClassifierCV(cv='prefit')` was deprecated in sklearn 1.8.0). Temperature scaling evaluated as an alternative only if reliability diagrams show poor calibration on small folds (e.g., the 2020 fold with ~891 games).
 - [ ] **MDL-03**: Brier score comparison table generated: v2 SP_ENHANCED vs v2 TEAM_ONLY vs v1 vs Kalshi market, on identical 2025 out-of-sample games.
 - [ ] **MDL-04**: Reliability diagrams (calibration curves) generated and visually inspected for all 6 model/feature-set combinations before declaring any model production-ready.
 - [x] **MDL-05**: VIF analysis run on the expanded SP feature set; features with VIF > 10 dropped before final model training.
 - [x] **MDL-06**: SHAP `TreeExplainer` feature importance ranking computed for XGBoost models; features with near-zero gain removed before final models.
-- [ ] **MDL-07**: All 6 model artifacts persisted as joblib files in `models/artifacts/`; `model_metadata.json` records training date, feature column list, fold Brier scores, and calibration method used.
+- [x] **MDL-07**: All 6 model artifacts persisted as joblib files in `models/artifacts/`; `model_metadata.json` records training date, feature column list, fold Brier scores, and calibration method used.
 
 ### Live Pipeline & Database (Track 2)
 
@@ -130,13 +130,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SP-10 | Phase 5 | Complete |
 | SP-11 | Phase 5 | Complete |
 | SP-12 | Phase 5 | Complete |
-| MDL-01 | Phase 6 | Pending |
-| MDL-02 | Phase 6 | Pending |
+| MDL-01 | Phase 6 | Complete |
+| MDL-02 | Phase 6 | Complete |
 | MDL-03 | Phase 6 | Pending |
 | MDL-04 | Phase 6 | Pending |
 | MDL-05 | Phase 6 | Complete |
 | MDL-06 | Phase 6 | Complete |
-| MDL-07 | Phase 6 | Pending |
+| MDL-07 | Phase 6 | Complete |
 | PIPE-01 | Phase 7 | Pending |
 | PIPE-02 | Phase 7 | Pending |
 | PIPE-03 | Phase 7 | Pending |
