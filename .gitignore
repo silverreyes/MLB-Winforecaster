@@ -19,6 +19,9 @@ env/
 # Jupyter
 .ipynb_checkpoints/
 
+# Model artifacts -- binary serialized models (too large for git)
+/models/artifacts/*.joblib
+
 # IDE
 .vscode/
 .idea/

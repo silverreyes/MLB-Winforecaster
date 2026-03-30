@@ -1,0 +1,162 @@
+{
+  "training_date": "2026-03-29T19:26:50.440602",
+  "v2_feature_store": "data/features/feature_store_v2.parquet",
+  "models": {
+    "lr_team_only": {
+      "feature_cols": [
+        "team_woba_diff",
+        "team_ops_diff",
+        "pyth_win_pct_diff",
+        "rolling_ops_diff",
+        "bullpen_era_diff",
+        "bullpen_fip_diff",
+        "is_home",
+        "park_factor",
+        "log5_home_wp"
+      ],
+      "fold_brier_scores": {
+        "2019": 0.2333,
+        "2021": 0.2369,
+        "2022": 0.2367,
+        "2023": 0.24,
+        "2024": 0.2399
+      },
+      "aggregate_brier_score": 0.2374,
+      "calibration_method": "IsotonicRegression"
+    },
+    "lr_sp_enhanced": {
+      "feature_cols": [
+        "sp_fip_diff",
+        "sp_xfip_diff",
+        "sp_k_bb_pct_diff",
+        "sp_whip_diff",
+        "sp_era_diff",
+        "sp_recent_era_diff",
+        "sp_recent_fip_diff",
+        "sp_pitch_count_last_diff",
+        "sp_days_rest_diff",
+        "xwoba_diff",
+        "team_ops_diff",
+        "pyth_win_pct_diff",
+        "rolling_ops_diff",
+        "bullpen_era_diff",
+        "bullpen_fip_diff",
+        "park_factor",
+        "log5_home_wp"
+      ],
+      "fold_brier_scores": {
+        "2019": 0.2287,
+        "2021": 0.2347,
+        "2022": 0.2278,
+        "2023": 0.2367,
+        "2024": 0.2374
+      },
+      "aggregate_brier_score": 0.2331,
+      "calibration_method": "IsotonicRegression"
+    },
+    "rf_team_only": {
+      "feature_cols": [
+        "team_woba_diff",
+        "team_ops_diff",
+        "pyth_win_pct_diff",
+        "rolling_ops_diff",
+        "bullpen_era_diff",
+        "bullpen_fip_diff",
+        "is_home",
+        "park_factor",
+        "log5_home_wp"
+      ],
+      "fold_brier_scores": {
+        "2019": 0.2366,
+        "2021": 0.2382,
+        "2022": 0.2344,
+        "2023": 0.241,
+        "2024": 0.2411
+      },
+      "aggregate_brier_score": 0.2383,
+      "calibration_method": "IsotonicRegression"
+    },
+    "rf_sp_enhanced": {
+      "feature_cols": [
+        "sp_fip_diff",
+        "sp_xfip_diff",
+        "sp_k_bb_pct_diff",
+        "sp_whip_diff",
+        "sp_era_diff",
+        "sp_recent_era_diff",
+        "sp_recent_fip_diff",
+        "sp_pitch_count_last_diff",
+        "sp_days_rest_diff",
+        "xwoba_diff",
+        "team_ops_diff",
+        "pyth_win_pct_diff",
+        "rolling_ops_diff",
+        "bullpen_era_diff",
+        "bullpen_fip_diff",
+        "park_factor",
+        "log5_home_wp"
+      ],
+      "fold_brier_scores": {
+        "2019": 0.2326,
+        "2021": 0.2351,
+        "2022": 0.2302,
+        "2023": 0.2363,
+        "2024": 0.2369
+      },
+      "aggregate_brier_score": 0.2342,
+      "calibration_method": "IsotonicRegression"
+    },
+    "xgb_team_only": {
+      "feature_cols": [
+        "team_woba_diff",
+        "team_ops_diff",
+        "pyth_win_pct_diff",
+        "rolling_ops_diff",
+        "bullpen_era_diff",
+        "bullpen_fip_diff",
+        "is_home",
+        "park_factor",
+        "log5_home_wp"
+      ],
+      "fold_brier_scores": {
+        "2019": 0.2378,
+        "2021": 0.2425,
+        "2022": 0.2347,
+        "2023": 0.2406,
+        "2024": 0.2427
+      },
+      "aggregate_brier_score": 0.2397,
+      "calibration_method": "IsotonicRegression"
+    },
+    "xgb_sp_enhanced": {
+      "feature_cols": [
+        "sp_fip_diff",
+        "sp_xfip_diff",
+        "sp_k_bb_pct_diff",
+        "sp_whip_diff",
+        "sp_era_diff",
+        "sp_recent_era_diff",
+        "sp_recent_fip_diff",
+        "sp_pitch_count_last_diff",
+        "sp_days_rest_diff",
+        "xwoba_diff",
+        "team_ops_diff",
+        "pyth_win_pct_diff",
+        "rolling_ops_diff",
+        "bullpen_era_diff",
+        "bullpen_fip_diff",
+        "park_factor",
+        "log5_home_wp"
+      ],
+      "fold_brier_scores": {
+        "2019": 0.2337,
+        "2021": 0.2359,
+        "2022": 0.2303,
+        "2023": 0.237,
+        "2024": 0.2373
+      },
+      "aggregate_brier_score": 0.2349,
+      "calibration_method": "IsotonicRegression"
+    }
+  }
+}
