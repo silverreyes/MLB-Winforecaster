@@ -224,6 +224,27 @@ def update_pipeline_run(
         conn.commit()
 
 
+def mark_stale_runs_failed(pool: ConnectionPool) -> int:
+    """Mark any pipeline_runs still in 'running' state as failed.
+
+    Called at process startup to clean up rows left open by OOM-killed
+    processes that never got a chance to write their final status.
+    Returns the number of rows updated.
+    """
+    sql = """
+        UPDATE pipeline_runs
+        SET status = 'failed',
+            run_finished_at = NOW(),
+            error_message = 'process killed (OOM/crash)'
+        WHERE status = 'running'
+    """
+    with pool.connection() as conn:
+        cur = conn.execute(sql)
+        count = cur.rowcount
+        conn.commit()
+    return count
+
+
 def get_latest_pipeline_runs(pool: ConnectionPool) -> list[dict]:
     """Return the most recent pipeline_run for each prediction_version.
 

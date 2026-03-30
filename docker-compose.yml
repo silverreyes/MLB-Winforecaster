@@ -34,7 +34,7 @@ services:
   worker:
     build: .
     command: ["python", "scripts/run_pipeline.py"]
-    mem_limit: 1024m
+    mem_limit: 1536m
     environment:
       DATABASE_URL: postgresql://mlb:${POSTGRES_PASSWORD}@db:5432/mlb_forecaster
       KALSHI_API_KEY: ${KALSHI_API_KEY:-}
