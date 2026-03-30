@@ -644,13 +644,30 @@ class FeatureBuilder:
             .to_dict()
         )
 
+        # Fallback: team -> most recent non-NaN rolling_ops_10.
+        # Used for live games on dates with no completed log entries
+        # (e.g., Opening Day when no 2026 games are Final yet).
+        latest_rolling = (
+            logs_df.dropna(subset=["rolling_ops_10"])
+            .sort_values("game_date")
+            .groupby("team")["rolling_ops_10"]
+            .last()
+            .to_dict()
+        )
+
+        def _lookup_rolling(team, game_date):
+            val = rolling_lookup.get((team, game_date))
+            if val is None or pd.isna(val):
+                val = latest_rolling.get(team)
+            return val
+
         # Join for home and away teams
         df["home_rolling_ops_10"] = df.apply(
-            lambda r: rolling_lookup.get((r["home_team"], r["game_date"])),
+            lambda r: _lookup_rolling(r["home_team"], r["game_date"]),
             axis=1,
         )
         df["away_rolling_ops_10"] = df.apply(
-            lambda r: rolling_lookup.get((r["away_team"], r["game_date"])),
+            lambda r: _lookup_rolling(r["away_team"], r["game_date"]),
             axis=1,
         )
 
