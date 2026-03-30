@@ -16,9 +16,9 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Header Clock (HEADER)
 
-- [ ] **HEADER-01**: Dashboard header displays today's date in Eastern Time (e.g., "Monday, March 30")
-- [ ] **HEADER-02**: Dashboard header displays a live clock updating every second in Eastern Time (e.g., "2:34 PM ET")
-- [ ] **HEADER-03**: Dashboard header displays "Next update: H:MM AM/PM ET" showing the nearest future pipeline run time; pipeline runs daily at 10:00 AM, 1:00 PM, and 5:00 PM ET; after 5:00 PM ET shows "Next update: 10:00 AM ET tomorrow"; calculated client-side with no backend dependency
+- [x] **HEADER-01**: Dashboard header displays today's date in Eastern Time (e.g., "Monday, March 30")
+- [x] **HEADER-02**: Dashboard header displays a live clock updating every second in Eastern Time (e.g., "2:34 PM ET")
+- [x] **HEADER-03**: Dashboard header displays "Next update: H:MM AM/PM ET" showing the nearest future pipeline run time; pipeline runs daily at 10:00 AM, 1:00 PM, and 5:00 PM ET; after 5:00 PM ET shows "Next update: 10:00 AM ET tomorrow"; calculated client-side with no backend dependency
 
 ### Explanatory UI (EXPLAIN)
 
@@ -63,9 +63,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GMTIME-01 | Phase 10 | Complete |
 | GMTIME-02 | Phase 10 | Complete |
 | GMTIME-03 | Phase 10 | Complete |
-| HEADER-01 | Phase 11 | Pending |
-| HEADER-02 | Phase 11 | Pending |
-| HEADER-03 | Phase 11 | Pending |
+| HEADER-01 | Phase 11 | Complete |
+| HEADER-02 | Phase 11 | Complete |
+| HEADER-03 | Phase 11 | Complete |
 | EXPLAIN-01 | Phase 12 | Pending |
 | EXPLAIN-02 | Phase 12 | Pending |
 | EXPLAIN-03 | Phase 12 | Pending |

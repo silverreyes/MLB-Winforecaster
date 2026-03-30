@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: Dashboard UX / Contextual Clarity
 status: completed
-stopped_at: Completed 10-01-PLAN.md
-last_updated: "2026-03-30T20:48:42.529Z"
-last_activity: 2026-03-30 -- Phase 10 Plan 01 completed (game_time in API + ET display)
+stopped_at: Completed 11-01-PLAN.md
+last_updated: "2026-03-30T21:37:32.654Z"
+last_activity: 2026-03-30 -- Phase 11 Plan 01 completed (header date, clock, next-update display)
 progress:
   total_phases: 3
-  completed_phases: 1
-  total_plans: 1
-  completed_plans: 1
+  completed_phases: 2
+  total_plans: 2
+  completed_plans: 2
   percent: 100
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-30 -- v2.1 roadmap created)
 
 **Core value:** Produce well-calibrated win probability estimates that can be rigorously compared against Kalshi market prices, surfacing where models agree, disagree, and where edges may exist.
-**Current focus:** v2.1 Phase 10 -- Game Time Display (complete)
+**Current focus:** v2.1 Phase 11 -- Header Date and Clock (complete)
 
 ## Current Position
 
-Phase: 10 of 12 (Game Time Display)
+Phase: 11 of 12 (Header Date and Clock)
 Plan: 1 of 1 in current phase (complete)
-Status: Phase 10 complete -- ready for Phase 11
-Last activity: 2026-03-30 -- Phase 10 Plan 01 completed (game_time in API + ET display)
+Status: Phase 11 complete -- ready for Phase 12
+Last activity: 2026-03-30 -- Phase 11 Plan 01 completed (header date, clock, next-update display)
 
 Progress: [██████████] 100%
 
@@ -57,6 +57,8 @@ Recent decisions affecting current work:
 - [v2.1 Roadmap]: EXPLAIN + TLTP grouped into single phase (both informational UI, 9 requirements)
 - [v2.1 Scope]: No pipeline/DB changes; match existing dark amber aesthetic; mobile must not break
 - [Phase 10]: game_time field uses datetime|None in Pydantic (not str|None) for server-side validation; ET conversion done client-side via Intl.DateTimeFormat
+- [Phase 11]: Static RUN_LABELS lookup for pipeline schedule; drift-corrected timer via setTimeout+setInterval alignment; column header layout with topRow+clockRow
+- [Phase 11]: Static RUN_LABELS lookup for pipeline schedule; drift-corrected setTimeout+setInterval timer; column header layout with topRow+clockRow
 
 ### Pending Todos
 
@@ -70,6 +72,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T20:45:26.042Z
-Stopped at: Completed 10-01-PLAN.md
+Last session: 2026-03-30T21:37:19.684Z
+Stopped at: Completed 11-01-PLAN.md
 Resume file: None
