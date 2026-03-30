@@ -6,8 +6,8 @@ interface EdgeBadgeProps {
   magnitude: number;
 }
 
-const TOOLTIP_YES = 'Pays $1 if the home team wins. You pay the displayed price.';
-const TOOLTIP_NO = 'Pays $1 if the home team loses. You pay 1 minus the Yes price.';
+const TOOLTIP_YES = 'Kalshi contract: pays $1 if home wins';
+const TOOLTIP_NO = 'Kalshi contract: pays $1 if home loses';
 
 export function EdgeBadge({ signal, magnitude }: EdgeBadgeProps) {
   const isBuyYes = signal === 'BUY_YES';
