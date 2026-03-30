@@ -104,3 +104,24 @@ def fetch_schedule(season: int) -> pd.DataFrame:
 
     save_to_cache(df, key, parquet_path, season)
     return df
+
+
+def fetch_today_schedule() -> list[dict]:
+    """Fetch today's MLB regular-season games with probable pitchers.
+
+    Unlike fetch_schedule() which returns historical Final games as a DataFrame,
+    this returns raw game dicts for today's date regardless of game status
+    (Scheduled, Pre-Game, Warmup, In Progress, etc.).
+
+    Returns:
+        List of game dicts from statsapi.schedule(), each containing:
+        game_id, game_date, home_name, away_name, home_probable_pitcher,
+        away_probable_pitcher, game_type, status, etc.
+        Filtered to game_type == "R" (regular season only).
+        Team names are NOT normalized here (pipeline does that).
+    """
+    from datetime import date
+    today = date.today().strftime("%m/%d/%Y")
+    games = statsapi_schedule(start_date=today, end_date=today, sportId=1)
+    # Filter to regular season only (exclude spring training, exhibitions, postseason)
+    return [g for g in games if g.get("game_type") == "R"]

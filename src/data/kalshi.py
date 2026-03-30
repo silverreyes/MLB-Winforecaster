@@ -422,3 +422,46 @@ def fetch_kalshi_open_prices(df: pd.DataFrame) -> pd.DataFrame:
     )
 
     return df
+
+
+def fetch_kalshi_live_prices() -> dict[str, float]:
+    """Fetch current Kalshi prices for open MLB game markets.
+
+    Queries the Kalshi API for OPEN (not settled) KXMLBGAME markets.
+    Returns a dict mapping game keys to current home-win prices.
+
+    Returns:
+        Dict of {game_key: yes_price} where:
+        - game_key = "YYYY-MM-DD_HOME_AWAY" (e.g., "2025-07-15_NYY_BOS")
+        - yes_price = float between 0 and 1 (P(home_win) implied by market)
+        Uses last_price_dollars if available, falls back to yes_ask_dollars.
+        Returns empty dict if Kalshi API is unreachable (graceful degradation).
+    """
+    try:
+        markets = _paginate_endpoint("markets", {
+            "status": "open",
+            "series_ticker": "KXMLBGAME",
+        })
+    except Exception:
+        # Graceful degradation: Kalshi unavailable -> no prices, not a pipeline failure
+        return {}
+
+    prices = {}
+    for m in markets:
+        parsed = _parse_ticker(m.get("ticker", ""))
+        if not parsed:
+            continue
+        # Only process home-YES markets (yes_team matches home_code)
+        if parsed["yes_team"] != parsed["home_code"]:
+            continue
+        home = _safe_normalize(parsed["home_code"])
+        away = _safe_normalize(parsed["away_code"])
+        if not home or not away:
+            continue
+        # Prefer last_price_dollars (matches Phase 4 convention), fall back to yes_ask
+        price_str = m.get("last_price_dollars") or m.get("yes_ask_dollars") or "0"
+        price = float(price_str)
+        if price > 0:
+            key = f"{parsed['date']}_{home}_{away}"
+            prices[key] = price
+    return prices
