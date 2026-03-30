@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Live Platform
-status: completed
-stopped_at: Completed 08-03 (Phase 8 complete -- all API and Dashboard plans done)
-last_updated: "2026-03-30T05:48:28.943Z"
-last_activity: 2026-03-30 -- Completed 08-03 (Interactive behaviors -- polling, staleness, error state)
+status: in-progress
+stopped_at: Completed 09-01 (Docker and deployment artifacts)
+last_updated: "2026-03-30T06:26:00Z"
+last_activity: 2026-03-30 -- Completed 09-01 (Dockerfile, Docker Compose, memory audit, backup scripts)
 progress:
   total_phases: 5
   completed_phases: 4
-  total_plans: 13
-  completed_plans: 13
-  percent: 100
+  total_plans: 16
+  completed_plans: 14
+  percent: 88
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-29 -- v2.0 milestone started)
 
 **Core value:** Produce well-calibrated win probability estimates that can be rigorously compared against Kalshi market prices, surfacing where models agree, disagree, and where edges may exist.
-**Current focus:** Phase 8 complete -- API and Dashboard (all 3 plans done). Ready for Phase 9.
+**Current focus:** Phase 9 in progress -- Infrastructure and Go-Live (1 of 3 plans done).
 
 ## Current Position
 
-Phase: 8 of 9 (API and Dashboard) -- COMPLETE
-Plan: 3 of 3 in current phase (08-03 complete)
-Status: Phase 8 complete, ready for Phase 9 (Infrastructure and Go-Live)
-Last activity: 2026-03-30 -- Completed 08-03 (Interactive behaviors -- polling, staleness, error state)
+Phase: 9 of 9 (Infrastructure and Go-Live)
+Plan: 2 of 3 in current phase (09-01 complete, 09-02 next)
+Status: Executing Phase 9
+Last activity: 2026-03-30 -- Completed 09-01 (Dockerfile, Docker Compose, memory audit, backup scripts)
 
-Progress: [██████████] 100%
+Progress: [█████████░] 88%
 
 ## Performance Metrics
 
@@ -60,6 +60,7 @@ Progress: [██████████] 100%
 | Phase 08 P01 | 7min | 3 tasks | 17 files |
 | Phase 08 P02 | 7min | 2 tasks | 39 files |
 | Phase 08 P03 | 8min | 2 tasks | 6 files |
+| Phase 09 P01 | 2min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -120,6 +121,10 @@ Recent decisions affecting current work:
 - [08-03]: No additional visibilitychange listener needed -- TanStack React Query refetchIntervalInBackground: false handles pause/resume
 - [08-03]: Error state with cached data shows grayed cards + offline badge, not full ErrorState replacement
 - [08-03]: No retry button in ErrorState -- React Query auto-recovers when API responds
+- [09-01]: mem_limit (not deploy.resources) for non-swarm Docker Compose compatibility
+- [09-01]: Model artifacts bind-mounted read-only at runtime, not baked into Docker image
+- [09-01]: API on host port 8082, worker gets 1024MB (double api/db) for ML inference
+- [09-01]: Container name mlb-winforecaster-db-1 follows Docker Compose default naming convention
 
 ### Pending Todos
 
@@ -135,6 +140,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T05:41:32.163Z
-Stopped at: Completed 08-03 (Phase 8 complete -- all API and Dashboard plans done)
+Last session: 2026-03-30T06:25:45Z
+Stopped at: Completed 09-01 (Docker and deployment artifacts)
 Resume file: None

@@ -63,10 +63,10 @@
 
 ### Infrastructure & Deployment (Track 2)
 
-- [ ] **INFRA-01**: Docker Compose stack (services: `api`, `worker`, `db`) deployed on port 8082; explicit memory limits set in `docker-compose.yml` before first VPS deploy (`api: 512M`, `worker: 1G`, `db: 512M`); before deploying, audit GamePredictor container memory consumption via `docker stats --no-stream` to confirm remaining headroom is sufficient (shared VPS: 8GB total, Ghost CMS + GamePredictor + OS baseline already consuming ~2.4GB).
+- [x] **INFRA-01**: Docker Compose stack (services: `api`, `worker`, `db`) deployed on port 8082; explicit memory limits set in `docker-compose.yml` before first VPS deploy (`api: 512M`, `worker: 1G`, `db: 512M`); before deploying, audit GamePredictor container memory consumption via `docker stats --no-stream` to confirm remaining headroom is sufficient (shared VPS: 8GB total, Ghost CMS + GamePredictor + OS baseline already consuming ~2.4GB).
 - [ ] **INFRA-02**: Host Nginx server block for `mlbforecaster.silverreyes.net` proxying to port 8082; config validated with `nginx -t` and tested in a staging pass before `nginx -s reload` on production.
 - [ ] **INFRA-03**: Certbot SSL certificate issued for `mlbforecaster.silverreyes.net`; renewal dry-run tested (`certbot renew --dry-run`) before go-live.
-- [ ] **INFRA-04**: Postgres data in a named Docker volume (`mlb_pgdata`); volume persistence verified by stop/start cycle before go-live; daily `pg_dump` backup cron to `/opt/backups/mlb/` with 7-day retention.
+- [x] **INFRA-04**: Postgres data in a named Docker volume (`mlb_pgdata`); volume persistence verified by stop/start cycle before go-live; daily `pg_dump` backup cron to `/opt/backups/mlb/` with 7-day retention.
 
 ### Portfolio Page (Track 2)
 
@@ -158,10 +158,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DASH-05 | Phase 8 | Complete |
 | DASH-06 | Phase 8 | Complete |
 | DASH-07 | Phase 8 | Complete |
-| INFRA-01 | Phase 9 | Pending |
+| INFRA-01 | Phase 9 | Complete |
 | INFRA-02 | Phase 9 | Pending |
 | INFRA-03 | Phase 9 | Pending |
-| INFRA-04 | Phase 9 | Pending |
+| INFRA-04 | Phase 9 | Complete |
 | PORT-01 | Phase 9 | Pending |
 
 **Coverage:**

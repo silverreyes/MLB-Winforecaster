@@ -126,4 +126,4 @@ Phases execute in numeric order: 5 -> 6 -> 7 -> 8 -> 9
 | 6. Model Retrain and Calibration | v2.0 | 3/3 | Complete | 2026-03-30 |
 | 7. Live Pipeline and Database | v2.0 | 3/3 | Complete | 2026-03-30 |
 | 8. API and Dashboard | v2.0 | 3/3 | Complete | 2026-03-30 |
-| 9. Infrastructure and Go-Live | v2.0 | 0/3 | Not started | - |
+| 9. Infrastructure and Go-Live | v2.0 | 1/3 | In Progress | - |
