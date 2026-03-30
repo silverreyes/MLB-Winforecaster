@@ -1,7 +1,13 @@
 import { usePredictions } from './hooks/usePredictions';
 import { useLatestTimestamp } from './hooks/useLatestTimestamp';
+import { Header } from './components/Header';
+import { AccuracyStrip } from './components/AccuracyStrip';
+import { GameCardGrid } from './components/GameCardGrid';
+import { SkeletonCard } from './components/SkeletonCard';
+import { EmptyState } from './components/EmptyState';
 
 const STALE_THRESHOLD_MS = 3 * 60 * 60 * 1000; // 3 hours
+const SKELETON_COUNT = 6;
 
 function App() {
   const { data, isLoading, isError, games } = usePredictions();
@@ -21,22 +27,81 @@ function App() {
 
   return (
     <div>
-      {/* Header placeholder */}
-      <header>
-        <h1>MLB Win Forecaster</h1>
-        <p>Last updated: {latestPredictionAt ?? 'loading...'}</p>
-        {isStale && <p>Data may be stale</p>}
-      </header>
+      <Header
+        lastUpdated={latestPredictionAt}
+        isStale={isStale}
+        isOffline={isError}
+      />
+      <AccuracyStrip />
 
       {/* New predictions banner placeholder */}
-      {hasNewPredictions && <p>New predictions available</p>}
+      {hasNewPredictions && (
+        <div style={{
+          background: 'rgba(217, 119, 6, 0.15)',
+          color: '#D97706',
+          padding: '8px 16px',
+          textAlign: 'center',
+          fontFamily: 'var(--font-ui)',
+          fontSize: '14px',
+        }}>
+          New predictions available
+        </div>
+      )}
 
-      {/* Main content */}
-      {isLoading && <p>Loading...</p>}
-      {isError && <p>Error loading predictions</p>}
-      {!isLoading && !isError && games.length === 0 && <p>No games scheduled today</p>}
+      {/* Loading: skeleton cards */}
+      {isLoading && (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
+          gap: '32px',
+          maxWidth: '1200px',
+          margin: '0 auto',
+          padding: '48px 24px 24px',
+        }}>
+          {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
+      )}
+
+      {/* Error state placeholder */}
+      {isError && !isLoading && (
+        <div style={{
+          maxWidth: '480px',
+          margin: '48px auto',
+          padding: '24px',
+          background: 'var(--color-surface)',
+          border: '1px solid var(--color-border)',
+          borderRadius: '8px',
+          textAlign: 'center',
+        }}>
+          <h2 style={{
+            fontFamily: 'var(--font-ui)',
+            fontSize: '20px',
+            fontWeight: 600,
+            color: 'var(--color-text-primary)',
+            margin: '0 0 8px',
+          }}>
+            Dashboard offline
+          </h2>
+          <p style={{
+            fontFamily: 'var(--font-ui)',
+            fontSize: '16px',
+            fontWeight: 400,
+            color: 'var(--color-text-secondary)',
+            margin: 0,
+          }}>
+            Unable to reach the predictions API. The pipeline may be updating — try again in a few minutes.
+          </p>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {!isLoading && !isError && games.length === 0 && <EmptyState />}
+
+      {/* Game card grid */}
       {!isLoading && !isError && games.length > 0 && (
-        <p>{games.length} games loaded</p>
+        <GameCardGrid games={games} isStale={isStale} />
       )}
     </div>
   );

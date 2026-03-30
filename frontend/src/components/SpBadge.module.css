@@ -1,0 +1,19 @@
+.confirmed {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text-primary);
+  line-height: 1.3;
+}
+
+.tbd {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-accent-muted);
+  background: rgba(217, 119, 6, 0.15);
+  padding: 2px var(--space-sm);
+  border-radius: 4px;
+  line-height: 1.3;
+  white-space: nowrap;
+}

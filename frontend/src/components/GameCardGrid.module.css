@@ -1,0 +1,19 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: var(--space-xl);
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-2xl) var(--space-lg) var(--space-lg);
+}
+
+.stale {
+  opacity: 0.45;
+}
+
+@media (max-width: 768px) {
+  .grid {
+    padding: var(--space-md);
+    gap: var(--space-md);
+  }
+}
