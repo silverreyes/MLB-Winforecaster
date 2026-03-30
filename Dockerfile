@@ -38,6 +38,10 @@ COPY pyproject.toml .
 # Install the project package (src/) in non-editable mode
 RUN pip install --no-cache-dir --no-deps .
 
+# Pre-warm pybaseball's Chadwick register cache so the first pipeline run
+# doesn't stall downloading the ZIP from GitHub at container startup.
+RUN python -c "from pybaseball.playerid_lookup import chadwick_register; chadwick_register()"
+
 EXPOSE 8000
 
 CMD ["gunicorn", "api.main:app", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "120"]
