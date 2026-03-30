@@ -57,9 +57,9 @@
 - [x] **DASH-02**: Today's games displayed with pre-lineup and post-lineup prediction versions side-by-side; LR/RF/XGB probabilities shown per version; visual distinction between confirmed and TBD lineup states.
 - [x] **DASH-03**: Kalshi live price and edge signal (BUY_YES/BUY_NO/NO_EDGE) displayed per game with fee-adjusted framing consistent with v1.
 - [x] **DASH-04**: SP confirmation status per game — confirmed starter name shown; "TBD" flagged visually; `sp_may_have_changed` flag surfaced as a warning indicator.
-- [ ] **DASH-05**: "Last updated: [timestamp]" shown prominently on the page; prediction cards grayed out with a staleness indicator when the most recent prediction is older than 3 hours.
-- [ ] **DASH-06**: Client-side timestamp polling implemented with `document.visibilityState` check — polling fires every 60 seconds when `document.visibilityState === 'visible'` and is suspended on `visibilitychange` to `'hidden'`; resumes on `visibilitychange` back to `'visible'`; shows a "New predictions available — refresh" banner when the polled timestamp is newer than the currently displayed data.
-- [ ] **DASH-07**: Explicit error state rendered when the API is unreachable — not a blank page, not an infinite spinner; shows last-known data with a "Dashboard offline" indicator and timestamp of last successful fetch.
+- [x] **DASH-05**: "Last updated: [timestamp]" shown prominently on the page; prediction cards grayed out with a staleness indicator when the most recent prediction is older than 3 hours.
+- [x] **DASH-06**: Client-side timestamp polling implemented with `document.visibilityState` check — polling fires every 60 seconds when `document.visibilityState === 'visible'` and is suspended on `visibilitychange` to `'hidden'`; resumes on `visibilitychange` back to `'visible'`; shows a "New predictions available — refresh" banner when the polled timestamp is newer than the currently displayed data.
+- [x] **DASH-07**: Explicit error state rendered when the API is unreachable — not a blank page, not an infinite spinner; shows last-known data with a "Dashboard offline" indicator and timestamp of last successful fetch.
 
 ### Infrastructure & Deployment (Track 2)
 
@@ -155,9 +155,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DASH-02 | Phase 8 | Complete |
 | DASH-03 | Phase 8 | Complete |
 | DASH-04 | Phase 8 | Complete |
-| DASH-05 | Phase 8 | Pending |
-| DASH-06 | Phase 8 | Pending |
-| DASH-07 | Phase 8 | Pending |
+| DASH-05 | Phase 8 | Complete |
+| DASH-06 | Phase 8 | Complete |
+| DASH-07 | Phase 8 | Complete |
 | INFRA-01 | Phase 9 | Pending |
 | INFRA-02 | Phase 9 | Pending |
 | INFRA-03 | Phase 9 | Pending |

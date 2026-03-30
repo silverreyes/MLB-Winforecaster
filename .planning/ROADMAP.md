@@ -22,7 +22,7 @@
 - [x] **Phase 5: SP Feature Integration** - Fix data bugs, convert SP stats to rolling season-to-date, add new SP features, produce v2 feature store (completed 2026-03-29)
 - [x] **Phase 6: Model Retrain and Calibration** - Train 6 model artifacts (3 models x 2 feature sets), calibrate, validate, persist (completed 2026-03-30)
 - [x] **Phase 7: Live Pipeline and Database** - Postgres schema, three-run daily pipeline (10am/1pm/5pm), Kalshi edge computation at insert time (completed 2026-03-30)
-- [ ] **Phase 8: API and Dashboard** - FastAPI read layer over Postgres, React frontend with dark/amber aesthetic, client-side polling, error states
+- [x] **Phase 8: API and Dashboard** - FastAPI read layer over Postgres, React frontend with dark/amber aesthetic, client-side polling, error states (completed 2026-03-30)
 - [ ] **Phase 9: Infrastructure and Go-Live** - Docker Compose on VPS with memory limits, Nginx + SSL, Postgres backups, portfolio page
 
 ## Phase Details
@@ -88,12 +88,12 @@ Plans:
   3. Client-side polling fires every 60 seconds against `/api/v1/predictions/latest-timestamp` when `document.visibilityState === 'visible'`, suspends on `visibilitychange` to `'hidden'`, and resumes on return to `'visible'`; a "New predictions available -- refresh" banner appears when the polled timestamp is newer than displayed data
   4. When the API is unreachable, the dashboard renders an explicit error state (not a blank page or infinite spinner) showing last-known data with a "Dashboard offline" indicator and timestamp of last successful fetch
   5. All 6 model artifacts are loaded at FastAPI startup via lifespan context manager; no model loading inside request handlers; API fails to start (not silently) if any artifact is missing
-**Plans:** 1/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
-- [ ] 08-01-PLAN.md -- FastAPI app scaffold, all 5 API endpoints, test suite (API-01, API-02, API-03, API-04, API-05, API-06)
-- [ ] 08-02-PLAN.md -- React 19 frontend scaffold, all dashboard UI components, game cards (DASH-01, DASH-02, DASH-03, DASH-04)
-- [ ] 08-03-PLAN.md -- Polling, staleness, error states, visual verification checkpoint (DASH-05, DASH-06, DASH-07)
+- [x] 08-01-PLAN.md -- FastAPI app scaffold, all 5 API endpoints, test suite (API-01, API-02, API-03, API-04, API-05, API-06)
+- [x] 08-02-PLAN.md -- React 19 frontend scaffold, all dashboard UI components, game cards (DASH-01, DASH-02, DASH-03, DASH-04)
+- [x] 08-03-PLAN.md -- Polling, staleness, error states, visual verification checkpoint (DASH-05, DASH-06, DASH-07)
 
 ### Phase 9: Infrastructure and Go-Live
 **Goal**: The complete stack is deployed to the Hostinger KVM 2 VPS with verified memory headroom, SSL, backups, and a portfolio page linking to the live dashboard
@@ -124,5 +124,5 @@ Phases execute in numeric order: 5 -> 6 -> 7 -> 8 -> 9
 | 5. SP Feature Integration | v2.0 | 4/4 | Complete | 2026-03-29 |
 | 6. Model Retrain and Calibration | v2.0 | 3/3 | Complete | 2026-03-30 |
 | 7. Live Pipeline and Database | v2.0 | 3/3 | Complete | 2026-03-30 |
-| 8. API and Dashboard | 1/3 | In Progress|  | - |
+| 8. API and Dashboard | v2.0 | 3/3 | Complete | 2026-03-30 |
 | 9. Infrastructure and Go-Live | v2.0 | 0/? | Not started | - |

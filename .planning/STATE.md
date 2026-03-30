@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Live Platform
-status: in_progress
-stopped_at: Completed 08-02 (React dashboard frontend)
-last_updated: "2026-03-30T05:18:00.000Z"
-last_activity: 2026-03-30 -- Completed 08-02 (React dashboard frontend with 12 components)
+status: completed
+stopped_at: Completed 08-03 (Phase 8 complete -- all API and Dashboard plans done)
+last_updated: "2026-03-30T05:41:34.236Z"
+last_activity: 2026-03-30 -- Completed 08-03 (Interactive behaviors -- polling, staleness, error state)
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 13
-  completed_plans: 12
-  percent: 88
+  completed_plans: 13
+  percent: 100
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-29 -- v2.0 milestone started)
 
 **Core value:** Produce well-calibrated win probability estimates that can be rigorously compared against Kalshi market prices, surfacing where models agree, disagree, and where edges may exist.
-**Current focus:** Phase 8 in progress -- API and Dashboard (plan 2 of 3 complete)
+**Current focus:** Phase 8 complete -- API and Dashboard (all 3 plans done). Ready for Phase 9.
 
 ## Current Position
 
-Phase: 8 of 9 (API and Dashboard)
-Plan: 2 of 3 in current phase (08-02 complete)
-Status: Plan 08-02 complete, ready for 08-03 (Integration testing)
-Last activity: 2026-03-30 -- Completed 08-02 (React dashboard frontend with 12 components)
+Phase: 8 of 9 (API and Dashboard) -- COMPLETE
+Plan: 3 of 3 in current phase (08-03 complete)
+Status: Phase 8 complete, ready for Phase 9 (Infrastructure and Go-Live)
+Last activity: 2026-03-30 -- Completed 08-03 (Interactive behaviors -- polling, staleness, error state)
 
-Progress: [█████████░] 88%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -59,6 +59,7 @@ Progress: [█████████░] 88%
 | Phase 07 P03 | 4min | 2 tasks | 6 files |
 | Phase 08 P01 | 7min | 3 tasks | 17 files |
 | Phase 08 P02 | 7min | 2 tasks | 39 files |
+| Phase 08 P03 | 8min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -116,6 +117,9 @@ Recent decisions affecting current work:
 - [08-02]: Game grouping (pre+post lineup) done client-side in usePredictions hook via Map aggregation
 - [08-02]: Kalshi price formatted as cents (Math.round(price * 100)) matching API float response
 - [08-02]: Self-hosted woff2 fonts committed to repo (no external CDN dependency)
+- [08-03]: No additional visibilitychange listener needed -- TanStack React Query refetchIntervalInBackground: false handles pause/resume
+- [08-03]: Error state with cached data shows grayed cards + offline badge, not full ErrorState replacement
+- [08-03]: No retry button in ErrorState -- React Query auto-recovers when API responds
 
 ### Pending Todos
 
@@ -131,6 +135,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T05:18:00Z
-Stopped at: Completed 08-02 (React dashboard frontend with 12 components)
-Resume file: .planning/phases/08-api-and-dashboard/08-03-PLAN.md
+Last session: 2026-03-30T05:41:32.163Z
+Stopped at: Completed 08-03 (Phase 8 complete -- all API and Dashboard plans done)
+Resume file: None
