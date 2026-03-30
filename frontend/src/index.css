@@ -1,0 +1,54 @@
+/* Font faces -- self-hosted woff2 */
+@font-face {
+  font-family: 'DM Mono';
+  src: url('./fonts/DMMono-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'DM Sans';
+  src: url('./fonts/DMSans-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'DM Sans';
+  src: url('./fonts/DMSans-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --color-bg: #0A0A0F;
+  --color-surface: #12121A;
+  --color-border: #1E1E2A;
+  --color-text-primary: #E8E8ED;
+  --color-text-secondary: #8A8A9A;
+  --color-accent: #F59E0B;
+  --color-accent-muted: #D97706;
+  --color-edge-green: #22C55E;
+  --color-edge-red: #EF4444;
+  --color-stale: #6B7280;
+
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
+  --font-data: 'DM Mono', monospace;
+  --font-ui: 'DM Sans', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+}
