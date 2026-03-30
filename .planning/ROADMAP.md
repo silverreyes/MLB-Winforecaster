@@ -70,12 +70,12 @@ Plans:
   2. The 5pm ET confirmation run is a full pipeline re-run (not just a flag update) that re-fetches current SP assignments; if a starter differs from the 1pm prediction, the old row is marked `is_latest = FALSE`, an updated row is inserted, and `sp_may_have_changed = TRUE` is set on the new row
   3. When starters are TBD or unresolvable, the pipeline stores a `TEAM_ONLY` prediction with `sp_uncertainty = TRUE` and does not insert a `post_lineup` version until starters are confirmed; the `predictions` table schema enforces this at the database level — either via a `prediction_status` enum (e.g., `confirmed`, `pending_sp`, `tbd`) with a CHECK constraint, or a nullable `sp_confirmed_at` timestamp column — so that the "no post_lineup without confirmed starters" invariant cannot be violated by application bugs
   4. `GET /api/v1/health` returns `last_pipeline_run` timestamp and status for each version (pre_lineup, post_lineup, confirmation); pipeline runs are logged to a persistent file
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 07-01: TBD
-- [ ] 07-02: TBD
-- [ ] 07-03: TBD
+- [ ] 07-01-PLAN.md -- Postgres schema, DB access layer, and test infrastructure (PIPE-01, PIPE-07)
+- [ ] 07-02-PLAN.md -- LiveFeatureBuilder, inference module, live data adapters (PIPE-02, PIPE-03, PIPE-05)
+- [ ] 07-03-PLAN.md -- Pipeline runner, scheduler, health endpoint, entry point (PIPE-02, PIPE-03, PIPE-04, PIPE-05, PIPE-06, PIPE-07, PIPE-08)
 
 ### Phase 8: API and Dashboard
 **Goal**: Users visit mlbforecaster.silverreyes.net and see today's MLB game predictions with model probabilities, Kalshi edge signals, and SP confirmation status -- updated automatically via client-side polling
@@ -123,6 +123,6 @@ Phases execute in numeric order: 5 -> 6 -> 7 -> 8 -> 9
 | 4. Kalshi Market Comparison and Edge Analysis | v1.0 | 2/2 | Complete | 2026-03-29 |
 | 5. SP Feature Integration | v2.0 | 4/4 | Complete | 2026-03-29 |
 | 6. Model Retrain and Calibration | v2.0 | 3/3 | Complete | 2026-03-30 |
-| 7. Live Pipeline and Database | v2.0 | 0/? | Not started | - |
+| 7. Live Pipeline and Database | v2.0 | 0/3 | Planned | - |
 | 8. API and Dashboard | v2.0 | 0/? | Not started | - |
 | 9. Infrastructure and Go-Live | v2.0 | 0/? | Not started | - |
