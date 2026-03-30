@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Live Platform
-status: completed
-stopped_at: Completed 06-03-PLAN.md (Phase 6 complete, all v2 models production-ready)
-last_updated: "2026-03-30T02:09:56.277Z"
-last_activity: 2026-03-30 -- Completed 06-03 (Brier comparison, reliability diagrams approved)
+status: in_progress
+stopped_at: Completed 07-01-PLAN.md (DB schema and access layer)
+last_updated: "2026-03-30T03:15:25Z"
+last_activity: 2026-03-30 -- Completed 07-01 (Postgres schema, db.py access layer, test infrastructure)
 progress:
   total_phases: 5
   completed_phases: 2
-  total_plans: 7
-  completed_plans: 7
-  percent: 100
+  total_plans: 10
+  completed_plans: 8
+  percent: 80
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-29 -- v2.0 milestone started)
 
 **Core value:** Produce well-calibrated win probability estimates that can be rigorously compared against Kalshi market prices, surfacing where models agree, disagree, and where edges may exist.
-**Current focus:** Phase 6 complete -- ready for Phase 7 (Live Pipeline and Database)
+**Current focus:** Phase 7 in progress -- Live Pipeline and Database (plan 1 of 3 complete)
 
 ## Current Position
 
-Phase: 6 of 9 (Model Retrain and Calibration) -- COMPLETE
-Plan: 3 of 3 in current phase (all complete)
-Status: Phase 6 complete, all 6 v2 models production-ready
-Last activity: 2026-03-30 -- Completed 06-03 (Brier comparison, reliability diagrams approved)
+Phase: 7 of 9 (Live Pipeline and Database)
+Plan: 1 of 3 in current phase (07-01 complete)
+Status: DB schema and access layer complete, proceeding to LiveFeatureBuilder
+Last activity: 2026-03-30 -- Completed 07-01 (Postgres schema, db.py, test infrastructure)
 
-Progress: [==========] 100%
+Progress: [========  ] 80%
 
 ## Performance Metrics
 
@@ -54,6 +54,7 @@ Progress: [==========] 100%
 | Phase 06 P01 | 6min | 2 tasks | 6 files |
 | Phase 06 P02 | 9min | 2 tasks | 14 files |
 | Phase 06 P03 | 12min | 2 tasks | 6 files |
+| Phase 07 P01 | 4min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -92,6 +93,10 @@ Recent decisions affecting current work:
 - [06-03]: v2 SP_ENHANCED RF is best on 2,128-game common set (Brier 0.2371), beats Kalshi market (0.2434) by 0.0063
 - [06-03]: All 6 v2 models declared production-ready after human visual inspection of reliability diagrams
 - [06-03]: IsotonicRegression calibration confirmed sufficient -- no temperature scaling needed
+- [07-01]: psycopg3 (not psycopg2) for async-ready connection pool and modern Python type support
+- [07-01]: ENUM types for prediction_version and prediction_status enforce domain values at DB level
+- [07-01]: UPSERT pattern (ON CONFLICT DO UPDATE) for re-run safety instead of failing on duplicates
+- [07-01]: apply_schema handles DuplicateObject for ENUMs to allow idempotent re-runs
 
 ### Pending Todos
 
@@ -107,6 +112,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T02:09:56.274Z
-Stopped at: Completed 06-03-PLAN.md (Phase 6 complete, all v2 models production-ready)
+Last session: 2026-03-30T03:15:25Z
+Stopped at: Completed 07-01-PLAN.md (DB schema and access layer)
 Resume file: None

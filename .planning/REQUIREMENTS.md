@@ -33,13 +33,13 @@
 
 ### Live Pipeline & Database (Track 2)
 
-- [ ] **PIPE-01**: Postgres schema created: `games` table (one row per MLB game), `predictions` table (one row per game per version with `is_latest` flag), `pipeline_runs` audit table; appropriate indexes on `game_date`, `is_latest`, and `(game_date, prediction_version)`.
+- [x] **PIPE-01**: Postgres schema created: `games` table (one row per MLB game), `predictions` table (one row per game per version with `is_latest` flag), `pipeline_runs` audit table; appropriate indexes on `game_date`, `is_latest`, and `(game_date, prediction_version)`.
 - [ ] **PIPE-02**: Pre-lineup pipeline runs at 10am ET daily using `TEAM_ONLY_FEATURE_COLS`; SP fields stored as null/unconfirmed; `prediction_version = 'pre_lineup'`.
 - [ ] **PIPE-03**: Post-lineup pipeline runs at 1pm ET daily using `SP_ENHANCED_FEATURE_COLS` with confirmed starting pitcher names; `prediction_version = 'post_lineup'`.
 - [ ] **PIPE-04**: Confirmation pipeline runs at 5pm ET daily; re-fetches current SP assignments; if starter differs from 1pm prediction, marks old row `is_latest = FALSE`, inserts updated row, and sets `sp_may_have_changed = TRUE` on the new row.
 - [ ] **PIPE-05**: Kalshi live opening price fetched and `edge_signal` (BUY_YES/BUY_NO/NO_EDGE) computed at insert time per prediction row; stored in `predictions` table (not computed at query time).
 - [ ] **PIPE-06**: SP name stored in each `predictions` row; `sp_may_have_changed` boolean flag set by 5pm confirmation run when starter differs from 1pm run.
-- [ ] **PIPE-07**: Pipeline falls back to `TEAM_ONLY_FEATURE_COLS` with `sp_uncertainty = TRUE` flag when starters are TBD or unresolvable at run time; does not insert a `post_lineup` prediction until starters are confirmed. The `predictions` table schema enforces this at the database level — either a `prediction_status` enum (`confirmed`, `pending_sp`, `tbd`) with a CHECK constraint, or a nullable `sp_confirmed_at` timestamp — so the invariant cannot be violated by application-level bugs.
+- [x] **PIPE-07**: Pipeline falls back to `TEAM_ONLY_FEATURE_COLS` with `sp_uncertainty = TRUE` flag when starters are TBD or unresolvable at run time; does not insert a `post_lineup` prediction until starters are confirmed. The `predictions` table schema enforces this at the database level — either a `prediction_status` enum (`confirmed`, `pending_sp`, `tbd`) with a CHECK constraint, or a nullable `sp_confirmed_at` timestamp — so the invariant cannot be violated by application-level bugs.
 - [ ] **PIPE-08**: All pipeline runs log to a persistent file; `GET /api/v1/health` returns `last_pipeline_run` timestamp and run status for each version.
 
 ### API Layer (Track 2)
@@ -137,13 +137,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MDL-05 | Phase 6 | Complete |
 | MDL-06 | Phase 6 | Complete |
 | MDL-07 | Phase 6 | Complete |
-| PIPE-01 | Phase 7 | Pending |
+| PIPE-01 | Phase 7 | Complete |
 | PIPE-02 | Phase 7 | Pending |
 | PIPE-03 | Phase 7 | Pending |
 | PIPE-04 | Phase 7 | Pending |
 | PIPE-05 | Phase 7 | Pending |
 | PIPE-06 | Phase 7 | Pending |
-| PIPE-07 | Phase 7 | Pending |
+| PIPE-07 | Phase 7 | Complete |
 | PIPE-08 | Phase 7 | Pending |
 | API-01 | Phase 8 | Pending |
 | API-02 | Phase 8 | Pending |
