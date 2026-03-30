@@ -15,6 +15,7 @@ Environment variables:
 import argparse
 import logging
 import sys
+import time
 
 from src.pipeline.inference import load_all_artifacts
 from src.pipeline.db import get_pool, apply_schema
@@ -29,6 +30,46 @@ logging.basicConfig(
 logger = logging.getLogger("mlb_pipeline")
 
 
+MAX_RETRIES = 3
+RETRY_DELAY_SECONDS = 10
+
+
+def _run_once(version: str) -> None:
+    """Load artifacts, connect to DB, run a single pipeline version, and exit."""
+    logger.info("Loading model artifacts...")
+    artifacts = load_all_artifacts()
+    logger.info(f"Loaded {len(artifacts)} model artifacts")
+
+    logger.info("Connecting to Postgres...")
+    pool = get_pool()
+    apply_schema(pool)
+    logger.info("Database schema applied")
+
+    logger.info(f"Running single pipeline: {version}")
+    run_pipeline(version, artifacts, pool)
+    pool.close()
+    logger.info("Done")
+
+
+def _run_scheduler() -> None:
+    """Load artifacts, connect to DB, and start the blocking scheduler."""
+    logger.info("Loading model artifacts...")
+    artifacts = load_all_artifacts()
+    logger.info(f"Loaded {len(artifacts)} model artifacts")
+
+    logger.info("Connecting to Postgres...")
+    pool = get_pool()
+    apply_schema(pool)
+    logger.info("Database schema applied")
+
+    scheduler = create_scheduler(artifacts, pool)
+    logger.info("Pipeline ready. Waiting for scheduled runs...")
+    try:
+        start_scheduler(scheduler)
+    finally:
+        pool.close()
+
+
 def main():
     parser = argparse.ArgumentParser(description="MLB Win Forecaster Pipeline")
     parser.add_argument(
@@ -38,31 +79,27 @@ def main():
     )
     args = parser.parse_args()
 
-    # Load model artifacts (fail hard if any missing)
-    logger.info("Loading model artifacts...")
-    artifacts = load_all_artifacts()
-    logger.info(f"Loaded {len(artifacts)} model artifacts")
-
-    # Connect to Postgres and apply schema
-    logger.info("Connecting to Postgres...")
-    pool = get_pool()
-    apply_schema(pool)
-    logger.info("Database schema applied")
-
-    if args.once:
-        # Single run mode (useful for testing and manual triggers)
-        logger.info(f"Running single pipeline: {args.once}")
-        run_pipeline(args.once, artifacts, pool)
-        pool.close()
-        logger.info("Done")
-    else:
-        # Scheduled mode (blocks forever)
-        scheduler = create_scheduler(artifacts, pool)
-        logger.info("Pipeline ready. Waiting for scheduled runs...")
+    # The first run after a container start fetches pybaseball data cold
+    # (team batting, SP stats, Chadwick register) which can spike memory
+    # and crash before caches are written. Subsequent runs hit local cache
+    # and succeed. Retry up to MAX_RETRIES times with a short delay.
+    for attempt in range(1, MAX_RETRIES + 1):
         try:
-            start_scheduler(scheduler)
-        finally:
-            pool.close()
+            if args.once:
+                _run_once(args.once)
+            else:
+                _run_scheduler()
+            return
+        except Exception as e:
+            if attempt < MAX_RETRIES:
+                logger.warning(
+                    f"Pipeline attempt {attempt}/{MAX_RETRIES} failed: {e} — "
+                    f"retrying in {RETRY_DELAY_SECONDS}s (caches will be warm)"
+                )
+                time.sleep(RETRY_DELAY_SECONDS)
+            else:
+                logger.error(f"Pipeline failed after {MAX_RETRIES} attempts: {e}")
+                sys.exit(1)
 
 
 if __name__ == "__main__":
