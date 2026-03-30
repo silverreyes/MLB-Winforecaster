@@ -17,6 +17,7 @@ export interface PredictionResponse {
   edge_signal: 'BUY_YES' | 'BUY_NO' | 'NO_EDGE' | null;
   edge_magnitude: number | null;
   created_at: string;
+  game_time: string | null;
 }
 
 export interface TodayResponse {
@@ -34,6 +35,7 @@ export interface GameGroup {
   home_team: string;
   away_team: string;
   game_date: string;
+  game_time: string | null;
   pre_lineup: PredictionResponse | null;
   post_lineup: PredictionResponse | null;
 }

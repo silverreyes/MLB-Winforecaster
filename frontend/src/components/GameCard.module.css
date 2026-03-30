@@ -28,6 +28,24 @@
   line-height: 1.5;
 }
 
+.gameTime {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+  margin: var(--space-xs) 0 0;
+  line-height: 1.3;
+}
+
+.gameTimeTbd {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--color-accent-muted);
+  margin: var(--space-xs) 0 0;
+  line-height: 1.3;
+}
+
 .spRow {
   font-family: var(--font-ui);
   font-size: 12px;

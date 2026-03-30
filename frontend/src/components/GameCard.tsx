@@ -4,6 +4,21 @@ import { KalshiSection } from './KalshiSection';
 import { SpBadge } from './SpBadge';
 import styles from './GameCard.module.css';
 
+function formatGameTime(isoString: string | null): string {
+  if (!isoString) return 'Time TBD';
+  try {
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) return 'Time TBD';
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      timeZone: 'America/New_York',
+    }) + ' ET';
+  } catch {
+    return 'Time TBD';
+  }
+}
+
 interface GameCardProps {
   game: GameGroup;
   isStale: boolean;
@@ -33,6 +48,9 @@ export function GameCard({ game }: GameCardProps) {
       <div className={styles.headerRow}>
         <p className={styles.matchup}>
           {away_team} @ {home_team}
+        </p>
+        <p className={game.game_time ? styles.gameTime : styles.gameTimeTbd}>
+          {formatGameTime(game.game_time)}
         </p>
         <div className={styles.spRow}>
           {primary?.away_sp ? (

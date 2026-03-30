@@ -13,6 +13,7 @@ function groupPredictions(predictions: PredictionResponse[]): GameGroup[] {
         home_team: pred.home_team,
         away_team: pred.away_team,
         game_date: pred.game_date,
+        game_time: pred.game_time,
         pre_lineup: null,
         post_lineup: null,
       };
