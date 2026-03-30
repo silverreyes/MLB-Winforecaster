@@ -101,7 +101,7 @@ def insert_prediction(pool: ConnectionPool, data: dict) -> None:
         INSERT INTO predictions ({col_names})
         VALUES ({placeholders})
         ON CONFLICT ON CONSTRAINT uq_prediction
-        DO UPDATE SET {update_set}
+        DO UPDATE SET {update_set}, created_at = NOW()
     """
 
     with pool.connection() as conn:
