@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Live Platform
-status: complete
-stopped_at: Completed 09-03-PLAN.md
-last_updated: "2026-03-30T07:32:30.566Z"
-last_activity: 2026-03-30 -- Completed 09-03 (Environment template and VPS deployment)
+status: archived
+stopped_at: v2.0 milestone archived 2026-03-30
+last_updated: "2026-03-30T17:37:03.809Z"
+last_activity: 2026-03-30 -- v2.0 milestone complete and archived
 progress:
   total_phases: 5
   completed_phases: 5
@@ -18,10 +18,10 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-29 -- v2.0 milestone started)
+See: .planning/PROJECT.md (updated 2026-03-30 — v2.0 milestone complete)
 
 **Core value:** Produce well-calibrated win probability estimates that can be rigorously compared against Kalshi market prices, surfacing where models agree, disagree, and where edges may exist.
-**Current focus:** v2.0 milestone complete -- all 5 phases (5-9) executed, live platform deployed.
+**Current focus:** v2.0 archived. Planning next milestone — run `/gsd:new-milestone` to begin.
 
 ## Current Position
 
