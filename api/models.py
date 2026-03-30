@@ -30,6 +30,7 @@ class PredictionResponse(BaseModel):
     edge_signal: str | None
     edge_magnitude: float | None
     created_at: datetime
+    game_time: datetime | None = None
 
 
 class TodayResponse(BaseModel):

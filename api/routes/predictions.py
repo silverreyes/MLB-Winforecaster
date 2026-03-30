@@ -9,6 +9,7 @@ All handlers are sync (def, not async def) to run in FastAPI's thread pool,
 since psycopg3 sync connections block the event loop if called from async.
 """
 
+import logging
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Request
@@ -19,11 +20,45 @@ from api.models import (
     PredictionResponse,
     TodayResponse,
 )
+from src.data.mlb_schedule import fetch_today_schedule
+from src.data.team_mappings import normalize_team
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["predictions"])
 
 
-def _build_prediction(row: dict) -> PredictionResponse:
+def _build_schedule_lookup() -> dict[tuple[str, str], str]:
+    """Build (home_team, away_team) -> game_datetime lookup from today's schedule."""
+    try:
+        games = fetch_today_schedule()
+    except Exception:
+        logger.warning("Failed to fetch schedule for game times, returning empty lookup")
+        return {}
+    lookup: dict[tuple[str, str], str] = {}
+    for g in games:
+        try:
+            home = normalize_team(g.get("home_name", ""))
+            away = normalize_team(g.get("away_name", ""))
+            dt = g.get("game_datetime")
+            if home and away and dt:
+                lookup[(home, away)] = dt
+        except (ValueError, KeyError):
+            continue
+    return lookup
+
+
+def _parse_game_time(dt_str: str | None) -> datetime | None:
+    """Parse game_datetime ISO string to timezone-aware datetime, or None."""
+    if not dt_str:
+        return None
+    try:
+        return datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
+    except (ValueError, AttributeError):
+        return None
+
+
+def _build_prediction(row: dict, game_time: str | None = None) -> PredictionResponse:
     """Map a DB row dict to a PredictionResponse with computed fields."""
     lr = row.get("lr_prob")
     rf = row.get("rf_prob")
@@ -61,10 +96,16 @@ def _build_prediction(row: dict) -> PredictionResponse:
         edge_signal=row.get("edge_signal"),
         edge_magnitude=edge_magnitude,
         created_at=row["created_at"],
+        game_time=_parse_game_time(game_time),
     )
 
 
-def _fetch_predictions(pool, game_date_clause: str, params: dict | None = None) -> TodayResponse:
+def _fetch_predictions(
+    pool,
+    game_date_clause: str,
+    params: dict | None = None,
+    schedule_lookup: dict[tuple[str, str], str] | None = None,
+) -> TodayResponse:
     """Shared query logic for /today and /{date} endpoints."""
     sql = f"""
         SELECT *
@@ -77,7 +118,12 @@ def _fetch_predictions(pool, game_date_clause: str, params: dict | None = None) 
             cur.execute(sql, params)
             rows = cur.fetchall()
 
-    predictions = [_build_prediction(row) for row in rows]
+    predictions = []
+    for row in rows:
+        game_time = None
+        if schedule_lookup:
+            game_time = schedule_lookup.get((row["home_team"], row["away_team"]))
+        predictions.append(_build_prediction(row, game_time=game_time))
     latest_prediction_at = max(
         (row["created_at"] for row in rows), default=None
     )
@@ -93,7 +139,8 @@ def _fetch_predictions(pool, game_date_clause: str, params: dict | None = None) 
 def get_today_predictions(request: Request):
     """Return all predictions for today's games (API-01)."""
     pool = request.app.state.pool
-    return _fetch_predictions(pool, "CURRENT_DATE")
+    schedule_lookup = _build_schedule_lookup()
+    return _fetch_predictions(pool, "CURRENT_DATE", schedule_lookup=schedule_lookup)
 
 
 # DO NOT REORDER: /latest-timestamp must precede /{date} to prevent path parameter capture
