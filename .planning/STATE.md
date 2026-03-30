@@ -1,34 +1,34 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.0
-milestone_name: Live Platform
-status: archived
-stopped_at: v2.0 milestone archived 2026-03-30
-last_updated: "2026-03-30T17:37:03.809Z"
-last_activity: 2026-03-30 -- v2.0 milestone complete and archived
+milestone: v2.1
+milestone_name: Dashboard UX / Contextual Clarity
+status: defining_requirements
+stopped_at: —
+last_updated: "2026-03-30T00:00:00.000Z"
+last_activity: 2026-03-30 -- Milestone v2.1 started
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 16
-  completed_plans: 16
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-30 — v2.0 milestone complete)
+See: .planning/PROJECT.md (updated 2026-03-30 — v2.1 milestone started)
 
 **Core value:** Produce well-calibrated win probability estimates that can be rigorously compared against Kalshi market prices, surfacing where models agree, disagree, and where edges may exist.
-**Current focus:** v2.0 archived. Planning next milestone — run `/gsd:new-milestone` to begin.
+**Current focus:** v2.1 — Dashboard UX / Contextual Clarity
 
 ## Current Position
 
-Phase: 9 of 9 (Infrastructure and Go-Live) -- COMPLETE
-Plan: 3 of 3 in current phase (all complete)
-Status: v2.0 Milestone Complete
-Last activity: 2026-03-30 -- Completed 09-03 (Environment template and VPS deployment)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-30 — Milestone v2.1 started
 
 Progress: [██████████] 100%
 

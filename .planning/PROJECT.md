@@ -51,9 +51,24 @@ Produce well-calibrated win probability estimates that can be rigorously compare
 - ✓ Docker Compose stack (api 512M, worker 1536M, db 512M) on Hostinger KVM2 with Nginx + SSL — v2.0
 - ✓ Daily pg_dump backups to /opt/backups/mlb/ with 7-day retention — v2.0
 
+## Current Milestone: v2.1 Dashboard UX / Contextual Clarity
+
+**Goal:** Add game times, a live date/time header, and explanatory UI copy to the dashboard — primarily frontend changes with one small backend addition for game time.
+
+**Target features:**
+- Game time display (UTC→ET conversion) on each game card, sourced from game_datetime in MLB Stats API response
+- Dashboard header with today's date and live clock in Eastern Time
+- Collapsible "About the Models" section explaining LR/RF/XGBoost, calibration, and PRE/POST-LINEUP distinction
+- Kalshi market explanation with fee disclosure (no trading recommendation)
+- Buy Yes / Buy No inline tooltip on each game card
+
 ### Active
 
-*(No active requirements — next milestone not yet defined. Run `/gsd:new-milestone` to begin.)*
+- [ ] Add game_time to prediction response model, populated from game_datetime (UTC ISO string)
+- [ ] Display game time in ET on each game card ("7:05 PM ET" / "Time TBD" when null)
+- [ ] Dashboard header: today's date and live clock updating every second (Eastern Time)
+- [ ] Collapsible "About the Models" section covering all 4 explanation points
+- [ ] Buy Yes / Buy No inline (?) tooltip on game cards
 
 ### Out of Scope
 
@@ -129,4 +144,4 @@ Produce well-calibrated win probability estimates that can be rigorously compare
 | No retry button in ErrorState | React Query auto-recovers when API responds | ✓ Good — less UI complexity |
 
 ---
-*Last updated: 2026-03-30 — v2.0 milestone complete*
+*Last updated: 2026-03-30 — v2.1 milestone started*
