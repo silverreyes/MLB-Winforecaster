@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Live Platform
 status: in_progress
-stopped_at: Completed 08-01 (FastAPI backend)
-last_updated: "2026-03-30T04:27:42.063Z"
-last_activity: 2026-03-30 -- Completed 07-03 (Pipeline runner, scheduler, health)
+stopped_at: Completed 08-02 (React dashboard frontend)
+last_updated: "2026-03-30T05:18:00.000Z"
+last_activity: 2026-03-30 -- Completed 08-02 (React dashboard frontend with 12 components)
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 13
-  completed_plans: 11
-  percent: 84
+  completed_plans: 12
+  percent: 88
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-29 -- v2.0 milestone started)
 
 **Core value:** Produce well-calibrated win probability estimates that can be rigorously compared against Kalshi market prices, surfacing where models agree, disagree, and where edges may exist.
-**Current focus:** Phase 8 in progress -- API and Dashboard (plan 1 of 3 complete)
+**Current focus:** Phase 8 in progress -- API and Dashboard (plan 2 of 3 complete)
 
 ## Current Position
 
 Phase: 8 of 9 (API and Dashboard)
-Plan: 1 of 3 in current phase (08-01 complete)
-Status: Plan 08-01 complete, ready for 08-02 (React dashboard frontend)
-Last activity: 2026-03-30 -- Completed 08-01 (FastAPI backend with 5 endpoints)
+Plan: 2 of 3 in current phase (08-02 complete)
+Status: Plan 08-02 complete, ready for 08-03 (Integration testing)
+Last activity: 2026-03-30 -- Completed 08-02 (React dashboard frontend with 12 components)
 
-Progress: [████████░░] 81%
+Progress: [█████████░] 88%
 
 ## Performance Metrics
 
@@ -58,6 +58,7 @@ Progress: [████████░░] 81%
 | Phase 07 P02 | 4min | 2 tasks | 6 files |
 | Phase 07 P03 | 4min | 2 tasks | 6 files |
 | Phase 08 P01 | 7min | 3 tasks | 17 files |
+| Phase 08 P02 | 7min | 2 tasks | 39 files |
 
 ## Accumulated Context
 
@@ -111,6 +112,10 @@ Recent decisions affecting current work:
 - [08-01]: Sync def handlers (not async def) for all API routes -- psycopg3 sync connections run in FastAPI thread pool
 - [08-01]: Ensemble prob and edge magnitude computed per-request in route handler, not stored in DB
 - [08-01]: Route ordering enforced: /latest-timestamp before /{date} to prevent path parameter capture
+- [08-02]: CSS custom properties reference UI-SPEC tokens; hex values never hard-coded in component CSS
+- [08-02]: Game grouping (pre+post lineup) done client-side in usePredictions hook via Map aggregation
+- [08-02]: Kalshi price formatted as cents (Math.round(price * 100)) matching API float response
+- [08-02]: Self-hosted woff2 fonts committed to repo (no external CDN dependency)
 
 ### Pending Todos
 
@@ -126,6 +131,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T05:07:36Z
-Stopped at: Completed 08-01 (FastAPI backend with 5 endpoints)
-Resume file: .planning/phases/08-api-and-dashboard/08-02-PLAN.md
+Last session: 2026-03-30T05:18:00Z
+Stopped at: Completed 08-02 (React dashboard frontend with 12 components)
+Resume file: .planning/phases/08-api-and-dashboard/08-03-PLAN.md

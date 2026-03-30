@@ -53,10 +53,10 @@
 
 ### Dashboard Frontend (Track 2)
 
-- [ ] **DASH-01**: React 19 + Vite 8 dashboard at `mlbforecaster.silverreyes.net` with dark cinematic + amber aesthetic — near-black background, high-contrast typography, amber highlights for probabilities and edge values; design produced using the frontend-design skill before Phase 4 planning begins.
-- [ ] **DASH-02**: Today's games displayed with pre-lineup and post-lineup prediction versions side-by-side; LR/RF/XGB probabilities shown per version; visual distinction between confirmed and TBD lineup states.
-- [ ] **DASH-03**: Kalshi live price and edge signal (BUY_YES/BUY_NO/NO_EDGE) displayed per game with fee-adjusted framing consistent with v1.
-- [ ] **DASH-04**: SP confirmation status per game — confirmed starter name shown; "TBD" flagged visually; `sp_may_have_changed` flag surfaced as a warning indicator.
+- [x] **DASH-01**: React 19 + Vite 8 dashboard at `mlbforecaster.silverreyes.net` with dark cinematic + amber aesthetic — near-black background, high-contrast typography, amber highlights for probabilities and edge values; design produced using the frontend-design skill before Phase 4 planning begins.
+- [x] **DASH-02**: Today's games displayed with pre-lineup and post-lineup prediction versions side-by-side; LR/RF/XGB probabilities shown per version; visual distinction between confirmed and TBD lineup states.
+- [x] **DASH-03**: Kalshi live price and edge signal (BUY_YES/BUY_NO/NO_EDGE) displayed per game with fee-adjusted framing consistent with v1.
+- [x] **DASH-04**: SP confirmation status per game — confirmed starter name shown; "TBD" flagged visually; `sp_may_have_changed` flag surfaced as a warning indicator.
 - [ ] **DASH-05**: "Last updated: [timestamp]" shown prominently on the page; prediction cards grayed out with a staleness indicator when the most recent prediction is older than 3 hours.
 - [ ] **DASH-06**: Client-side timestamp polling implemented with `document.visibilityState` check — polling fires every 60 seconds when `document.visibilityState === 'visible'` and is suspended on `visibilitychange` to `'hidden'`; resumes on `visibilitychange` back to `'visible'`; shows a "New predictions available — refresh" banner when the polled timestamp is newer than the currently displayed data.
 - [ ] **DASH-07**: Explicit error state rendered when the API is unreachable — not a blank page, not an infinite spinner; shows last-known data with a "Dashboard offline" indicator and timestamp of last successful fetch.
@@ -151,10 +151,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | API-04 | Phase 8 | Complete |
 | API-05 | Phase 8 | Complete |
 | API-06 | Phase 8 | Complete |
-| DASH-01 | Phase 8 | Pending |
-| DASH-02 | Phase 8 | Pending |
-| DASH-03 | Phase 8 | Pending |
-| DASH-04 | Phase 8 | Pending |
+| DASH-01 | Phase 8 | Complete |
+| DASH-02 | Phase 8 | Complete |
+| DASH-03 | Phase 8 | Complete |
+| DASH-04 | Phase 8 | Complete |
 | DASH-05 | Phase 8 | Pending |
 | DASH-06 | Phase 8 | Pending |
 | DASH-07 | Phase 8 | Pending |
