@@ -13,6 +13,7 @@ haven't been played), we construct feature rows by reusing the FeatureBuilder's
 lookup infrastructure.
 """
 import logging
+import math
 from datetime import date, timedelta
 
 import pandas as pd
@@ -157,6 +158,18 @@ class LiveFeatureBuilder:
                 )
 
             features = game_row[available_cols].iloc[0].to_dict()
+
+            # Impute NaN differential features with 0.0 (neutral: no known advantage).
+            # On Opening Day and early in the season, current-year Statcast and
+            # pitcher game-log data don't exist yet, causing xwoba_diff,
+            # sp_recent_era_diff, sp_recent_fip_diff (and others) to be NaN.
+            # Imputing to 0.0 (no differential) is the safest neutral assumption
+            # and keeps predict_game from skipping all models due to NaN features.
+            for col, val in list(features.items()):
+                if (val is None or (isinstance(val, float) and math.isnan(val))) and col.endswith("_diff"):
+                    logger.debug("Imputing NaN feature %s=0.0 for %s vs %s", col, game["home_team"], game["away_team"])
+                    features[col] = 0.0
+
             return features
 
         except Exception as e:

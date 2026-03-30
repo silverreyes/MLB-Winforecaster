@@ -187,6 +187,11 @@ def _process_post_lineup(game, artifacts, pool, fb, kalshi_price, today_str):
 
         probs = predict_game(artifacts, features, "sp_enhanced")
         if not probs:
+            logger.warning(
+                f"SP_ENHANCED prediction yielded no probs for "
+                f"{game['home_team']} vs {game['away_team']}, falling back to team_only"
+            )
+            _insert_team_only_fallback(game, artifacts, pool, fb, kalshi_price, today_str, "post_lineup")
             return
 
         edge_signal = compute_edge_signal(probs, kalshi_price)
