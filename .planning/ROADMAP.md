@@ -62,10 +62,10 @@ Plans:
   2. Dashboard header displays a live clock that updates every second showing current Eastern Time (e.g., "2:34 PM ET")
   3. Clock continues updating accurately after the page has been open for extended periods (no drift from setInterval accumulation)
   4. Dashboard header displays "Next update: H:MM AM/PM ET" for the nearest future pipeline run (10:00 AM, 1:00 PM, or 5:00 PM ET); shows "Next update: 10:00 AM ET tomorrow" after 5:00 PM ET
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 11-01: TBD
+- [ ] 11-01-PLAN.md — Add live ET date/clock and next-update display to dashboard header
 
 ### Phase 12: Explanatory Content and Tooltips
 **Goal**: Users understand what the models are, how to interpret probabilities, and what Buy Yes/No means -- without needing external documentation
@@ -99,5 +99,5 @@ Phases 10, 11, and 12 have no inter-dependencies and can execute in any order.
 | 8. API and Dashboard | v2.0 | 3/3 | Complete | 2026-03-30 |
 | 9. Infrastructure and Go-Live | v2.0 | 3/3 | Complete | 2026-03-30 |
 | 10. Game Time Display | 1/1 | Complete    | 2026-03-30 | - |
-| 11. Header Date and Clock | v2.1 | 0/? | Not started | - |
+| 11. Header Date and Clock | v2.1 | 0/1 | Not started | - |
 | 12. Explanatory Content and Tooltips | v2.1 | 0/? | Not started | - |
