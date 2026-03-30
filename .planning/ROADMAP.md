@@ -77,10 +77,10 @@ Plans:
   3. No language in the Kalshi section recommends or encourages trading
   4. Each game card's Buy Yes label has an inline (?) icon that shows a tooltip explaining "pays $1 if home team wins; user pays the displayed price"
   5. Each game card's Buy No label has an inline (?) icon that shows a tooltip explaining "pays $1 if home team loses; user pays (1 - Yes price)"
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 12-01: TBD
+- [ ] 12-01-PLAN.md — Collapsible AboutModels section + Tooltip component on EdgeBadge
 
 ## Progress
 
@@ -98,6 +98,6 @@ Phases 10, 11, and 12 have no inter-dependencies and can execute in any order.
 | 7. Live Pipeline and Database | v2.0 | 3/3 | Complete | 2026-03-30 |
 | 8. API and Dashboard | v2.0 | 3/3 | Complete | 2026-03-30 |
 | 9. Infrastructure and Go-Live | v2.0 | 3/3 | Complete | 2026-03-30 |
-| 10. Game Time Display | 1/1 | Complete    | 2026-03-30 | - |
-| 11. Header Date and Clock | 1/1 | Complete    | 2026-03-30 | - |
-| 12. Explanatory Content and Tooltips | v2.1 | 0/? | Not started | - |
+| 10. Game Time Display | v2.1 | 1/1 | Complete | 2026-03-30 |
+| 11. Header Date and Clock | v2.1 | 1/1 | Complete | 2026-03-30 |
+| 12. Explanatory Content and Tooltips | v2.1 | 0/1 | Not started | - |
