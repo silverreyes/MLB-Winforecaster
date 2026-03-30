@@ -1,6 +1,7 @@
 .badge {
   display: inline-flex;
   align-items: center;
+  gap: var(--space-xs);
   font-family: var(--font-data);
   font-size: 12px;
   font-weight: 400;
