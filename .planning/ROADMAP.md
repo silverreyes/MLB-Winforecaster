@@ -139,7 +139,7 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17
 | 10. Game Time Display | v2.1 | 1/1 | Complete | 2026-03-30 |
 | 11. Header Date and Clock | v2.1 | 1/1 | Complete | 2026-03-30 |
 | 12. Explanatory Content and Tooltips | v2.1 | 1/1 | Complete | 2026-03-30 |
-| 13. Schema Migration & Game Visibility | 3/3 | Complete   | 2026-03-31 | - |
+| 13. Schema Migration & Game Visibility | 3/3 | Complete    | 2026-03-31 | - |
 | 14. Date Navigation | v2.2 | 0/? | Not started | - |
 | 15. Live Score Polling | v2.2 | 0/? | Not started | - |
 | 16. Final Outcomes & Nightly Reconciliation | v2.2 | 0/? | Not started | - |
