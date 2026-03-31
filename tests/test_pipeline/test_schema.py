@@ -48,6 +48,7 @@ class TestSchemaCreation:
             "lr_prob", "rf_prob", "xgb_prob", "feature_set",
             "home_sp", "away_sp", "sp_uncertainty", "sp_may_have_changed",
             "kalshi_yes_price", "edge_signal", "is_latest", "created_at",
+            "game_id", "actual_winner", "prediction_correct", "reconciled_at",
         }
 
         with pg_pool.connection() as conn:
@@ -233,3 +234,91 @@ class TestCRUDHelpers:
         found = [r for r in latest if r["id"] == run_id]
         assert len(found) == 1
         assert found[0]["status"] == "success"
+
+
+class TestMigration:
+    """Verify Phase 13 migration adds game_id and reconciliation columns."""
+
+    def test_game_id_column(self, pg_pool, clean_tables):
+        """SCHM-01: game_id column exists in predictions table."""
+        with pg_pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT column_name, data_type
+                    FROM information_schema.columns
+                    WHERE table_name = 'predictions' AND column_name = 'game_id'
+                """)
+                row = cur.fetchone()
+        assert row is not None, "game_id column missing from predictions"
+        assert row[1] == "integer"
+
+    def test_unique_constraint_includes_game_id(self, pg_pool, clean_tables):
+        """SCHM-01: uq_prediction includes game_id."""
+        with pg_pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT kcu.column_name
+                    FROM information_schema.table_constraints tc
+                    JOIN information_schema.key_column_usage kcu
+                        ON tc.constraint_name = kcu.constraint_name
+                    WHERE tc.constraint_name = 'uq_prediction'
+                    ORDER BY kcu.ordinal_position
+                """)
+                columns = [row[0] for row in cur.fetchall()]
+        assert "game_id" in columns, f"game_id not in uq_prediction columns: {columns}"
+
+    def test_upsert_with_game_id(self, pg_pool, clean_tables, sample_prediction_data):
+        """SCHM-01: insert_prediction succeeds with game_id in data."""
+        # Should not raise
+        insert_prediction(pg_pool, sample_prediction_data)
+        with pg_pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT game_id FROM predictions WHERE home_team = 'NYY' AND away_team = 'BOS'"
+                )
+                row = cur.fetchone()
+        assert row is not None
+        assert row[0] == 718520
+
+    def test_doubleheader_no_collision(self, pg_pool, clean_tables, sample_prediction_data):
+        """SCHM-01: Two predictions for same teams on same day with different game_ids don't collide."""
+        insert_prediction(pg_pool, sample_prediction_data)
+        game2 = sample_prediction_data.copy()
+        game2["game_id"] = 718521  # Second game of doubleheader
+        insert_prediction(pg_pool, game2)
+
+        with pg_pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT COUNT(*) FROM predictions WHERE home_team = 'NYY' AND away_team = 'BOS'"
+                )
+                count = cur.fetchone()[0]
+        assert count == 2
+
+    def test_reconciliation_columns(self, pg_pool, clean_tables):
+        """SCHM-02: actual_winner, prediction_correct, reconciled_at columns exist."""
+        with pg_pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT column_name, data_type, is_nullable
+                    FROM information_schema.columns
+                    WHERE table_name = 'predictions'
+                    AND column_name IN ('actual_winner', 'prediction_correct', 'reconciled_at')
+                    ORDER BY column_name
+                """)
+                rows = cur.fetchall()
+        cols = {row[0]: (row[1], row[2]) for row in rows}
+        assert "actual_winner" in cols, "actual_winner column missing"
+        assert cols["actual_winner"][0] == "text"
+        assert cols["actual_winner"][1] == "YES"  # nullable
+        assert "prediction_correct" in cols, "prediction_correct column missing"
+        assert cols["prediction_correct"][0] == "boolean"
+        assert "reconciled_at" in cols, "reconciled_at column missing"
+        assert "timestamp" in cols["reconciled_at"][0]  # timestamptz
+
+    def test_reconciliation_excluded_from_upsert(self):
+        """SCHM-02: reconciliation columns not in UPSERT column lists."""
+        from src.pipeline.db import _PREDICTION_COLS, _PREDICTION_UPDATE_COLS
+        for col in ["actual_winner", "prediction_correct", "reconciled_at"]:
+            assert col not in _PREDICTION_COLS, f"{col} must not be in _PREDICTION_COLS"
+            assert col not in _PREDICTION_UPDATE_COLS, f"{col} must not be in _PREDICTION_UPDATE_COLS"

@@ -79,4 +79,5 @@ def sample_prediction_data():
         "kalshi_yes_price": 0.52,
         "edge_signal": "BUY_YES",
         "is_latest": True,
+        "game_id": 718520,
     }

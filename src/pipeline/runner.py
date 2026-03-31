@@ -171,6 +171,7 @@ def _process_pre_lineup(game, artifacts, pool, fb, kalshi_price, today_str):
         "kalshi_yes_price": kalshi_price,
         "edge_signal": edge_signal,
         "is_latest": True,
+        "game_id": game.get("game_id"),
     })
 
 
@@ -213,6 +214,7 @@ def _process_post_lineup(game, artifacts, pool, fb, kalshi_price, today_str):
             "kalshi_yes_price": kalshi_price,
             "edge_signal": edge_signal,
             "is_latest": True,
+            "game_id": game.get("game_id"),
         })
     else:
         # TBD starters: TEAM_ONLY only, do NOT insert as post_lineup (PIPE-07)
@@ -251,6 +253,7 @@ def _insert_team_only_fallback(game, artifacts, pool, fb, kalshi_price, today_st
         "kalshi_yes_price": kalshi_price,
         "edge_signal": edge_signal,
         "is_latest": True,
+        "game_id": game.get("game_id"),
     })
 
 
@@ -314,4 +317,5 @@ def _process_confirmation(game, artifacts, pool, fb, kalshi_price, today_str):
         "kalshi_yes_price": kalshi_price,
         "edge_signal": edge_signal,
         "is_latest": True,
+        "game_id": game.get("game_id"),
     })
