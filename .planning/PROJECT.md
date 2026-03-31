@@ -56,9 +56,27 @@ Produce well-calibrated win probability estimates that can be rigorously compare
 - ✓ Collapsible "About the Models" section: LR/RF/XGBoost plain-English, calibration, PRE/POST-LINEUP, Kalshi mechanics + 7% fee disclosure — v2.1
 - ✓ Reusable Tooltip component (CSS-only, keyboard accessible); EdgeBadge (?) icons explaining Buy Yes/No contract mechanics — v2.1
 
-## Current State: v2.1 Shipped — Planning v3.0
+## Current Milestone: v2.2 Game Lifecycle, Live Scores & Historical Accuracy
 
-All three milestones shipped. Dashboard is live at mlbforecaster.silverreyes.net with full contextual clarity for users.
+**Goal:** Complete the game lifecycle loop — keep all scheduled games visible all day, add date navigation, show live scores for in-progress games, surface prediction outcomes, and provide a history page with rolling accuracy.
+
+**Target features:**
+- Fix game visibility (games disappearing once in-progress or final)
+- Date navigation (arrows + calendar picker; today/tomorrow predictions; future = schedule only)
+- Live score display (90s polling, bases diamond, pitcher/batter data, auto-Final stamping to Postgres)
+- Final game outcome display (score + prediction correctness on completed cards)
+- History page (date range, predictions vs actuals table, rolling accuracy)
+
+### Active (v2.2)
+
+- [ ] All games scheduled for selected date remain visible throughout the day (pre-game, in-progress, final)
+- [ ] Date navigation control (arrows + calendar picker) with today/tomorrow predictions and future-date schedule-only mode
+- [ ] Live score polling for in-progress games (90s interval; score + inning on card; expanded view with bases/pitch/batter)
+- [ ] Live poller writes actual_winner and prediction_correct to Postgres when game goes Final
+- [ ] Completed game cards show final score, model prediction, and prediction outcome marker
+- [ ] Nightly reconciliation job for games missed by live poller
+- [ ] Additive Postgres columns: actual_winner, prediction_correct, reconciled_at on predictions table
+- [ ] History route with date range picker, predictions vs actuals table, rolling accuracy by model
 
 ### Out of Scope
 
@@ -141,4 +159,4 @@ All three milestones shipped. Dashboard is live at mlbforecaster.silverreyes.net
 | Shortened tooltip text with pricing clause preserved | Original overflow fix removed "you pay" clause; restored as spec requirement in audit | ✓ Good — audit caught regression before milestone close |
 
 ---
-*Last updated: 2026-03-31 — after v2.1 milestone (Dashboard UX / Contextual Clarity)*
+*Last updated: 2026-03-30 — after v2.2 milestone started (Game Lifecycle, Live Scores & Historical Accuracy)*
