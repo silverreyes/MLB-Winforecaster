@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 
 interface EasternClockState {
   dateStr: string;   // e.g., "Monday, March 30" (ET date — baseball context)
-  timeStr: string;   // e.g., "2:34 PM" (browser local time, no ET label)
-  nextUpdate: string; // e.g., "Next update: 1:00 PM" or "Next update: 10:00 AM tomorrow"
+  timeStr: string;   // e.g., "2:34 PM MST" (browser local time with tz abbreviation)
+  nextUpdate: string; // e.g., "Next update: 1:00 PM MST" or "Next update: 10:00 AM MST tomorrow"
 }
 
 const PIPELINE_RUN_HOURS_ET = [10, 13, 17]; // 10 AM, 1 PM, 5 PM ET
@@ -31,6 +31,16 @@ const etHourFmt = new Intl.DateTimeFormat('en-US', {
   timeZone: 'America/New_York',
 });
 
+// Timezone abbreviation extractor (browser local timezone)
+const tzAbbrFmt = new Intl.DateTimeFormat('en-US', {
+  hour: 'numeric', // at least one field required alongside timeZoneName
+  timeZoneName: 'short',
+});
+
+function getLocalTzAbbr(date: Date): string {
+  return tzAbbrFmt.formatToParts(date).find(p => p.type === 'timeZoneName')?.value ?? '';
+}
+
 /**
  * Convert a pipeline run hour (in ET) to a display string in the user's browser timezone.
  *
@@ -54,7 +64,8 @@ function etRunHourToLocalDisplay(now: Date, etRunHour: number, tomorrow: boolean
   if (tomorrow) runDate.setDate(runDate.getDate() + 1);
   runDate.setHours(etRunHour + hourOffset, 0, 0, 0);
 
-  return localTimeFmt.format(runDate);
+  const tzAbbr = getLocalTzAbbr(runDate);
+  return tzAbbr ? `${localTimeFmt.format(runDate)} ${tzAbbr}` : localTimeFmt.format(runDate);
 }
 
 function computeNextUpdate(now: Date): string {
@@ -81,7 +92,8 @@ function computeNextUpdate(now: Date): string {
 function computeClock(): EasternClockState {
   const now = new Date();
   const dateStr = dateFmt.format(now);
-  const timeStr = localTimeFmt.format(now);
+  const tzAbbr = getLocalTzAbbr(now);
+  const timeStr = tzAbbr ? `${localTimeFmt.format(now)} ${tzAbbr}` : localTimeFmt.format(now);
   const nextUpdate = computeNextUpdate(now);
   return { dateStr, timeStr, nextUpdate };
 }

@@ -7,13 +7,22 @@ interface HeaderProps {
   isOffline: boolean;
 }
 
+const _timeFmt = new Intl.DateTimeFormat('en-US', {
+  hour: 'numeric',
+  minute: '2-digit',
+  hour12: true,
+});
+
+const _tzAbbrFmt = new Intl.DateTimeFormat('en-US', {
+  hour: 'numeric',
+  timeZoneName: 'short',
+});
+
 function formatTimestamp(isoString: string): string {
   const date = new Date(isoString);
-  return new Intl.DateTimeFormat('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  }).format(date);
+  const timeStr = _timeFmt.format(date);
+  const tzAbbr = _tzAbbrFmt.formatToParts(date).find(p => p.type === 'timeZoneName')?.value ?? '';
+  return tzAbbr ? `${timeStr} ${tzAbbr}` : timeStr;
 }
 
 export function Header({ lastUpdated, isStale, isOffline }: HeaderProps) {
