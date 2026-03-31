@@ -1,4 +1,4 @@
-import type { GameResponse } from '../api/types';
+import type { GameResponse, ViewMode } from '../api/types';
 import { PredictionColumn } from './PredictionColumn';
 import { KalshiSection } from './KalshiSection';
 import { SpBadge } from './SpBadge';
@@ -23,9 +23,10 @@ function formatGameTime(isoString: string | null): string {
 interface GameCardProps {
   game: GameResponse;
   isStale: boolean;
+  viewMode: ViewMode | null;
 }
 
-export function GameCard({ game }: GameCardProps) {
+export function GameCard({ game, isStale, viewMode }: GameCardProps) {
   const { home_team, away_team, prediction, game_status } = game;
 
   const pre_lineup = prediction?.pre_lineup ?? null;
@@ -39,6 +40,11 @@ export function GameCard({ game }: GameCardProps) {
 
   const hasBothVersions = post_lineup !== null && pre_lineup !== null;
   const hasPrediction = prediction !== null;
+
+  // SP name fallback: use prediction SP names, then schedule pitcher names
+  const awaySpName = primary?.away_sp ?? game.away_probable_pitcher;
+  const homeSpName = primary?.home_sp ?? game.home_probable_pitcher;
+  const spStatus = primary?.prediction_status === 'tbd' ? 'tbd' : 'confirmed';
 
   return (
     <div className={styles.card}>
@@ -60,20 +66,23 @@ export function GameCard({ game }: GameCardProps) {
         <div className={styles.statusBadge}>
           <StatusBadge status={game_status} />
         </div>
+        {game.prediction_label === 'PRELIMINARY' && (
+          <span className={styles.preliminaryBadge}>PRELIMINARY</span>
+        )}
         <div className={styles.spRow}>
-          {primary?.away_sp ? (
+          {awaySpName ? (
             <SpBadge
-              status={primary.prediction_status === 'tbd' ? 'tbd' : 'confirmed'}
-              name={primary.away_sp}
+              status={spStatus}
+              name={awaySpName}
             />
           ) : (
             <SpBadge status="tbd" />
           )}
           <span>|</span>
-          {primary?.home_sp ? (
+          {homeSpName ? (
             <SpBadge
-              status={primary.prediction_status === 'tbd' ? 'tbd' : 'confirmed'}
-              name={primary.home_sp}
+              status={spStatus}
+              name={homeSpName}
             />
           ) : (
             <SpBadge status="tbd" />
@@ -81,8 +90,8 @@ export function GameCard({ game }: GameCardProps) {
         </div>
       </div>
 
-      {/* Prediction body -- absent for stub cards */}
-      {hasPrediction && (
+      {/* Prediction body -- absent for stub cards and future mode */}
+      {hasPrediction && viewMode !== 'future' && (
         <div className={styles.predictionBody}>
           {hasBothVersions ? (
             <>
@@ -121,8 +130,8 @@ export function GameCard({ game }: GameCardProps) {
         </div>
       )}
 
-      {/* Kalshi section -- absent for stub cards */}
-      {hasPrediction && primary && (
+      {/* Kalshi section -- absent for stub cards and future mode */}
+      {hasPrediction && primary && viewMode !== 'future' && (
         <KalshiSection
           price={primary.kalshi_yes_price}
           edgeSignal={primary.edge_signal}

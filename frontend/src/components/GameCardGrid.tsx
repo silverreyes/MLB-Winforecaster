@@ -1,13 +1,14 @@
-import type { GameResponse } from '../api/types';
+import type { GameResponse, ViewMode } from '../api/types';
 import { GameCard } from './GameCard';
 import styles from './GameCardGrid.module.css';
 
 interface GameCardGridProps {
   games: GameResponse[];
   isStale: boolean;
+  viewMode: ViewMode | null;
 }
 
-export function GameCardGrid({ games, isStale }: GameCardGridProps) {
+export function GameCardGrid({ games, isStale, viewMode }: GameCardGridProps) {
   return (
     <div className={`${styles.grid} ${isStale ? styles.stale : ''}`}>
       {games.map((game) => (
@@ -15,6 +16,7 @@ export function GameCardGrid({ games, isStale }: GameCardGridProps) {
           key={game.game_id}
           game={game}
           isStale={isStale}
+          viewMode={viewMode}
         />
       ))}
     </div>

@@ -6,6 +6,7 @@ import { DateNavigator } from './components/DateNavigator';
 import { AccuracyStrip } from './components/AccuracyStrip';
 import { AboutModels } from './components/AboutModels';
 import { NewPredictionsBanner } from './components/NewPredictionsBanner';
+import { FutureDateBanner } from './components/FutureDateBanner';
 import { GameCardGrid } from './components/GameCardGrid';
 import { SkeletonCard } from './components/SkeletonCard';
 import { EmptyState } from './components/EmptyState';
@@ -69,6 +70,9 @@ function App() {
         visible={hasNewPredictions}
         onRefresh={handleRefresh}
       />
+      {(viewMode === 'tomorrow' || viewMode === 'future') && games.length > 0 && (
+        <FutureDateBanner viewMode={viewMode} />
+      )}
       <main>
         {isLoading && !data ? (
           <div className={styles.skeletonGrid}>
@@ -79,11 +83,16 @@ function App() {
         ) : isError && !data ? (
           <ErrorState lastSuccessfulTimestamp={lastSuccessTimestamp} />
         ) : games.length === 0 ? (
-          <EmptyState />
+          viewMode === 'future' || viewMode === 'tomorrow' ? (
+            <FutureDateBanner viewMode={viewMode} />
+          ) : (
+            <EmptyState viewMode={viewMode ?? null} selectedDate={selectedDate} />
+          )
         ) : (
           <GameCardGrid
             games={games}
             isStale={isStale || isOffline}
+            viewMode={viewMode}
           />
         )}
       </main>
