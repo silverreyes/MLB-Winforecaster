@@ -86,6 +86,14 @@ def apply_schema(pool: ConnectionPool) -> None:
             migration_path,
         )
 
+    migration_002_path = _MIGRATION_DIR / "migration_002.sql"
+    if migration_002_path.exists():
+        migration_sql = migration_002_path.read_text()
+        with pool.connection() as conn:
+            conn.execute(migration_sql)
+            conn.commit()
+        logger.info("Applied migration_002.sql")
+
 
 # ---------------------------------------------------------------------------
 # Prediction helpers
