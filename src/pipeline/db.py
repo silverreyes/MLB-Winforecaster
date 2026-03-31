@@ -18,6 +18,7 @@ DATABASE_URL = os.environ.get(
 )
 
 _SCHEMA_PATH = Path(__file__).parent / "schema.sql"
+_MIGRATION_DIR = Path(__file__).parent
 
 
 def get_pool(min_size: int = 2, max_size: int = 10) -> ConnectionPool:
@@ -67,6 +68,14 @@ def apply_schema(pool: ConnectionPool) -> None:
         conn.execute(remaining_sql)
         conn.commit()
 
+    # Apply migrations (idempotent, safe to re-run)
+    migration_path = _MIGRATION_DIR / "migration_001.sql"
+    if migration_path.exists():
+        migration_sql = migration_path.read_text()
+        with pool.connection() as conn:
+            conn.execute(migration_sql)
+            conn.commit()
+
 
 # ---------------------------------------------------------------------------
 # Prediction helpers
@@ -78,6 +87,7 @@ _PREDICTION_COLS = [
     "prediction_status", "lr_prob", "rf_prob", "xgb_prob", "feature_set",
     "home_sp", "away_sp", "sp_uncertainty", "sp_may_have_changed",
     "kalshi_yes_price", "edge_signal", "is_latest",
+    "game_id",  # Phase 13 SCHM-01
 ]
 
 # Columns to update on conflict (everything except the unique key columns)
@@ -86,6 +96,9 @@ _PREDICTION_UPDATE_COLS = [
     "home_sp", "away_sp", "sp_uncertainty", "sp_may_have_changed",
     "kalshi_yes_price", "edge_signal",
 ]
+# NOTE: actual_winner, prediction_correct, reconciled_at deliberately excluded.
+# These columns are written only by the reconciliation process (Phase 16).
+# Including them here would cause pipeline UPSERT to overwrite reconciliation data.
 
 
 def insert_prediction(pool: ConnectionPool, data: dict) -> None:
