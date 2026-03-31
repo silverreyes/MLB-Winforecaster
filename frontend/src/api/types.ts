@@ -52,6 +52,23 @@ export interface PredictionGroup {
   post_lineup: PredictionResponse | null;
 }
 
+export interface LiveScoreData {
+  away_score: number;
+  home_score: number;
+  inning: number;
+  inning_half: 'top' | 'bottom';
+  outs: number;
+  balls: number;
+  strikes: number;
+  runner_on_1b: boolean;
+  runner_on_2b: boolean;
+  runner_on_3b: boolean;
+  current_batter: string | null;
+  batter_avg: string | null;
+  batter_ops: string | null;
+  on_deck_batter: string | null;
+}
+
 export interface GameResponse {
   game_id: number;
   home_team: string;
@@ -62,6 +79,7 @@ export interface GameResponse {
   prediction_label: 'PRELIMINARY' | null;
   home_probable_pitcher: string | null;
   away_probable_pitcher: string | null;
+  live_score: LiveScoreData | null;
 }
 
 export interface GamesDateResponse {

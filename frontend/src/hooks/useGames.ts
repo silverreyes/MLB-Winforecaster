@@ -20,7 +20,11 @@ export function useGames(dateStr?: string) {
     staleTime: 55_000,
     refetchInterval: (query) => {
       const viewMode = query.state.data?.view_mode;
-      return viewMode === 'live' ? 60_000 : false;
+      if (viewMode !== 'live') return false;
+      const hasLiveGames = query.state.data?.games?.some(
+        (g: GameResponse) => g.game_status === 'LIVE'
+      );
+      return hasLiveGames ? 90_000 : false;
     },
   });
 
