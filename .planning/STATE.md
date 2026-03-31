@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Game Lifecycle, Live Scores & Historical Accuracy
-status: completed
-stopped_at: Completed 13-04-PLAN.md
-last_updated: "2026-03-31T16:08:42.959Z"
-last_activity: 2026-03-31 -- Completed 13-04 UAT gap closure plan
+status: executing
+stopped_at: Completed 14-01-PLAN.md
+last_updated: "2026-03-31T17:32:33Z"
+last_activity: 2026-03-31 -- Completed 14-01 API view_mode and tomorrow labels
 progress:
   total_phases: 5
   completed_phases: 1
-  total_plans: 4
-  completed_plans: 4
-  percent: 100
+  total_plans: 7
+  completed_plans: 5
+  percent: 71
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-30)
 
 **Core value:** Produce well-calibrated win probability estimates that can be rigorously compared against Kalshi market prices, surfacing where models agree, disagree, and where edges may exist.
-**Current focus:** Phase 13 - Schema Migration & Game Visibility
+**Current focus:** Phase 14 - Date Navigation
 
 ## Current Position
 
-Phase: 13 of 17 (Schema Migration & Game Visibility)
-Plan: 4 of 4 in current phase
-Status: Phase Complete
-Last activity: 2026-03-31 -- Completed 13-04 UAT gap closure plan
+Phase: 14 of 17 (Date Navigation)
+Plan: 1 of 3 in current phase
+Status: Executing
+Last activity: 2026-03-31 -- Completed 14-01 API view_mode and tomorrow labels
 
-Progress: [██████████] 100%
+Progress: [███████░░░] 71%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3 (v2.2)
+- Total plans completed: 5 (v2.2)
 - Average duration: 4min
-- Total execution time: 12min
+- Total execution time: 17min
 
 **By Phase:**
 
@@ -47,9 +47,10 @@ Progress: [██████████] 100%
 | Phase 13 P02 | 5min | 2 tasks | 5 files |
 | Phase 13 P03 | 4min | 2 tasks | 8 files |
 | Phase 13 P04 | 3min | 2 tasks | 3 files |
+| Phase 14 P01 | 5min | 1 task | 4 files |
 
 **Recent Trend:**
-- Last 5 plans: 3min, 5min, 4min, 3min
+- Last 5 plans: 3min, 5min, 4min, 3min, 5min
 - Trend: stable
 
 *Updated after each plan completion*
@@ -70,6 +71,9 @@ Progress: [██████████] 100%
 - game_id-first matching priority with team-pair fallback for prediction merge in /games/{date} (Phase 13)
 - Preserved existing GameGroup/TodayResponse types for backward compat with usePredictions/useLatestTimestamp (Phase 13)
 - StatusBadge placed between game time and SP row in card header per UI-SPEC layout contract (Phase 13)
+- Server-side view_mode via ET timezone avoids client-side date math pitfalls (Phase 14)
+- Composite cache key (date:pitchers) prevents returning non-pitcher data for tomorrow requests (Phase 14)
+- Pitcher fields always present in schedule dicts (None when not hydrated) for consistent dict shape (Phase 14)
 
 ### Roadmap Decisions
 
@@ -91,6 +95,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-31T16:08:42.956Z
-Stopped at: Completed 13-04-PLAN.md
-Resume file: None
+Last session: 2026-03-31T17:32:33Z
+Stopped at: Completed 14-01-PLAN.md
+Resume file: .planning/phases/14-date-navigation/14-02-PLAN.md
