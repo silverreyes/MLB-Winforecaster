@@ -5,6 +5,7 @@ use strict typing with Optional fields for nullable database columns.
 """
 
 from datetime import date, datetime
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -60,3 +61,28 @@ class HealthResponse(BaseModel):
     status: str
     last_pipeline_runs: dict
     checked_at: str
+
+
+class PredictionGroup(BaseModel):
+    """Pre-lineup and/or post-lineup predictions for a single game."""
+
+    pre_lineup: PredictionResponse | None = None
+    post_lineup: PredictionResponse | None = None
+
+
+class GameResponse(BaseModel):
+    """Single game entry for the /games/{date} endpoint."""
+
+    game_id: int
+    home_team: str
+    away_team: str
+    game_time: datetime | None
+    game_status: Literal['PRE_GAME', 'LIVE', 'FINAL', 'POSTPONED']
+    prediction: PredictionGroup | None = None
+
+
+class GamesDateResponse(BaseModel):
+    """Response shape for GET /games/{date}."""
+
+    games: list[GameResponse]
+    generated_at: datetime

@@ -12,6 +12,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.routes.accuracy import router as accuracy_router
+from api.routes.games import router as games_router
 from api.routes.health import router as health_router
 from api.routes.predictions import router as predictions_router
 from api.spa import SPAStaticFiles
@@ -41,6 +42,7 @@ app.add_middleware(
 
 # Include API routers -- all under /api/v1 prefix
 app.include_router(predictions_router, prefix="/api/v1")
+app.include_router(games_router, prefix="/api/v1")
 app.include_router(accuracy_router, prefix="/api/v1")
 app.include_router(health_router, prefix="/api/v1")
 
