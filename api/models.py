@@ -70,6 +70,25 @@ class PredictionGroup(BaseModel):
     post_lineup: PredictionResponse | None = None
 
 
+class LiveScoreData(BaseModel):
+    """Live game score and state data, populated only for LIVE games."""
+
+    away_score: int
+    home_score: int
+    inning: int
+    inning_half: Literal['top', 'bottom']
+    outs: int
+    balls: int
+    strikes: int
+    runner_on_1b: bool
+    runner_on_2b: bool
+    runner_on_3b: bool
+    current_batter: str | None
+    batter_avg: str | None
+    batter_ops: str | None
+    on_deck_batter: str | None
+
+
 class GameResponse(BaseModel):
     """Single game entry for the /games/{date} endpoint."""
 
@@ -82,6 +101,7 @@ class GameResponse(BaseModel):
     prediction_label: Literal['PRELIMINARY'] | None = None
     home_probable_pitcher: str | None = None
     away_probable_pitcher: str | None = None
+    live_score: LiveScoreData | None = None
 
 
 class GamesDateResponse(BaseModel):

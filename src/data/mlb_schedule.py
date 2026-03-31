@@ -270,3 +270,150 @@ def get_schedule_cached(date_str: str, include_pitchers: bool = False) -> list[d
         _schedule_cache[cache_key] = (now, fresh)
 
     return fresh
+
+
+# ---------------------------------------------------------------------------
+# Phase 15: Per-game linescore cache for live score data
+# ---------------------------------------------------------------------------
+
+import logging
+
+_log = logging.getLogger(__name__)
+
+_linescore_cache: dict[int, tuple[float, dict]] = {}
+_linescore_lock = threading.Lock()
+_LINESCORE_TTL = 90
+_LINESCORE_MAX_ENTRIES = 20
+
+
+def get_linescore_cached(game_id: int) -> dict | None:
+    """Fetch live game data with 90s TTL cache.
+
+    Returns the raw MLB Stats API response dict for the given game,
+    or None if the API call fails. Cached per game_id with 90s TTL.
+    Thread-safe via Lock; fetch happens outside lock to avoid blocking.
+
+    Args:
+        game_id: The MLB gamePk identifier.
+
+    Returns:
+        Raw dict from statsapi.get('game', ...) or None on error.
+    """
+    now = time.monotonic()
+    with _linescore_lock:
+        if game_id in _linescore_cache:
+            ts, data = _linescore_cache[game_id]
+            if now - ts < _LINESCORE_TTL:
+                return data
+
+    # Fetch outside lock to avoid blocking concurrent requests
+    try:
+        raw = statsapi.get('game', {
+            'gamePk': game_id,
+            'fields': (
+                'liveData,linescore,currentInning,currentInningOrdinal,'
+                'inningHalf,outs,balls,strikes,teams,home,away,runs,'
+                'offense,defense,batter,onDeck,first,second,third,fullName,id,'
+                'boxscore,players,person,seasonStats,batting,avg,ops,'
+                'gameData,status,abstractGameState'
+            ),
+        })
+    except Exception:
+        _log.warning("Failed to fetch linescore for game %s", game_id, exc_info=True)
+        return None
+
+    with _linescore_lock:
+        # Evict oldest entry if at capacity
+        if len(_linescore_cache) >= _LINESCORE_MAX_ENTRIES and game_id not in _linescore_cache:
+            oldest = min(_linescore_cache, key=lambda k: _linescore_cache[k][0])
+            del _linescore_cache[oldest]
+        _linescore_cache[game_id] = (now, raw)
+
+    return raw
+
+
+def parse_linescore(raw: dict) -> dict | None:
+    """Extract live score data from raw MLB Stats API game feed response.
+
+    Parses the linescore, offense, and boxscore sections to produce a dict
+    matching the LiveScoreData Pydantic model fields.
+
+    Args:
+        raw: Raw dict from statsapi.get('game', ...).
+
+    Returns:
+        Dict with 14 fields matching LiveScoreData schema, or None if
+        the game has no score data (pre-game state).
+    """
+    live = raw.get('liveData', {})
+    ls = live.get('linescore', {})
+    offense = ls.get('offense', {})
+
+    # Core score data -- return None if runs not present (pre-game)
+    home_runs = ls.get('teams', {}).get('home', {}).get('runs')
+    away_runs = ls.get('teams', {}).get('away', {}).get('runs')
+    if home_runs is None or away_runs is None:
+        return None
+
+    inning = ls.get('currentInning')
+    inning_half_raw = ls.get('inningHalf', '')
+
+    # Map inningHalf to top/bottom; "Middle"/"End" default to top
+    if inning_half_raw.lower() == 'bottom':
+        inning_half = 'bottom'
+    elif inning_half_raw.lower() == 'top':
+        inning_half = 'top'
+    else:
+        inning_half = 'top'  # "Middle"/"End" treated as top for display
+
+    # Count data
+    outs = ls.get('outs', 0)
+    balls = ls.get('balls', 0)
+    strikes = ls.get('strikes', 0)
+
+    # Runners: offense.first/second/third are present only when occupied
+    runner_on_1b = 'first' in offense
+    runner_on_2b = 'second' in offense
+    runner_on_3b = 'third' in offense
+
+    # Current batter
+    batter_obj = offense.get('batter', {})
+    batter_name = batter_obj.get('fullName')
+    batter_id = batter_obj.get('id')
+
+    # On-deck batter
+    on_deck_obj = offense.get('onDeck', {})
+    on_deck_name = on_deck_obj.get('fullName')
+
+    # Batter season stats from boxscore (AVG, OPS)
+    batter_avg = None
+    batter_ops = None
+    if batter_id:
+        boxscore = live.get('boxscore', {})
+        # Batter could be on either team -- check both
+        for side in ('home', 'away'):
+            players = boxscore.get('teams', {}).get(side, {}).get('players', {})
+            player_key = f'ID{batter_id}'
+            player_data = players.get(player_key, {})
+            season_batting = player_data.get('seasonStats', {}).get('batting', {})
+            if season_batting.get('avg'):
+                batter_avg = season_batting['avg']
+                batter_ops = season_batting.get('ops')
+                break
+
+    return {
+        'away_score': away_runs,
+        'home_score': home_runs,
+        'inning': inning,
+        'inning_half': inning_half,
+        'outs': outs,
+        'balls': balls,
+        'strikes': strikes,
+        'runner_on_1b': runner_on_1b,
+        'runner_on_2b': runner_on_2b,
+        'runner_on_3b': runner_on_3b,
+        'current_batter': batter_name,
+        'batter_avg': batter_avg,
+        'batter_ops': batter_ops,
+        'on_deck_batter': on_deck_name,
+    }
