@@ -1,7 +1,7 @@
 # Requirements: MLB Win Forecaster
 
 **Defined:** 2026-03-30
-**Milestone:** v2.2 — Game Lifecycle, Live Scores & Historical Accuracy
+**Milestone:** v2.2 -- Game Lifecycle, Live Scores & Historical Accuracy
 **Core Value:** Produce well-calibrated win probability estimates that can be rigorously compared against Kalshi market prices, surfacing where models agree, disagree, and where edges may exist.
 
 ## v2.2 Requirements
@@ -13,8 +13,8 @@
 
 ### Schema Migration (SCHM)
 
-- [ ] **SCHM-01**: Predictions table gains `game_id` column (integer); unique constraint updated to include `game_id` to prevent doubleheader row collision — applied via idempotent migration
-- [ ] **SCHM-02**: Predictions table gains additive nullable columns: `actual_winner` (text), `prediction_correct` (boolean), `reconciled_at` (timestamp) — applied via idempotent migration
+- [ ] **SCHM-01**: Predictions table gains `game_id` column (integer); unique constraint updated to include `game_id` to prevent doubleheader row collision -- applied via idempotent migration
+- [ ] **SCHM-02**: Predictions table gains additive nullable columns: `actual_winner` (text), `prediction_correct` (boolean), `reconciled_at` (timestamp) -- applied via idempotent migration
 
 ### Date Navigation (DATE)
 
@@ -56,9 +56,9 @@
 
 ### Advanced Features (v2.3+)
 
-- **HIST-05**: Rolling accuracy trend chart (Recharts) — deferred until 50+ games accumulated
+- **HIST-05**: Rolling accuracy trend chart (Recharts) -- deferred until 50+ games accumulated
 - **HIST-06**: Per-model Brier score trend chart over time
-- **DATE-09**: Tomorrow preliminary predictions using TEAM_ONLY model when SP data unavailable (deferred — stale SP risk)
+- **DATE-09**: Tomorrow preliminary predictions using TEAM_ONLY model when SP data unavailable (deferred -- stale SP risk)
 - **LIVE-09**: Model win probability shift overlay during live games (requires in-game modeling, out of scope per PROJECT.md)
 
 ## Out of Scope
@@ -106,10 +106,10 @@
 | HIST-04 | Phase 17 | Pending |
 
 **Coverage:**
-- v2.2 requirements: 26 total
-- Mapped to phases: 26
-- Unmapped: 0 ✓
+- v2.2 requirements: 28 total
+- Mapped to phases: 28
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-30*
-*Last updated: 2026-03-30 after initial definition*
+*Last updated: 2026-03-30 after roadmap creation*
