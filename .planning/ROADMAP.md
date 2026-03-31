@@ -43,6 +43,7 @@
 
 - [x] **Phase 13: Schema Migration & Game Visibility** - Add game_id and outcome columns to predictions table; make all games visible regardless of status (gap closure in progress) (completed 2026-03-31)
 - [x] **Phase 14: Date Navigation** - Arrow/calendar date controls with today default, past predictions, and future schedule-only mode (completed 2026-03-31)
+- [ ] **Phase 14.5: Post-Phase-14 Bug Fixes** - Header timestamp (BUG-A), browser timezone clock (BUG-B), MLB API retry logic (RETRY)
 - [ ] **Phase 15: Live Score Polling** - In-progress game scores, inning display, expanded card with bases/pitcher/batter, auto-Final outcome writes
 - [ ] **Phase 16: Final Outcomes & Nightly Reconciliation** - Completed game cards with score/prediction/outcome marker; safety-net reconciler for missed Finals
 - [ ] **Phase 17: History Route** - Date range picker, predictions vs actuals table, rolling accuracy by model
@@ -82,6 +83,21 @@ Plans:
 - [ ] 14-01-PLAN.md — Backend: view_mode computation, probable pitcher hydration, tomorrow PRELIMINARY logic, tests
 - [ ] 14-02-PLAN.md — Frontend: TypeScript types, DateNavigator component, useGames conditional polling, App.tsx wiring
 - [ ] 14-03-PLAN.md — Frontend: FutureDateBanner, EmptyState date-aware copy, GameCard PRELIMINARY badge, visual verification
+
+### Phase 14.5: Post-Phase-14 Bug Fixes
+**Goal**: Fix three bugs identified during Phase 14 VPS verification
+**Depends on**: Phase 14
+**Requirements**: BUG-A, BUG-B, RETRY
+**Success Criteria** (what must be TRUE):
+  1. Header "Last updated" shows the pipeline run time, not page load time
+  2. Live clock and "Next update" display in the user's browser timezone
+  3. On 503 or timeout from MLB Stats API, pipeline jobs retry once after 15 minutes
+**Plans**: 3 plans
+
+Plans:
+- [ ] 14.5-01-PLAN.md — BUG-A: Wire pipeline timestamp to Header, isStale, hasNewPredictions in App.tsx
+- [ ] 14.5-02-PLAN.md — BUG-B: Browser-local timezone in useEasternClock (clock + next update display)
+- [ ] 14.5-03-PLAN.md — RETRY: run_pipeline_with_retry wrapper in scheduler.py with 8 unit tests
 
 ### Phase 15: Live Score Polling
 **Goal**: Users see real-time game progress on in-progress cards and the system automatically records outcomes when games finish
