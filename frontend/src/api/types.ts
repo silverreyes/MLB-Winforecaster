@@ -39,3 +39,26 @@ export interface GameGroup {
   pre_lineup: PredictionResponse | null;
   post_lineup: PredictionResponse | null;
 }
+
+// Phase 13: /games/{date} response types
+
+export type GameStatus = 'PRE_GAME' | 'LIVE' | 'FINAL' | 'POSTPONED';
+
+export interface PredictionGroup {
+  pre_lineup: PredictionResponse | null;
+  post_lineup: PredictionResponse | null;
+}
+
+export interface GameResponse {
+  game_id: number;
+  home_team: string;
+  away_team: string;
+  game_time: string | null;
+  game_status: GameStatus;
+  prediction: PredictionGroup | null;
+}
+
+export interface GamesDateResponse {
+  games: GameResponse[];
+  generated_at: string;
+}
