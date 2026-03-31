@@ -5,6 +5,7 @@ predictions, and pipeline_runs tables. All functions accept a
 ConnectionPool and use parameterized queries.
 """
 
+import logging
 import os
 from datetime import datetime, timezone
 from pathlib import Path
@@ -12,6 +13,8 @@ from pathlib import Path
 import psycopg
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
+
+logger = logging.getLogger(__name__)
 
 DATABASE_URL = os.environ.get(
     "DATABASE_URL", "postgresql://localhost:5432/mlb_forecaster"
@@ -75,6 +78,13 @@ def apply_schema(pool: ConnectionPool) -> None:
         with pool.connection() as conn:
             conn.execute(migration_sql)
             conn.commit()
+        logger.info("Applied migration_001.sql")
+    else:
+        logger.warning(
+            "migration_001.sql not found at %s — skipping migration "
+            "(check pyproject.toml package-data if running from pip install)",
+            migration_path,
+        )
 
 
 # ---------------------------------------------------------------------------
