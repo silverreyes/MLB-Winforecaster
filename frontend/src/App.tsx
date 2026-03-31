@@ -83,11 +83,7 @@ function App() {
         ) : isError && !data ? (
           <ErrorState lastSuccessfulTimestamp={lastSuccessTimestamp} />
         ) : games.length === 0 ? (
-          viewMode === 'future' || viewMode === 'tomorrow' ? (
-            <FutureDateBanner viewMode={viewMode} />
-          ) : (
-            <EmptyState viewMode={viewMode ?? null} selectedDate={selectedDate} />
-          )
+          <EmptyState viewMode={viewMode ?? null} selectedDate={selectedDate} />
         ) : (
           <GameCardGrid
             games={games}
