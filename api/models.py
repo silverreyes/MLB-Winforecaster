@@ -79,6 +79,9 @@ class GameResponse(BaseModel):
     game_time: datetime | None
     game_status: Literal['PRE_GAME', 'LIVE', 'FINAL', 'POSTPONED']
     prediction: PredictionGroup | None = None
+    prediction_label: Literal['PRELIMINARY'] | None = None
+    home_probable_pitcher: str | None = None
+    away_probable_pitcher: str | None = None
 
 
 class GamesDateResponse(BaseModel):
@@ -86,3 +89,4 @@ class GamesDateResponse(BaseModel):
 
     games: list[GameResponse]
     generated_at: datetime
+    view_mode: Literal['live', 'historical', 'tomorrow', 'future']

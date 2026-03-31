@@ -166,7 +166,7 @@ def map_game_status(status_obj: dict) -> str:
         return 'PRE_GAME'
 
 
-def fetch_schedule_for_date(date_str: str) -> list[dict]:
+def fetch_schedule_for_date(date_str: str, include_pitchers: bool = False) -> list[dict]:
     """Fetch MLB schedule using raw API to get status fields.
 
     Unlike fetch_today_schedule() which uses the statsapi.schedule() wrapper
@@ -175,20 +175,27 @@ def fetch_schedule_for_date(date_str: str) -> list[dict]:
 
     Args:
         date_str: Date in YYYY-MM-DD format.
+        include_pitchers: If True, hydrate probable pitchers and include
+            home_probable_pitcher / away_probable_pitcher in returned dicts.
 
     Returns:
         List of game dicts with keys: game_id, home_name, away_name,
         game_datetime, game_status, doubleheader, game_num.
+        When include_pitchers=True, also: home_probable_pitcher, away_probable_pitcher.
         Filtered to regular season games only (gameType == 'R').
     """
     from datetime import datetime as _dt
     dt = _dt.strptime(date_str, "%Y-%m-%d")
     api_date = dt.strftime("%m/%d/%Y")
 
-    data = statsapi.get('schedule', {
+    params = {
         'sportId': 1,
         'date': api_date,
-    })
+    }
+    if include_pitchers:
+        params['hydrate'] = 'probablePitcher(note)'
+
+    data = statsapi.get('schedule', params)
 
     games = []
     for date_entry in data.get('dates', []):
@@ -203,7 +210,15 @@ def fetch_schedule_for_date(date_str: str) -> list[dict]:
             if game_pk is None:
                 continue  # Skip games without a gamePk (shouldn't happen)
 
-            games.append({
+            home_pitcher = None
+            away_pitcher = None
+            if include_pitchers:
+                home_pitcher = (game.get('teams', {}).get('home', {})
+                                .get('probablePitcher', {}).get('fullName'))
+                away_pitcher = (game.get('teams', {}).get('away', {})
+                                .get('probablePitcher', {}).get('fullName'))
+
+            game_dict = {
                 'game_id': game_pk,
                 'home_name': game['teams']['home']['team']['name'],
                 'away_name': game['teams']['away']['team']['name'],
@@ -211,12 +226,16 @@ def fetch_schedule_for_date(date_str: str) -> list[dict]:
                 'game_status': game_status,
                 'doubleheader': game.get('doubleHeader', 'N'),
                 'game_num': game.get('gameNumber', 1),
-            })
+                'home_probable_pitcher': home_pitcher,
+                'away_probable_pitcher': away_pitcher,
+            }
+
+            games.append(game_dict)
 
     return games
 
 
-def get_schedule_cached(date_str: str) -> list[dict]:
+def get_schedule_cached(date_str: str, include_pitchers: bool = False) -> list[dict]:
     """Return cached schedule, fetching fresh if expired.
 
     Thread-safe via Lock. Fetch happens outside the lock to avoid blocking
@@ -224,25 +243,30 @@ def get_schedule_cached(date_str: str) -> list[dict]:
 
     Args:
         date_str: Date in YYYY-MM-DD format.
+        include_pitchers: If True, hydrate probable pitchers (passed through
+            to fetch_schedule_for_date).
 
     Returns:
         Same as fetch_schedule_for_date().
     """
+    # Use a composite cache key when pitchers are included to avoid
+    # returning non-pitcher data for tomorrow requests
+    cache_key = f"{date_str}:pitchers" if include_pitchers else date_str
     now = time.monotonic()
     with _cache_lock:
-        if date_str in _schedule_cache:
-            ts, data = _schedule_cache[date_str]
+        if cache_key in _schedule_cache:
+            ts, data = _schedule_cache[cache_key]
             if now - ts < _CACHE_TTL_SECONDS:
                 return data
 
     # Fetch fresh data outside the lock
-    fresh = fetch_schedule_for_date(date_str)
+    fresh = fetch_schedule_for_date(date_str, include_pitchers=include_pitchers)
 
     with _cache_lock:
         # Evict oldest entries if at capacity
-        if len(_schedule_cache) >= _CACHE_MAX_ENTRIES and date_str not in _schedule_cache:
+        if len(_schedule_cache) >= _CACHE_MAX_ENTRIES and cache_key not in _schedule_cache:
             oldest_key = min(_schedule_cache, key=lambda k: _schedule_cache[k][0])
             del _schedule_cache[oldest_key]
-        _schedule_cache[date_str] = (now, fresh)
+        _schedule_cache[cache_key] = (now, fresh)
 
     return fresh

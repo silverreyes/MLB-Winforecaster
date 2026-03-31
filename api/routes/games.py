@@ -8,7 +8,8 @@ Sync def handler (not async) following existing FastAPI pattern.
 """
 
 import logging
-from datetime import datetime, timezone
+from datetime import date as date_type, datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, HTTPException, Request
 from psycopg.rows import dict_row
@@ -22,9 +23,62 @@ from api.models import (
 from src.data.mlb_schedule import get_schedule_cached
 from src.data.team_mappings import normalize_team
 
+ET = ZoneInfo("America/New_York")
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["games"])
+
+
+def compute_view_mode(requested_date_str: str) -> str:
+    """Determine rendering context for a given date.
+
+    Returns one of: 'live', 'historical', 'tomorrow', 'future'.
+    All comparisons use America/New_York timezone (ET).
+    """
+    requested = date_type.fromisoformat(requested_date_str)
+    today = datetime.now(ET).date()
+    tomorrow = today + timedelta(days=1)
+    if requested == today:
+        return "live"
+    elif requested < today:
+        return "historical"
+    elif requested == tomorrow:
+        return "tomorrow"
+    else:
+        return "future"
+
+
+def _is_pitcher_confirmed(name: str | None) -> bool:
+    """Check if a probable pitcher name represents a confirmed starter.
+
+    Returns False for None, empty string, 'TBD', or whitespace-padded 'TBD'.
+    """
+    if not name:
+        return False
+    stripped = name.strip()
+    return bool(stripped) and stripped.upper() != 'TBD'
+
+
+def _apply_tomorrow_labels(games: list[GameResponse], schedule: list[dict]) -> None:
+    """Apply PRELIMINARY prediction labels to tomorrow's games with both SPs confirmed.
+
+    Mutates GameResponse objects in-place:
+    - Both SPs confirmed: prediction_label='PRELIMINARY', pitcher names populated
+    - Otherwise: prediction_label remains None, individual confirmed pitchers still populated
+    """
+    schedule_lookup = {g['game_id']: g for g in schedule}
+    for game_resp in games:
+        sched = schedule_lookup.get(game_resp.game_id, {})
+        home_sp = sched.get('home_probable_pitcher')
+        away_sp = sched.get('away_probable_pitcher')
+        if _is_pitcher_confirmed(home_sp) and _is_pitcher_confirmed(away_sp):
+            game_resp.prediction_label = 'PRELIMINARY'
+            game_resp.home_probable_pitcher = home_sp
+            game_resp.away_probable_pitcher = away_sp
+        else:
+            game_resp.home_probable_pitcher = home_sp if _is_pitcher_confirmed(home_sp) else None
+            game_resp.away_probable_pitcher = away_sp if _is_pitcher_confirmed(away_sp) else None
 
 
 def _parse_game_time(dt_str: str | None) -> datetime | None:
@@ -184,8 +238,12 @@ def get_games_for_date(request: Request, date: str):
 
     pool = request.app.state.pool
 
-    # Fetch schedule (cached, 75s TTL)
-    schedule = get_schedule_cached(date)
+    # Compute view mode (live/historical/tomorrow/future)
+    view_mode = compute_view_mode(date)
+
+    # Fetch schedule (cached, 75s TTL); include pitchers for tomorrow
+    include_pitchers = view_mode == "tomorrow"
+    schedule = get_schedule_cached(date, include_pitchers=include_pitchers)
 
     # Fetch predictions from DB
     predictions = _fetch_predictions_for_date(pool, date)
@@ -193,7 +251,12 @@ def get_games_for_date(request: Request, date: str):
     # Merge
     games = build_games_response(schedule, predictions)
 
+    # Apply PRELIMINARY labels for tomorrow's games with confirmed SPs
+    if view_mode == "tomorrow":
+        _apply_tomorrow_labels(games, schedule)
+
     return GamesDateResponse(
         games=games,
         generated_at=datetime.now(timezone.utc),
+        view_mode=view_mode,
     )
