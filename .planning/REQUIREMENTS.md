@@ -8,8 +8,8 @@
 
 ### Visibility Fix (VIBL)
 
-- [ ] **VIBL-01**: All games scheduled for the selected date remain visible on the dashboard regardless of game status (pre-game, in-progress, final, postponed)
-- [ ] **VIBL-02**: Each game card displays a status badge showing its current state (PRE-GAME / LIVE / FINAL / POSTPONED)
+- [x] **VIBL-01**: All games scheduled for the selected date remain visible on the dashboard regardless of game status (pre-game, in-progress, final, postponed)
+- [x] **VIBL-02**: Each game card displays a status badge showing its current state (PRE-GAME / LIVE / FINAL / POSTPONED)
 
 ### Schema Migration (SCHM)
 
@@ -76,8 +76,8 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| VIBL-01 | Phase 13 | Pending |
-| VIBL-02 | Phase 13 | Pending |
+| VIBL-01 | Phase 13 | Complete |
+| VIBL-02 | Phase 13 | Complete |
 | SCHM-01 | Phase 13 | Complete |
 | SCHM-02 | Phase 13 | Complete |
 | DATE-01 | Phase 14 | Pending |

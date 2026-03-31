@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Game Lifecycle, Live Scores & Historical Accuracy
 status: executing
-stopped_at: Completed 13-01-PLAN.md
-last_updated: "2026-03-31T12:40:23.393Z"
-last_activity: 2026-03-31 -- Completed 13-01 schema migration plan
+stopped_at: Completed 13-02-PLAN.md
+last_updated: "2026-03-31T12:48:55.604Z"
+last_activity: 2026-03-31 -- Completed 13-02 games date endpoint plan
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
-  percent: 33
+  completed_plans: 2
+  percent: 67
 ---
 
 # Project State
@@ -26,27 +26,28 @@ See: .planning/PROJECT.md (updated 2026-03-30)
 ## Current Position
 
 Phase: 13 of 17 (Schema Migration & Game Visibility)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: Executing
-Last activity: 2026-03-31 -- Completed 13-01 schema migration plan
+Last activity: 2026-03-31 -- Completed 13-02 games date endpoint plan
 
-Progress: [███░░░░░░░] 33%
+Progress: [███████░░░] 67%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1 (v2.2)
-- Average duration: 3min
-- Total execution time: 3min
+- Total plans completed: 2 (v2.2)
+- Average duration: 4min
+- Total execution time: 8min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | Phase 13 P01 | 3min | 2 tasks | 5 files |
+| Phase 13 P02 | 5min | 2 tasks | 5 files |
 
 **Recent Trend:**
-- Last 5 plans: 3min
+- Last 5 plans: 3min, 5min
 - Trend: -
 
 *Updated after each plan completion*
@@ -62,6 +63,9 @@ Progress: [███░░░░░░░] 33%
 - Docker Compose stack must remain deployable with docker compose up
 - Migration SQL executed after main schema.sql in apply_schema(), not inline (Phase 13)
 - game_id added to _PREDICTION_COLS but NOT _PREDICTION_UPDATE_COLS -- immutable per prediction (Phase 13)
+- Raw statsapi.get() for schedule endpoint to preserve abstractGameState/codedGameState status fields (Phase 13)
+- 75s TTL cache with max 7 entries for schedule data, thread-safe via Lock (Phase 13)
+- game_id-first matching priority with team-pair fallback for prediction merge in /games/{date} (Phase 13)
 
 ### Roadmap Decisions
 
@@ -83,6 +87,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-31T12:40:23.390Z
-Stopped at: Completed 13-01-PLAN.md
+Last session: 2026-03-31T12:48:55.601Z
+Stopped at: Completed 13-02-PLAN.md
 Resume file: None
