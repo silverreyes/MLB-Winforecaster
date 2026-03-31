@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Game Lifecycle, Live Scores & Historical Accuracy
 status: executing
-stopped_at: Completed 15-03-PLAN.md
-last_updated: "2026-03-31T22:32:03Z"
-last_activity: 2026-03-31 -- Completed Plan 15-03 (frontend live score display, ScoreRow, BasesDiamond, LiveDetail, 90s dual-gate polling)
+stopped_at: Completed 15-04-PLAN.md
+last_updated: "2026-03-31T23:10:00Z"
+last_activity: 2026-03-31 -- Completed Plan 15-04 (full verification + human VPS checkpoint — Phase 15 approved, no live games at review time)
 progress:
   total_phases: 6
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 14
-  completed_plans: 10
-  percent: 71
+  completed_plans: 11
+  percent: 79
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-30)
 
 **Core value:** Produce well-calibrated win probability estimates that can be rigorously compared against Kalshi market prices, surfacing where models agree, disagree, and where edges may exist.
-**Current focus:** Phase 15 - Live Score Polling
+**Current focus:** Phase 16 - Final Outcomes & Nightly Reconciliation
 
 ## Current Position
 
-Phase: 15 of 17 (Live Score Polling) — IN PROGRESS
-Plan: 3 of 4 in phase 15 — complete
-Status: Plan 15-03 complete, ready for 15-04
-Last activity: 2026-03-31 -- Completed Plan 15-03 (frontend live score display, ScoreRow, BasesDiamond, LiveDetail, 90s dual-gate polling)
+Phase: 15 of 17 (Live Score Polling) — COMPLETE
+Plan: 4 of 4 in phase 15 — complete
+Status: Phase 15 complete, ready for Phase 16
+Last activity: 2026-03-31 -- Completed Plan 15-04 (full verification + human VPS checkpoint — Phase 15 approved, no live games at review time)
 
-Progress: [███████░░░] 71% (milestone v2.2: 10 of 14 plans)
+Progress: [████████░░] 79% (milestone v2.2: 11 of 14 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 10 (v2.2)
+- Total plans completed: 11 (v2.2)
 - Average duration: 4min
-- Total execution time: 44min
+- Total execution time: ~46min
 
 **By Phase:**
 
@@ -53,9 +53,10 @@ Progress: [███████░░░] 71% (milestone v2.2: 10 of 14 plans)
 | Phase 15 P01 | 4min | 2 tasks | 4 files |
 | Phase 15 P02 | 4min | 2 tasks | 4 files |
 | Phase 15 P03 | 3min | 2 tasks | 7 files |
+| Phase 15 P04 | ~2min | 2 tasks | 0 files |
 
 **Recent Trend:**
-- Last 5 plans: 3min, 10min, 4min, 4min, 3min
+- Last 5 plans: 10min, 4min, 4min, 3min, ~2min
 - Trend: stable
 
 *Updated after each plan completion*
@@ -89,6 +90,7 @@ Progress: [███████░░░] 71% (milestone v2.2: 10 of 14 plans)
 - Always singular "out" (not "outs") per UI-SPEC copywriting contract (Phase 15)
 - useState for expand/collapse per UI-SPEC lock, not details/summary -- LIVE-to-FINAL transition clears state via conditional render (Phase 15)
 - ScoreRow conditional render gated on game_status === 'LIVE' prevents expand affordance on non-LIVE cards (Phase 15)
+- Phase 15 approved with no live games at VPS review time; MLB API rejection during pipeline is a pre-existing separate issue (Phase 15)
 
 ### Roadmap Decisions
 
@@ -105,11 +107,11 @@ None yet.
 
 ### Blockers/Concerns
 
-- Phase 15 has 5 converging pitfalls (race condition, APScheduler collision, status zoo, API amplification, memory pressure) -- needs careful planning
 - Phase 16 reconciliation must target ALL prediction rows for a game_id, not just is_latest = TRUE rows
+- MLB Stats API rejection encountered during daily pipeline run (2026-03-31) -- pre-existing issue, not introduced by Phase 15
 
 ## Session Continuity
 
-Last session: 2026-03-31T22:32:03Z
-Stopped at: Completed 15-03-PLAN.md
-Resume file: .planning/phases/15-live-score-polling/15-04-PLAN.md
+Last session: 2026-03-31T23:10:00Z
+Stopped at: Completed 15-04-PLAN.md
+Resume file: .planning/phases/16-final-outcomes/16-01-PLAN.md (or equivalent Phase 16 plan)

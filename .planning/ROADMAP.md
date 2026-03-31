@@ -44,7 +44,7 @@
 - [x] **Phase 13: Schema Migration & Game Visibility** - Add game_id and outcome columns to predictions table; make all games visible regardless of status (gap closure in progress) (completed 2026-03-31)
 - [x] **Phase 14: Date Navigation** - Arrow/calendar date controls with today default, past predictions, and future schedule-only mode (completed 2026-03-31)
 - [ ] **Phase 14.5: Post-Phase-14 Bug Fixes** - Header timestamp (BUG-A), browser timezone clock (BUG-B), MLB API retry logic (RETRY)
-- [ ] **Phase 15: Live Score Polling** - In-progress game scores, inning display, expanded card with bases/pitcher/batter, auto-Final outcome writes
+- [x] **Phase 15: Live Score Polling** - In-progress game scores, inning display, expanded card with bases/pitcher/batter, auto-Final outcome writes (completed 2026-03-31)
 - [ ] **Phase 16: Final Outcomes & Nightly Reconciliation** - Completed game cards with score/prediction/outcome marker; safety-net reconciler for missed Finals
 - [ ] **Phase 17: History Route** - Date range picker, predictions vs actuals table, rolling accuracy by model
 
@@ -111,10 +111,10 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 15-01-PLAN.md — Test scaffolds + LiveScoreData model + linescore cache + parse_linescore function
-- [ ] 15-02-PLAN.md — Games route enrichment + live_poller_job + write_game_outcome + poller tests
-- [ ] 15-03-PLAN.md — Frontend: TypeScript types, useGames 90s gate, ScoreRow, LiveDetail, BasesDiamond
-- [ ] 15-04-PLAN.md — Full test suite verification + human VPS deployment check
+- [x] 15-01-PLAN.md — Test scaffolds + LiveScoreData model + linescore cache + parse_linescore function
+- [x] 15-02-PLAN.md — Games route enrichment + live_poller_job + write_game_outcome + poller tests
+- [x] 15-03-PLAN.md — Frontend: TypeScript types, useGames 90s gate, ScoreRow, LiveDetail, BasesDiamond
+- [x] 15-04-PLAN.md — Full test suite verification + human VPS deployment check
 
 ### Phase 16: Final Outcomes & Nightly Reconciliation
 **Goal**: Users see prediction results on completed game cards, and a nightly safety net ensures no Final game is missed
@@ -163,6 +163,6 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17
 | 12. Explanatory Content and Tooltips | v2.1 | 1/1 | Complete | 2026-03-30 |
 | 13. Schema Migration & Game Visibility | 4/4 | Complete   | 2026-03-31 | - |
 | 14. Date Navigation | 3/3 | Complete   | 2026-03-31 | - |
-| 15. Live Score Polling | 3/4 | In Progress|  | - |
+| 15. Live Score Polling | 4/4 | Complete   | 2026-03-31 | 2026-03-31 |
 | 16. Final Outcomes & Nightly Reconciliation | v2.2 | 0/? | Not started | - |
 | 17. History Route | v2.2 | 0/? | Not started | - |
