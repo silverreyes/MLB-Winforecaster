@@ -5,7 +5,7 @@
 - v1.0 MVP - Phases 1-4 (shipped 2026-03-29) - [Archive](milestones/v1.0-ROADMAP.md)
 - v2.0 Live Platform - Phases 5-9 (shipped 2026-03-30) - [Archive](milestones/v2.0-ROADMAP.md)
 - v2.1 Dashboard UX / Contextual Clarity - Phases 10-12 (shipped 2026-03-31) - [Archive](milestones/v2.1-ROADMAP.md)
-- **v2.2 Game Lifecycle, Live Scores & Historical Accuracy** - Phases 13-17 (in progress)
+- **v2.2 Game Lifecycle, Live Scores & Historical Accuracy** - Phases 13-18 (in progress)
 
 ## Phases
 
@@ -45,8 +45,9 @@
 - [x] **Phase 14: Date Navigation** - Arrow/calendar date controls with today default, past predictions, and future schedule-only mode (completed 2026-03-31)
 - [ ] **Phase 14.5: Post-Phase-14 Bug Fixes** - Header timestamp (BUG-A), browser timezone clock (BUG-B), MLB API retry logic (RETRY)
 - [x] **Phase 15: Live Score Polling** - In-progress game scores, inning display, expanded card with bases/pitcher/batter, auto-Final outcome writes (completed 2026-03-31)
-- [ ] **Phase 16: Final Outcomes & Nightly Reconciliation** - Completed game cards with score/prediction/outcome marker; safety-net reconciler for missed Finals
-- [ ] **Phase 17: History Route** - Date range picker, predictions vs actuals table, rolling accuracy by model
+- [ ] **Phase 16: Historical Game Cache** - game_logs table seeded from 2025+2026 completed games; incremental fetch replaces full-season refetch; feature builder reads from DB instead of API
+- [ ] **Phase 17: Final Outcomes & Nightly Reconciliation** - Completed game cards with score/prediction/outcome marker; safety-net reconciler for missed Finals
+- [ ] **Phase 18: History Route** - Date range picker, predictions vs actuals table, rolling accuracy by model
 
 ## Phase Details
 
@@ -116,9 +117,24 @@ Plans:
 - [x] 15-03-PLAN.md — Frontend: TypeScript types, useGames 90s gate, ScoreRow, LiveDetail, BasesDiamond
 - [x] 15-04-PLAN.md — Full test suite verification + human VPS deployment check
 
-### Phase 16: Final Outcomes & Nightly Reconciliation
-**Goal**: Users see prediction results on completed game cards, and a nightly safety net ensures no Final game is missed
+### Phase 16: Historical Game Cache
+**Goal**: The pipeline never re-fetches immutable completed game data from the MLB Stats API; instead it reads from a local `game_logs` Postgres table, seeded once and grown incrementally
 **Depends on**: Phase 15
+**Requirements**: CACHE-01, CACHE-02, CACHE-03, CACHE-04, CACHE-05
+**Success Criteria** (what must be TRUE):
+  1. A `game_logs` table exists in Postgres with columns: `game_id`, `date`, `home_team`, `away_team`, `home_score`, `away_score`, `winner`, and any stats required by the feature builder (win/loss rolling records)
+  2. A one-time seed job backfills all completed 2025 and 2026 games from the MLB Stats API into `game_logs`
+  3. On each pipeline run, the system fetches only games from the last known `game_logs` date forward — never the full season
+  4. The feature builder (`FeatureBuilder`) reads rolling team win/loss features from `game_logs` instead of calling `fetch_schedule(season)` directly
+  5. Completed games in `game_logs` are never overwritten or re-fetched (immutability guarantee enforced by INSERT ... ON CONFLICT DO NOTHING)
+**Plans**: TBD
+
+Plans:
+- [ ] 16-01: TBD
+
+### Phase 17: Final Outcomes & Nightly Reconciliation
+**Goal**: Users see prediction results on completed game cards, and a nightly safety net ensures no Final game is missed
+**Depends on**: Phase 16
 **Requirements**: FINL-01, FINL-02, FINL-03, FINL-04
 **Success Criteria** (what must be TRUE):
   1. Completed game cards display the final score, the model's win probability prediction, and a correctness marker (check or X) showing whether the model called it right
@@ -127,11 +143,11 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 16-01: TBD
+- [ ] 17-01: TBD
 
-### Phase 17: History Route
+### Phase 18: History Route
 **Goal**: Users can review their prediction track record over any date range with accuracy metrics per model
-**Depends on**: Phase 16
+**Depends on**: Phase 17
 **Requirements**: HIST-01, HIST-02, HIST-03, HIST-04
 **Success Criteria** (what must be TRUE):
   1. A `/history` route is accessible from the main dashboard via navigation
@@ -140,7 +156,7 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 17-01: TBD
+- [ ] 18-01: TBD
 
 ## Progress
 
@@ -164,5 +180,6 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17
 | 13. Schema Migration & Game Visibility | 4/4 | Complete   | 2026-03-31 | - |
 | 14. Date Navigation | 3/3 | Complete   | 2026-03-31 | - |
 | 15. Live Score Polling | 4/4 | Complete   | 2026-03-31 | 2026-03-31 |
-| 16. Final Outcomes & Nightly Reconciliation | v2.2 | 0/? | Not started | - |
-| 17. History Route | v2.2 | 0/? | Not started | - |
+| 16. Historical Game Cache | v2.2 | 0/? | Not started | - |
+| 17. Final Outcomes & Nightly Reconciliation | v2.2 | 0/? | Not started | - |
+| 18. History Route | v2.2 | 0/? | Not started | - |
