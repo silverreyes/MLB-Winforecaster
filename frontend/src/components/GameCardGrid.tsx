@@ -1,9 +1,9 @@
-import type { GameGroup } from '../api/types';
+import type { GameResponse } from '../api/types';
 import { GameCard } from './GameCard';
 import styles from './GameCardGrid.module.css';
 
 interface GameCardGridProps {
-  games: GameGroup[];
+  games: GameResponse[];
   isStale: boolean;
 }
 
@@ -12,7 +12,7 @@ export function GameCardGrid({ games, isStale }: GameCardGridProps) {
     <div className={`${styles.grid} ${isStale ? styles.stale : ''}`}>
       {games.map((game) => (
         <GameCard
-          key={`${game.away_team}-${game.home_team}`}
+          key={game.game_id}
           game={game}
           isStale={isStale}
         />

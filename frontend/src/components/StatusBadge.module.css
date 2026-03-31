@@ -1,0 +1,33 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: 4px;
+  line-height: 1.3;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.preGame {
+  color: var(--color-text-secondary);
+  background: rgba(138, 138, 154, 0.12);
+}
+
+.live {
+  color: var(--color-edge-green);
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.final {
+  color: var(--color-text-secondary);
+  background: rgba(138, 138, 154, 0.12);
+}
+
+.postponed {
+  color: var(--color-accent-muted);
+  background: rgba(217, 119, 6, 0.15);
+}

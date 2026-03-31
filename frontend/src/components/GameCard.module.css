@@ -72,3 +72,7 @@
   flex: 1;
   min-width: 0;
 }
+
+.statusBadge {
+  margin: var(--space-xs) 0 0;
+}

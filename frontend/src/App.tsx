@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { usePredictions } from './hooks/usePredictions';
+import { useGames } from './hooks/useGames';
 import { useLatestTimestamp } from './hooks/useLatestTimestamp';
 import { Header } from './components/Header';
 import { AccuracyStrip } from './components/AccuracyStrip';
@@ -15,11 +15,11 @@ const STALE_THRESHOLD_MS = 3 * 60 * 60 * 1000; // 3 hours
 const SKELETON_COUNT = 6;
 
 function App() {
-  const { data, isLoading, isError, games, refetch } = usePredictions();
+  const { data, isLoading, isError, games, refetch } = useGames();
   const { data: timestampData } = useLatestTimestamp();
 
   // Track displayed data timestamp for comparison
-  const displayedTimestamp = data?.latest_prediction_at ?? null;
+  const displayedTimestamp = data?.generated_at ?? null;
 
   // DASH-05: Staleness check (3-hour threshold)
   const isStale = displayedTimestamp

@@ -1,7 +1,8 @@
-import type { GameGroup } from '../api/types';
+import type { GameResponse } from '../api/types';
 import { PredictionColumn } from './PredictionColumn';
 import { KalshiSection } from './KalshiSection';
 import { SpBadge } from './SpBadge';
+import { StatusBadge } from './StatusBadge';
 import styles from './GameCard.module.css';
 
 function formatGameTime(isoString: string | null): string {
@@ -20,12 +21,15 @@ function formatGameTime(isoString: string | null): string {
 }
 
 interface GameCardProps {
-  game: GameGroup;
+  game: GameResponse;
   isStale: boolean;
 }
 
 export function GameCard({ game }: GameCardProps) {
-  const { home_team, away_team, pre_lineup, post_lineup } = game;
+  const { home_team, away_team, prediction, game_status } = game;
+
+  const pre_lineup = prediction?.pre_lineup ?? null;
+  const post_lineup = prediction?.post_lineup ?? null;
 
   // Use the most relevant prediction for SP info and Kalshi data
   const primary = post_lineup ?? pre_lineup;
@@ -34,6 +38,7 @@ export function GameCard({ game }: GameCardProps) {
     pre_lineup?.sp_may_have_changed === true;
 
   const hasBothVersions = post_lineup !== null && pre_lineup !== null;
+  const hasPrediction = prediction !== null;
 
   return (
     <div className={styles.card}>
@@ -44,7 +49,7 @@ export function GameCard({ game }: GameCardProps) {
         </div>
       )}
 
-      {/* Header row: teams + SP names */}
+      {/* Header row: teams + time + badge + SP names */}
       <div className={styles.headerRow}>
         <p className={styles.matchup}>
           {away_team} @ {home_team}
@@ -52,6 +57,9 @@ export function GameCard({ game }: GameCardProps) {
         <p className={game.game_time ? styles.gameTime : styles.gameTimeTbd}>
           {formatGameTime(game.game_time)}
         </p>
+        <div className={styles.statusBadge}>
+          <StatusBadge status={game_status} />
+        </div>
         <div className={styles.spRow}>
           {primary?.away_sp ? (
             <SpBadge
@@ -73,46 +81,48 @@ export function GameCard({ game }: GameCardProps) {
         </div>
       </div>
 
-      {/* Prediction body */}
-      <div className={styles.predictionBody}>
-        {hasBothVersions ? (
-          <>
-            <div className={styles.splitColumn}>
+      {/* Prediction body -- absent for stub cards */}
+      {hasPrediction && (
+        <div className={styles.predictionBody}>
+          {hasBothVersions ? (
+            <>
+              <div className={styles.splitColumn}>
+                <PredictionColumn
+                  prediction={post_lineup}
+                  isPrimary={true}
+                  label="POST-LINEUP"
+                />
+              </div>
+              <div className={styles.splitColumn}>
+                <PredictionColumn
+                  prediction={pre_lineup}
+                  isPrimary={false}
+                  label="PRE-LINEUP"
+                />
+              </div>
+            </>
+          ) : pre_lineup ? (
+            <div className={styles.fullWidth}>
+              <PredictionColumn
+                prediction={pre_lineup}
+                isPrimary={true}
+                label="TEAM ONLY"
+              />
+            </div>
+          ) : post_lineup ? (
+            <div className={styles.fullWidth}>
               <PredictionColumn
                 prediction={post_lineup}
                 isPrimary={true}
                 label="POST-LINEUP"
               />
             </div>
-            <div className={styles.splitColumn}>
-              <PredictionColumn
-                prediction={pre_lineup}
-                isPrimary={false}
-                label="PRE-LINEUP"
-              />
-            </div>
-          </>
-        ) : pre_lineup ? (
-          <div className={styles.fullWidth}>
-            <PredictionColumn
-              prediction={pre_lineup}
-              isPrimary={true}
-              label="TEAM ONLY"
-            />
-          </div>
-        ) : post_lineup ? (
-          <div className={styles.fullWidth}>
-            <PredictionColumn
-              prediction={post_lineup}
-              isPrimary={true}
-              label="POST-LINEUP"
-            />
-          </div>
-        ) : null}
-      </div>
+          ) : null}
+        </div>
+      )}
 
-      {/* Kalshi section */}
-      {primary && (
+      {/* Kalshi section -- absent for stub cards */}
+      {hasPrediction && primary && (
         <KalshiSection
           price={primary.kalshi_yes_price}
           edgeSignal={primary.edge_signal}
