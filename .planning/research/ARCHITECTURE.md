@@ -1,962 +1,685 @@
-# Architecture Research: v2.0 Live Platform
+# Architecture: v2.2 Game Lifecycle, Live Scores & Historical Accuracy
 
-**Domain:** MLB Pre-Game Win Probability -- SP Feature Integration + Live Dashboard Deployment
-**Researched:** 2026-03-29
-**Confidence:** HIGH (existing codebase thoroughly analyzed; deployment pattern mirrors GamePredictor; standard FastAPI/Docker/Postgres patterns)
+**Domain:** MLB pre-game win probability dashboard -- game lifecycle completion
+**Researched:** 2026-03-30
+**Confidence:** HIGH (existing codebase thoroughly analyzed; all integration points verified against source; MLB Stats API capabilities confirmed via library docs)
 
 ---
 
-## 1. FeatureBuilder SP Integration Strategy
+## Current System Architecture (Baseline)
 
-### Current State Analysis
+Understanding what exists before adding anything.
 
-The existing `_add_sp_features()` method in `src/features/feature_builder.py` (lines 120-178) already computes four SP differential features from FanGraphs season-level data:
+### Backend (FastAPI + Postgres + APScheduler)
 
-| Feature | Source | Coverage |
-|---------|--------|----------|
-| `sp_fip_diff` | FanGraphs `pitching_stats` | 83.1% |
-| `sp_xfip_diff` | FanGraphs `pitching_stats` | 83.1% |
-| `sp_k_pct_diff` | FanGraphs `pitching_stats` | 83.1% |
-| `sp_siera_diff` | FanGraphs `pitching_stats` | 83.1% |
+| Component | File(s) | Role |
+|-----------|---------|------|
+| FastAPI app | `api/main.py` | Lifespan (pool + artifacts), CORS, router mounting, SPA static files |
+| Prediction routes | `api/routes/predictions.py` | `/predictions/today`, `/predictions/{date}`, `/predictions/latest-timestamp` |
+| Accuracy route | `api/routes/accuracy.py` | `/results/accuracy` (reads static JSON metadata) |
+| Health route | `api/routes/health.py` | `/health` (pipeline_runs status) |
+| Pydantic models | `api/models.py` | `PredictionResponse`, `TodayResponse`, `LatestTimestampResponse`, etc. |
+| SPA fallback | `api/spa.py` | `SPAStaticFiles` -- serves `index.html` for unknown paths (enables client routing) |
+| DB layer | `src/pipeline/db.py` | `get_pool`, `apply_schema`, `insert_prediction`, `mark_not_latest`, pipeline_run CRUD |
+| Schema | `src/pipeline/schema.sql` | `games`, `predictions`, `pipeline_runs` tables; ENUMs; indexes |
+| Scheduler | `src/pipeline/scheduler.py` | `BlockingScheduler` with 3 CronTrigger jobs (10am/1pm/5pm ET) |
+| Runner | `src/pipeline/runner.py` | `run_pipeline()` -- fetch/features/predict/store orchestration |
+| Entry point | `scripts/run_pipeline.py` | `--once` or scheduler mode; retry logic; schema application |
+| MLB data | `src/data/mlb_schedule.py` | `fetch_schedule()` (historical), `fetch_today_schedule()` (live day) |
 
-Additionally, `_add_advanced_features()` (lines 426-529) computes `sp_recent_era_diff` (30-day rolling ERA from MLB Stats API game logs, 89.4% coverage) and `xwoba_diff` (currently 100% NaN due to ADVF-07 bug).
+### Frontend (React 19 + TanStack Query)
 
-### Recommendation: Extend `_add_sp_features()`, Do NOT Create a Separate Method
+| Component | File(s) | Role |
+|-----------|---------|------|
+| Entry | `main.tsx` | `QueryClient` + `QueryClientProvider`; no router |
+| App | `App.tsx` | Single-page: Header, AccuracyStrip, AboutModels, NewPredictionsBanner, GameCardGrid |
+| API client | `api/client.ts` | `fetchJson<T>` helper; base path `/api/v1` |
+| Types | `api/types.ts` | `PredictionResponse`, `TodayResponse`, `GameGroup`, etc. |
+| Predictions hook | `hooks/usePredictions.ts` | Fetches `/predictions/today`; groups by matchup into `GameGroup[]` |
+| Timestamp hook | `hooks/useLatestTimestamp.ts` | 60s polling of `/predictions/latest-timestamp` |
+| Clock hook | `hooks/useEasternClock.ts` | Drift-corrected ET clock for header |
+| GameCard | `components/GameCard.tsx` | Renders pre/post-lineup columns, SP badges, Kalshi section |
 
-**Rationale:** The new SP features (ERA, home/away splits, workload, BB%, WHIP) draw from the same FanGraphs `pitching_stats` data source that `_add_sp_features()` already queries via `fetch_sp_stats()`. The existing `sp_lookup` dictionary at line 128 already extracts `ERA` (line 139) but does not use it as a differential feature. Adding new features to this same method keeps the single-pass lookup pattern and avoids a second iteration over the same data.
+### Docker Topology
 
-### New SP Features to Add
+```
+[Nginx :443] --> [api :8082 (512M)] --> [db :5432 (512M)]
+                                              ^
+               [worker (1536M)] ---------------+
+               (APScheduler BlockingScheduler)
+```
 
-| Feature | Column Name | Source | Notes |
-|---------|-------------|--------|-------|
-| ERA differential | `sp_era_diff` | `sp_lookup["ERA"]` | Already extracted at line 139 but unused |
-| BB% differential | `sp_bb_pct_diff` | `fetch_sp_stats` `BB%` column | Available in FanGraphs data |
-| WHIP differential | `sp_whip_diff` | `fetch_sp_stats` `WHIP` column | Available in FanGraphs data |
-| SP workload (IP) | `sp_ip_diff` | `fetch_sp_stats` `IP` column | Season IP as stamina proxy |
-| Home/Away ERA split | `sp_split_era_diff` | **New data source needed** | FanGraphs splits; see note below |
+### Key Architectural Constraints
 
-**Home/Away splits note:** FanGraphs' `pitching_stats` returns season aggregates, not home/away splits. True split data requires `pybaseball.pitching_stats` with `split_seasons=True` or a separate FanGraphs splits endpoint. Given that BRef/FanGraphs are behind Cloudflare (discovered in v1.0, documented in `sp_recent_form.py` line 6), this data may be unreliable. **Recommendation:** Defer home/away splits to a later iteration; the `is_home` and `park_factor` features already capture home advantage at the venue level.
+1. **API handlers are sync `def`** (not `async def`) because psycopg3 sync connections block the event loop if called from async context. FastAPI runs them in a thread pool.
+2. **Worker uses BlockingScheduler** -- the scheduler IS the process; adding jobs is additive, not architectural change.
+3. **SPA fallback already exists** -- `SPAStaticFiles` serves `index.html` for unknown paths, so client-side routing will work without backend changes.
+4. **Memory ceiling** -- api container at 512M, worker at 1536M. New features must not increase baseline memory.
+5. **No WebSocket infrastructure** -- all real-time updates use client-side polling. v2.2 continues this pattern.
 
-### Exact Code Changes in `_add_sp_features()`
+---
 
-**Modified:** `src/features/feature_builder.py` -- `_add_sp_features()` method
+## Feature 1: Game Visibility Fix
 
-1. Extend the `sp_lookup` dictionary to include `BB%`, `WHIP`, `IP` (currently only extracts `FIP`, `xFIP`, `K%`, `SIERA`, `ERA`)
-2. Add mapping loops for new stats (same pattern as lines 142-153)
-3. Add differential computations: `sp_era_diff`, `sp_bb_pct_diff`, `sp_whip_diff`, `sp_ip_diff`
-4. Drop intermediate columns (same pattern as lines 166-178)
+### Problem
 
-**Modified:** `src/models/feature_sets.py` -- `FULL_FEATURE_COLS` list
+The `/predictions/today` query filters `WHERE is_latest = TRUE`, which correctly shows the most recent prediction per game. However, games that have gone to "In Progress" or "Final" status in the MLB schedule are not explicitly filtered out -- the issue is that the schedule lookup `_build_schedule_lookup()` calls `fetch_today_schedule()` which returns all game statuses. The predictions table itself has no game status column, so games remain visible as long as predictions exist.
 
-Add new columns to `FULL_FEATURE_COLS`. The `CORE_FEATURE_COLS` list (line 32) currently excludes only `sp_recent_era_diff`; define a new `SP_ENHANCED_FEATURE_COLS` that includes all new SP features for the post-lineup model variant:
+**Actual diagnosis from code review:** The query `WHERE game_date = CURRENT_DATE AND is_latest = TRUE` will return all predictions for today regardless of game status. The real visibility issue is likely that `fetch_today_schedule()` in the route handler only fetches game times for today's date -- if the schedule call fails, game_time becomes null but predictions still display. Games "disappearing" is more likely a frontend grouping or rendering issue, or a timezone boundary issue where `CURRENT_DATE` in Postgres (UTC) mismatches the ET calendar date.
+
+### Architecture Decision
+
+**What:** Add `game_status` to the API response (sourced from live schedule data, not stored in predictions table).
+
+**Why not store status in predictions table:** Game status changes minute-by-minute during a game. The predictions table is a snapshot at prediction time. Mixing mutable game state with immutable predictions creates update pressure on a table designed for write-once semantics.
+
+### Integration Points
+
+| Layer | Change Type | Details |
+|-------|-------------|---------|
+| `api/routes/predictions.py` | MODIFY | Enhance `_build_schedule_lookup()` to include `status`, `home_score`, `away_score`, `current_inning`, `inning_state` from `statsapi.schedule()` return |
+| `api/models.py` | MODIFY | Add `game_status: str \| None` field to `PredictionResponse` |
+| `api/types.ts` | MODIFY | Add `game_status` to `PredictionResponse` TS type |
+| `GameCard.tsx` | MODIFY | Conditionally render status badge (Scheduled/In Progress/Final) |
+
+### Data Flow
+
+```
+Client request --> GET /predictions/today
+  1. Query predictions WHERE game_date AND is_latest (unchanged)
+  2. Call fetch_today_schedule() (already happens for game_time)
+  3. Enrich: schedule_lookup now carries status + scores
+  4. Build PredictionResponse with game_status field
+  5. Return enriched response
+```
+
+**No new endpoints. No schema changes. No new tables.**
+
+---
+
+## Feature 2: Date Navigation
+
+### Architecture Decision
+
+**What:** Parameterize the existing predictions fetch by date. The backend endpoint `GET /predictions/{date}` already exists. The change is primarily frontend.
+
+### New Backend Work: Tomorrow's Predictions
+
+The existing pipeline runs at 10am/1pm/5pm ET for **today** only. To show tomorrow's predictions, the system needs a trigger mechanism.
+
+**Recommended approach: On-demand prediction via API endpoint (not scheduled).**
+
+| Option | Pros | Cons | Verdict |
+|--------|------|------|---------|
+| Scheduled job for tomorrow | Automatic | Runs every day even if no one navigates to tomorrow; stale quickly; SP data unreliable for tomorrow | REJECT |
+| API endpoint triggers prediction | Only runs when needed; can return cached result | Adds write-path to API container; needs model artifacts in API | REJECT (memory) |
+| Worker-side on-demand trigger | Keeps heavy work in worker (1536M) | Needs IPC between API and worker | OVERENGINEERED |
+| **Fetch schedule only for tomorrow** | Zero prediction cost; shows matchups with "Predictions available on game day" | No probabilities for tomorrow | **USE THIS** |
+
+**Rationale:** Tomorrow's starting pitchers are frequently unknown or change overnight. Pre-game prediction with no SP confirmation has low value and may mislead. The existing `fetch_today_schedule()` pattern can be adapted to `fetch_schedule_for_date(date)` to show tomorrow's scheduled games without predictions. This is honest (no fake predictions) and zero-cost.
+
+### Integration Points
+
+| Layer | Change Type | Details |
+|-------|-------------|---------|
+| `src/data/mlb_schedule.py` | MODIFY | Add `fetch_schedule_for_date(date_str)` -- same as `fetch_today_schedule()` but parameterized |
+| `api/routes/predictions.py` | MODIFY | `get_date_predictions()` now calls `fetch_schedule_for_date(date)` for schedule enrichment (game_time, status) instead of `fetch_today_schedule()` |
+| `api/routes/predictions.py` | NEW LOGIC | For dates with no predictions but scheduled games, return schedule-only entries with null probabilities |
+| `api/models.py` | MODIFY | Add `schedule_only: bool = False` flag to `PredictionResponse` |
+| `api/types.ts` | MODIFY | Add `schedule_only` field |
+| Frontend | NEW | `DateNavigator` component (left arrow, date display, right arrow, optional calendar picker) |
+| `hooks/usePredictions.ts` | MODIFY | Accept `date` parameter; change queryKey to `['predictions', date]`; fetch `/predictions/{date}` instead of `/predictions/today` |
+| `App.tsx` | MODIFY | Add `selectedDate` state; pass to `usePredictions` and `DateNavigator` |
+| `GameCard.tsx` | MODIFY | Render "schedule only" variant when `schedule_only === true` (no probabilities, just matchup + time) |
+
+### Date Boundaries
+
+| Navigation Target | What to Show | Source |
+|-------------------|-------------|--------|
+| Past dates | Predictions + outcomes (when available) | `predictions` table via existing `/{date}` endpoint |
+| Today | Full predictions + live status | Current behavior + Feature 1 enrichment |
+| Tomorrow | Schedule only (matchups, times, probable pitchers) | `fetch_schedule_for_date()` via MLB Stats API |
+| 2+ days out | Schedule only (less reliable) | Same as tomorrow |
+
+### Frontend Date State
+
+```
+App.tsx
+  selectedDate: string (YYYY-MM-DD, default: today)
+  |
+  +-- DateNavigator (arrows, display, calendar)
+  |     onDateChange(newDate) --> setSelectedDate
+  |
+  +-- usePredictions(selectedDate)
+        queryKey: ['predictions', selectedDate]
+        queryFn: fetchJson(`/predictions/${selectedDate}`)
+```
+
+**No React Router needed for date navigation.** Date is state, not a route. The URL does not need to reflect the selected date for this use case (bookmarkable date URLs would be a v2.3+ enhancement using `useSearchParams`).
+
+---
+
+## Feature 3: Live Score Polling
+
+### Architecture Decision: Backend Proxy, Not Client-Direct
+
+**Decision: The FastAPI API proxies live score data. The React client does NOT call MLB Stats API directly.**
+
+| Approach | Pros | Cons | Verdict |
+|----------|------|------|---------|
+| Client-direct to MLB API | No backend changes | CORS issues (MLB API has no CORS headers); exposes API rate limits to N clients; no server-side caching; cannot write to Postgres on Final | REJECT |
+| **Backend proxy endpoint** | CORS solved; server-side 30s cache; single upstream request per game; can write Final result to Postgres | Adds endpoint to API container | **USE THIS** |
+| Worker polling loop | Can write to DB | Adds continuous load to memory-constrained worker; complex state management | REJECT |
+
+### New Endpoint: `GET /api/v1/games/live?date=YYYY-MM-DD`
+
+This endpoint serves a different purpose than `/predictions/{date}`. Predictions are immutable snapshots; live game data changes every pitch. Separate endpoint, separate concerns.
+
+**Implementation:**
 
 ```python
-# v2 feature sets
-TEAM_ONLY_FEATURE_COLS = CORE_FEATURE_COLS  # Alias: pre-lineup predictions (no SP-specific)
-SP_ENHANCED_FEATURE_COLS = FULL_FEATURE_COLS + [
-    'sp_era_diff',
-    'sp_bb_pct_diff',
-    'sp_whip_diff',
-    'sp_ip_diff',
-]
+# api/routes/live.py (NEW FILE)
+
+@router.get("/games/live", response_model=LiveGamesResponse)
+def get_live_games(request: Request, date: str = None):
+    """Return live game scores for a date. Cached for 30s server-side."""
+    # 1. Parse date (default: today)
+    # 2. Check in-memory cache (dict keyed by date, 30s TTL)
+    # 3. If cache miss: call statsapi.schedule(date=...) for all games
+    # 4. For games with status "In Progress": call statsapi.get("game_linescore", {"gamePk": id})
+    # 5. For games with status "Final": write outcome to Postgres (idempotent)
+    # 6. Cache result, return
 ```
 
-### ADVF-07 Fix (xwOBA Column Pipeline)
-
-The `_add_advanced_features()` method at line 434 has two bugs documented in PROJECT.md:
-1. Statcast returns `'last_name, first_name'` as a single merged column (not separate `last_name` and `first_name` columns)
-2. The xwOBA column is named `est_woba` in Statcast data, not `xwoba`
-
-**Fix location:** `src/features/feature_builder.py` lines 440-455 (the `if "last_name" in sc_df.columns` branch)
-
-The fix must handle the comma-separated name format from `pybaseball.statcast_pitcher_expected_stats()` and map `est_woba` to the lookup key. This will recover `xwoba_diff` from 0% to approximately 80-85% coverage.
-
-### Impact on Existing Cached Parquet Files
-
-**Feature store Parquet files must be regenerated.** The feature store (`data/cache/` via `src/data/cache.py`) stores raw source data (schedule, SP stats, team batting, Statcast) as separate Parquet files keyed by `(data_type, season)`. These raw caches do NOT need regeneration -- they contain the same source data. However:
-
-1. **Raw SP stats caches (`sp_stats_{season}_mings{N}.parquet`):** Already contain `BB%`, `WHIP`, `IP`, `ERA` columns. No refetch needed.
-2. **Feature matrix Parquet (if persisted):** Must be regenerated via `FeatureBuilder.build()` because new columns are added. The v1.0 pipeline does not persist the feature matrix -- it is recomputed per notebook run. No stale cache risk.
-3. **Backtest results (`backtest_results.parquet` if persisted):** Must be regenerated since models are retrained with expanded feature set.
-
-**Bottom line:** Raw data caches survive; feature matrix and backtest results are rebuilt. No migration script needed.
-
-### Backward Compatibility: Pre-Lineup vs. Post-Lineup Predictions
-
-The twice-daily pipeline produces two prediction versions:
-
-| Run | Time | Feature Set | SP Data Available? |
-|-----|------|-------------|-------------------|
-| Pre-lineup | 10am ET | `TEAM_ONLY_FEATURE_COLS` | No -- starters may not be confirmed |
-| Post-lineup | 1pm ET | `SP_ENHANCED_FEATURE_COLS` | Yes -- lineups posted ~11:30am ET |
-
-**Implementation:** The `FeatureBuilder` already handles TBD starters via `_filter_tbd_starters()` (line 106). For pre-lineup predictions, the pipeline should:
-1. Run `FeatureBuilder.build()` as normal (games with TBD starters are included but SP features are NaN)
-2. Use `TEAM_ONLY_FEATURE_COLS` which excludes all SP-specific columns
-3. The team-only model (trained on historical data without SP features) produces valid predictions
-
-For post-lineup predictions:
-1. Re-run `FeatureBuilder.build()` (or just re-fetch schedule to get confirmed SPs)
-2. Use `SP_ENHANCED_FEATURE_COLS`
-3. Games where SPs are still TBD/scratched fall back to team-only prediction with an `is_sp_confirmed` flag
-
-**New field:** Add `prediction_version` enum (`pre_lineup` / `post_lineup`) to all pipeline outputs and database records.
-
----
-
-## 2. Postgres Schema Design
-
-### Design Principles
-
-- One table per logical entity (games, predictions, pipeline runs)
-- Both prediction versions (pre-lineup, post-lineup) stored as separate rows, not columns
-- All three model probabilities (LR, RF, XGB) stored per prediction row
-- Kalshi price is per-game, not per-prediction (fetched once per game)
-- `is_latest` flag enables efficient "current predictions" query without subquery
-
-### Schema
-
-```sql
--- Games table: one row per MLB game per day
-CREATE TABLE games (
-    id              SERIAL PRIMARY KEY,
-    game_date       DATE NOT NULL,
-    home_team       VARCHAR(3) NOT NULL,
-    away_team       VARCHAR(3) NOT NULL,
-    home_score      SMALLINT,           -- NULL until game final
-    away_score      SMALLINT,           -- NULL until game final
-    home_win        BOOLEAN,            -- NULL until game final
-    home_sp         VARCHAR(80),        -- NULL if TBD
-    away_sp         VARCHAR(80),        -- NULL if TBD
-    sp_confirmed    BOOLEAN NOT NULL DEFAULT FALSE,
-    kalshi_yes_price NUMERIC(5,4),      -- 0.0000-1.0000, NULL if no market
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-
-    UNIQUE (game_date, home_team, away_team)
-);
-
--- Predictions table: one row per (game, prediction_version)
--- Contains all three model probabilities in one row (not normalized to one row per model)
--- Rationale: the dashboard always displays all three models together;
--- normalizing to per-model rows triples row count for zero query benefit
-CREATE TABLE predictions (
-    id              SERIAL PRIMARY KEY,
-    game_id         INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
-    version         VARCHAR(12) NOT NULL CHECK (version IN ('pre_lineup', 'post_lineup')),
-    lr_prob         NUMERIC(5,4),       -- Logistic Regression calibrated prob
-    rf_prob         NUMERIC(5,4),       -- Random Forest calibrated prob
-    xgb_prob        NUMERIC(5,4),       -- XGBoost calibrated prob
-    lr_raw          NUMERIC(5,4),       -- LR uncalibrated (for diagnostics)
-    rf_raw          NUMERIC(5,4),       -- RF uncalibrated
-    xgb_raw         NUMERIC(5,4),       -- XGB uncalibrated
-    feature_set     VARCHAR(20) NOT NULL, -- 'team_only' or 'sp_enhanced'
-    edge_lr         NUMERIC(5,4),       -- lr_prob - kalshi_yes_price
-    edge_rf         NUMERIC(5,4),       -- rf_prob - kalshi_yes_price
-    edge_xgb        NUMERIC(5,4),       -- xgb_prob - kalshi_yes_price
-    is_latest       BOOLEAN NOT NULL DEFAULT TRUE,
-    pipeline_run_id INTEGER REFERENCES pipeline_runs(id),
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-
-    UNIQUE (game_id, version, pipeline_run_id)
-);
-
--- Index for the primary dashboard query: "today's latest predictions"
-CREATE INDEX idx_predictions_latest ON predictions (is_latest, created_at DESC)
-    WHERE is_latest = TRUE;
-CREATE INDEX idx_predictions_game_version ON predictions (game_id, version);
-
--- Pipeline runs: audit trail for each cron execution
-CREATE TABLE pipeline_runs (
-    id              SERIAL PRIMARY KEY,
-    run_type        VARCHAR(12) NOT NULL CHECK (run_type IN ('pre_lineup', 'post_lineup', 'backfill', 'manual')),
-    started_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    finished_at     TIMESTAMPTZ,
-    status          VARCHAR(10) NOT NULL DEFAULT 'running' CHECK (status IN ('running', 'success', 'failed')),
-    games_processed INTEGER DEFAULT 0,
-    error_message   TEXT,
-    model_version   VARCHAR(20)         -- e.g., 'v2.0.0' for artifact tracking
-);
-
--- Historical results: join games with actual outcomes for accuracy tracking
--- (This is a VIEW, not a separate table)
-CREATE VIEW prediction_results AS
-SELECT
-    g.game_date,
-    g.home_team,
-    g.away_team,
-    g.home_win,
-    g.home_sp,
-    g.away_sp,
-    g.kalshi_yes_price,
-    p.version,
-    p.lr_prob,
-    p.rf_prob,
-    p.xgb_prob,
-    p.edge_lr,
-    p.edge_rf,
-    p.edge_xgb,
-    p.feature_set,
-    p.created_at AS predicted_at
-FROM predictions p
-JOIN games g ON p.game_id = g.id
-WHERE p.is_latest = TRUE
-  AND g.home_win IS NOT NULL;
-```
-
-### `is_latest` Flag Management
-
-When a new prediction is inserted for the same `(game_id, version)`:
-1. Set `is_latest = FALSE` on all existing rows for that `(game_id, version)`
-2. Insert new row with `is_latest = TRUE`
-
-This avoids expensive `DISTINCT ON` or window function queries for the dashboard. A simple trigger or application-level logic handles the update:
-
-```sql
--- Application logic (in Python, not a trigger -- keeps schema simple)
--- Before insert:
-UPDATE predictions SET is_latest = FALSE
-WHERE game_id = :game_id AND version = :version AND is_latest = TRUE;
--- Then INSERT the new row with is_latest = TRUE
-```
-
-### Edge Computation
-
-Edge values (`edge_lr`, `edge_rf`, `edge_xgb`) are computed at insert time by the pipeline, not by the API at query time. This means:
-- Dashboard reads are pure `SELECT` with no computation
-- If Kalshi price updates, the pipeline re-inserts predictions with recalculated edges (marks old row as `is_latest = FALSE`)
-
-### Row Count Estimates
-
-| Table | Rows per day | Rows per season (162 games x 30 teams / 2) |
-|-------|-------------|---------------------------------------------|
-| `games` | ~15 | ~2,430 |
-| `predictions` | ~30 (15 games x 2 versions) | ~4,860 |
-| `pipeline_runs` | 2 | ~324 |
-
-At this scale, Postgres handles everything with zero performance concerns. No partitioning, no archival needed for years.
-
----
-
-## 3. FastAPI Service Architecture
-
-### Endpoint Design
-
-| Method | Path | Response | Used By |
-|--------|------|----------|---------|
-| `GET` | `/api/v1/predictions/today` | Today's games with latest predictions (both versions) | Dashboard home page |
-| `GET` | `/api/v1/predictions/{date}` | Predictions for a specific date (YYYY-MM-DD) | Dashboard historical view |
-| `GET` | `/api/v1/predictions/latest-timestamp` | `{ "timestamp": "2026-03-29T13:05:00Z" }` | Client-side polling for updates |
-| `GET` | `/api/v1/results` | Historical results with actual outcomes, paginated | Dashboard results page |
-| `GET` | `/api/v1/results/accuracy` | Aggregate accuracy stats (Brier scores by model, by month) | Dashboard stats section |
-| `GET` | `/api/v1/health` | `{ "status": "ok", "db": true, "models_loaded": true, "last_pipeline_run": "..." }` | Monitoring, uptime checks |
-
-### Response Shape: `/api/v1/predictions/today`
-
-```json
-{
-  "date": "2026-03-29",
-  "last_updated": "2026-03-29T13:05:00Z",
-  "games": [
-    {
-      "game_date": "2026-03-29",
-      "home_team": "NYY",
-      "away_team": "BOS",
-      "home_sp": "Gerrit Cole",
-      "away_sp": "Brayan Bello",
-      "sp_confirmed": true,
-      "kalshi_yes_price": 0.5800,
-      "predictions": {
-        "pre_lineup": {
-          "feature_set": "team_only",
-          "lr_prob": 0.5523,
-          "rf_prob": 0.5612,
-          "xgb_prob": 0.5701,
-          "edge_lr": -0.0277,
-          "edge_rf": -0.0188,
-          "edge_xgb": -0.0099,
-          "predicted_at": "2026-03-29T10:05:00Z"
-        },
-        "post_lineup": {
-          "feature_set": "sp_enhanced",
-          "lr_prob": 0.5891,
-          "rf_prob": 0.5934,
-          "xgb_prob": 0.6012,
-          "edge_lr": 0.0091,
-          "edge_rf": 0.0134,
-          "edge_xgb": 0.0212,
-          "predicted_at": "2026-03-29T13:05:00Z"
-        }
-      }
-    }
-  ]
-}
-```
-
-### Model Artifact Management
-
-**Location:** `/app/models/` inside the Docker container, mapped from a named Docker volume `model_artifacts`.
-
-**Artifacts persisted (pkl/joblib files):**
-
-| File | Contents | Size (est.) |
-|------|----------|-------------|
-| `lr_team_only.joblib` | Fitted LR Pipeline + IsotonicRegression calibrator | ~50 KB |
-| `rf_team_only.joblib` | Fitted RF Pipeline + IsotonicRegression calibrator | ~5 MB |
-| `xgb_team_only.joblib` | Fitted XGBClassifier + IsotonicRegression calibrator | ~2 MB |
-| `lr_sp_enhanced.joblib` | Fitted LR Pipeline + IsotonicRegression calibrator | ~50 KB |
-| `rf_sp_enhanced.joblib` | Fitted RF Pipeline + IsotonicRegression calibrator | ~5 MB |
-| `xgb_sp_enhanced.joblib` | Fitted XGBClassifier + IsotonicRegression calibrator | ~2 MB |
-| `model_metadata.json` | Training date, feature columns, fold info, Brier scores | ~2 KB |
-
-**Total: ~15 MB** -- trivial for the 8 GB RAM VPS.
-
-**Loading pattern:** FastAPI lifespan event (not deprecated `@app.on_event`):
+### New Pydantic Model
 
 ```python
-from contextlib import asynccontextmanager
-import joblib
+class LiveGameData(BaseModel):
+    game_id: int
+    home_team: str
+    away_team: str
+    status: str                    # "Scheduled", "Pre-Game", "Warmup", "In Progress", "Final", etc.
+    home_score: int | None
+    away_score: int | None
+    current_inning: int | None
+    inning_state: str | None       # "Top", "Middle", "Bottom", "End"
+    # Expanded view data (bases, pitcher, batter) -- optional
+    on_first: bool | None
+    on_second: bool | None
+    on_third: bool | None
+    current_pitcher: str | None
+    current_batter: str | None
+    balls: int | None
+    strikes: int | None
+    outs: int | None
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup: load all model artifacts into app.state
-    app.state.models = {
-        "lr_team_only": joblib.load("/app/models/lr_team_only.joblib"),
-        "rf_team_only": joblib.load("/app/models/rf_team_only.joblib"),
-        "xgb_team_only": joblib.load("/app/models/xgb_team_only.joblib"),
-        "lr_sp_enhanced": joblib.load("/app/models/lr_sp_enhanced.joblib"),
-        "rf_sp_enhanced": joblib.load("/app/models/rf_sp_enhanced.joblib"),
-        "xgb_sp_enhanced": joblib.load("/app/models/xgb_sp_enhanced.joblib"),
-    }
-    app.state.model_metadata = json.load(open("/app/models/model_metadata.json"))
-    yield
-    # Shutdown: cleanup (optional, Python GC handles it)
-    app.state.models.clear()
-
-app = FastAPI(lifespan=lifespan)
+class LiveGamesResponse(BaseModel):
+    games: list[LiveGameData]
+    cached_at: datetime
 ```
 
-**Why joblib over pickle:** joblib handles large NumPy arrays (RF's 300 decision trees) more efficiently. scikit-learn's own documentation recommends joblib for sklearn model persistence. Both the sklearn Pipeline and the IsotonicRegression calibrator are stored together in a dict per artifact file.
-
-### FastAPI Project Structure
-
-```
-api/
-    __init__.py
-    main.py              # FastAPI app, lifespan, CORS
-    config.py            # Settings via pydantic-settings (DATABASE_URL, MODEL_DIR, etc.)
-    database.py          # SQLAlchemy async engine + session
-    models/              # SQLAlchemy ORM models (games, predictions, pipeline_runs)
-        __init__.py
-        game.py
-        prediction.py
-        pipeline_run.py
-    schemas/             # Pydantic response/request schemas
-        __init__.py
-        prediction.py
-        result.py
-        health.py
-    routers/
-        __init__.py
-        predictions.py   # /api/v1/predictions/* endpoints
-        results.py       # /api/v1/results/* endpoints
-        health.py        # /api/v1/health endpoint
-    services/
-        __init__.py
-        prediction_service.py  # Query logic, edge computation
-        result_service.py      # Historical accuracy queries
-```
-
-### Database Access
-
-Use SQLAlchemy 2.0 async with `asyncpg` driver:
-- `DATABASE_URL = postgresql+asyncpg://mlb:password@db:5432/mlb_forecaster`
-- Connection pool: min 2, max 5 (2 CPU VPS -- no point in large pool)
-- Alembic for schema migrations (essential for production schema evolution)
-
----
-
-## 4. Docker Compose Service Topology
-
-### Services (Port 8082)
-
-```yaml
-version: "3.8"
-
-services:
-  # --- Database ---
-  db:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: mlb_forecaster
-      POSTGRES_USER: mlb
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U mlb -d mlb_forecaster"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - internal
-
-  # --- FastAPI Backend (serves HTTP) ---
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --workers 2
-    ports:
-      - "8082:8000"
-    environment:
-      DATABASE_URL: postgresql+asyncpg://mlb:${DB_PASSWORD}@db:5432/mlb_forecaster
-      MODEL_DIR: /app/models
-    volumes:
-      - model_artifacts:/app/models
-    depends_on:
-      db:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    networks:
-      - internal
-
-  # --- Prediction Pipeline Worker (runs on cron schedule) ---
-  worker:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    command: supercronic /app/crontab
-    environment:
-      DATABASE_URL: postgresql+psycopg2://mlb:${DB_PASSWORD}@db:5432/mlb_forecaster
-      MODEL_DIR: /app/models
-      KALSHI_API_KEY: ${KALSHI_API_KEY}
-    volumes:
-      - model_artifacts:/app/models
-      - data_cache:/app/data/raw
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - internal
-
-  # --- React Frontend (Nginx serving static build) ---
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    networks:
-      - internal
-
-volumes:
-  pgdata:
-    driver: local
-  model_artifacts:
-    driver: local
-  data_cache:
-    driver: local
-
-networks:
-  internal:
-    driver: bridge
-```
-
-### Service Responsibilities
-
-| Service | Image | Responsibility | Scaling |
-|---------|-------|---------------|---------|
-| `db` | `postgres:16-alpine` | Persistent data storage, ACID transactions | Single instance (8 GB RAM is plenty) |
-| `api` | Custom (Python + FastAPI) | Serve HTTP endpoints, load model artifacts at startup, return predictions | 2 uvicorn workers (matches 2 CPU) |
-| `worker` | Same image as `api` | Run twice-daily pipeline (fetch today's games, compute features, predict, store in Postgres) | Single instance with supercronic |
-| `frontend` | `node:20-alpine` build + `nginx:alpine` serve | Serve React static build | Single instance |
-
-### Why `worker` Uses the Same Docker Image as `api`
-
-Both services need:
-- `src/` package (FeatureBuilder, data loaders, model training code)
-- `api/` package (database models for writing predictions)
-- Python dependencies (pandas, scikit-learn, xgboost, pybaseball)
-
-Using the same image with a different `command` avoids maintaining two Dockerfiles and ensures the worker and API always use identical code versions. The only difference:
-- `api` command: `uvicorn api.main:app --host 0.0.0.0 --port 8000 --workers 2`
-- `worker` command: `supercronic /app/crontab`
-
-### Why Supercronic Instead of Celery/APScheduler
-
-| Option | Why Not |
-|--------|---------|
-| Celery + Redis | Requires Redis container, broker config, Flower monitoring. Massive overkill for 2 cron jobs per day. |
-| APScheduler in-process | Runs inside the API process -- if the API restarts, scheduled jobs are lost. Couples scheduling to serving. |
-| System cron | Doesn't inherit Docker environment variables, output doesn't appear in `docker logs`. |
-| **Supercronic** | Purpose-built for containers. Reads crontab file, logs to stdout, handles signals properly. Zero dependencies. |
-
-### Crontab File (`crontab`)
-
-```
-# Pre-lineup predictions: 10:00 AM ET (14:00 UTC during EDT, 15:00 UTC during EST)
-0 14 * * * python -m pipeline.run --version pre_lineup >> /proc/1/fd/1 2>&1
-
-# Post-lineup predictions: 1:00 PM ET (17:00 UTC during EDT, 18:00 UTC during EST)
-0 17 * * * python -m pipeline.run --version post_lineup >> /proc/1/fd/1 2>&1
-```
-
-### Worker Pipeline Logic (`pipeline/run.py`)
-
-```
-1. Fetch today's schedule from MLB Stats API (live, not cached)
-2. For each game:
-   a. Upsert into games table (game_date, home_team, away_team, SP info)
-   b. Fetch current Kalshi price, update games.kalshi_yes_price
-3. Build feature vector for today's games using FeatureBuilder
-   - Pre-lineup: use TEAM_ONLY_FEATURE_COLS (ignore SP columns even if available)
-   - Post-lineup: use SP_ENHANCED_FEATURE_COLS (fallback to team-only if SP is TBD)
-4. Load persisted model artifacts from /app/models/
-5. Run predict_proba for all 3 models, apply IsotonicRegression calibration
-6. Compute edge = model_prob - kalshi_yes_price for each model
-7. Mark previous predictions for same (game_id, version) as is_latest=FALSE
-8. Insert new prediction rows with is_latest=TRUE
-9. Update pipeline_runs table with status=success and games_processed count
-```
-
-### Shared Volume: `model_artifacts`
-
-Both `api` and `worker` mount the same `model_artifacts` volume at `/app/models/`. The worker writes model artifacts during retraining; the API reads them at startup. For the initial deployment, model artifacts are generated locally and copied into the volume. Subsequent retraining runs update the volume in-place.
-
-**Model hot-reload:** Not needed for v2.0. Models are retrained monthly at most. The API service restarts after a retrain (the worker triggers `docker compose restart api` or the deploy script does).
-
----
-
-## 5. Host Nginx Configuration
-
-### Pattern: Following GamePredictor (Port 8080)
-
-The existing GamePredictor stack uses:
-- Docker Compose with internal Nginx + FastAPI/uvicorn + worker + Postgres
-- Host Nginx (1.24.0) on the VPS reverse-proxies to port 8080
-- Certbot manages SSL certificates
-
-The MLB Forecaster follows the exact same pattern on port 8082.
-
-### Nginx Vhost Configuration
-
-**File:** `/etc/nginx/sites-available/mlbforecaster.silverreyes.net`
-
-```nginx
-# HTTP -> HTTPS redirect
-server {
-    listen 80;
-    listen [::]:80;
-    server_name mlbforecaster.silverreyes.net;
-
-    # Certbot ACME challenge
-    location /.well-known/acme-challenge/ {
-        root /var/www/certbot;
-    }
-
-    location / {
-        return 301 https://$host$request_uri;
-    }
-}
-
-# HTTPS reverse proxy to Docker Compose stack on port 8082
-server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
-    server_name mlbforecaster.silverreyes.net;
-
-    # Certbot-managed SSL certificates
-    ssl_certificate     /etc/letsencrypt/live/mlbforecaster.silverreyes.net/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/mlbforecaster.silverreyes.net/privkey.pem;
-    include /etc/letsencrypt/options-ssl-nginx.conf;
-    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
-
-    # API endpoints -> FastAPI container
-    location /api/ {
-        proxy_pass http://127.0.0.1:8082;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-
-        # Timeouts (pipeline health check can take a few seconds)
-        proxy_connect_timeout 10s;
-        proxy_read_timeout 30s;
-    }
-
-    # Frontend static assets -> same port (Docker internal Nginx serves these)
-    location / {
-        proxy_pass http://127.0.0.1:8082;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-
-        # Cache static assets
-        proxy_cache_valid 200 1h;
-    }
-}
-```
-
-**Wait -- the frontend and API are on the same port 8082?** Yes. Inside Docker Compose, the `api` service binds port 8082:8000. The React frontend can be served two ways:
-
-**Option A (recommended): API serves frontend static files.** FastAPI mounts the React build output as static files. One exposed port, zero routing complexity.
-
-**Option B: Internal Nginx in Docker Compose routes /api to API, / to frontend.** Adds an extra container. Only worth it if the frontend needs its own Nginx config (gzip, caching headers). For a simple React SPA, this is overkill.
-
-**Recommendation: Option A.** FastAPI serves the React build directory via `StaticFiles` mount. The host Nginx handles SSL termination and proxies everything to port 8082. This matches the simplicity target of a 2-CPU VPS.
+### Server-Side Cache Strategy
 
 ```python
-# In api/main.py, AFTER all API routers are mounted:
-from fastapi.staticfiles import StaticFiles
-app.mount("/", StaticFiles(directory="/app/frontend/dist", html=True), name="frontend")
+# Simple dict cache in module scope (lives in API process memory)
+_live_cache: dict[str, tuple[datetime, LiveGamesResponse]] = {}
+_CACHE_TTL_SECONDS = 30
+
+def _get_cached_or_fetch(date_str: str) -> LiveGamesResponse:
+    now = datetime.now(timezone.utc)
+    if date_str in _live_cache:
+        cached_at, response = _live_cache[date_str]
+        if (now - cached_at).total_seconds() < _CACHE_TTL_SECONDS:
+            return response
+    # Fetch fresh data...
+    response = _fetch_live_from_mlb(date_str)
+    _live_cache[date_str] = (now, response)
+    return response
 ```
 
-This means all `/api/*` routes are handled by FastAPI routers (matched first), and everything else falls through to the React SPA's `index.html`.
+**Why 30s server-side cache:** Multiple browser tabs / users polling at 90s intervals. With 30s cache, the API makes at most 2 upstream MLB API calls per minute regardless of client count. The `statsapi.schedule()` call is lightweight (~50ms) and returns all games for a date in one request.
 
-### SSL Certificate Setup
+### Auto-Write Final Outcomes
 
-```bash
-# On VPS as deploy user:
-sudo certbot certonly --webroot -w /var/www/certbot \
-    -d mlbforecaster.silverreyes.net \
-    --email silver@silverreyes.net \
-    --agree-tos --non-interactive
+When the live endpoint sees a game with `status == "Final"`, it writes the outcome to Postgres. This is the primary mechanism for outcome recording; the nightly reconciliation (Feature 4) is the safety net.
 
-# Enable site and reload
-sudo ln -s /etc/nginx/sites-available/mlbforecaster.silverreyes.net \
-           /etc/nginx/sites-enabled/
-sudo nginx -t && sudo systemctl reload nginx
+```python
+def _record_final_outcome(pool, game_data: dict):
+    """Write actual_winner to predictions table for a finalized game."""
+    sql = """
+        UPDATE predictions
+        SET actual_winner = %(winner)s,
+            prediction_correct = (
+                CASE WHEN %(winner)s = home_team
+                    THEN lr_prob > 0.5  -- simplified; real logic uses ensemble
+                END
+            ),
+            reconciled_at = NOW()
+        WHERE game_date = %(game_date)s
+          AND home_team = %(home_team)s
+          AND away_team = %(away_team)s
+          AND actual_winner IS NULL
+    """
 ```
 
-Certbot auto-renewal is already configured system-wide via `systemd timer` or cron (set up for GamePredictor). The new cert renews automatically.
+### Frontend Integration
 
----
+| Component | Change |
+|-----------|--------|
+| `api/types.ts` | Add `LiveGameData` and `LiveGamesResponse` types |
+| `hooks/useLiveGames.ts` | NEW -- fetches `/games/live?date=X`; 90s refetchInterval; only active when date is today |
+| `App.tsx` | Merge live game data with prediction data for display |
+| `GameCard.tsx` | MODIFY -- show score, inning indicator, bases diamond when live data present |
+| `components/LiveScoreOverlay.tsx` | NEW -- renders score + inning on game card; bases diamond for expanded view |
 
-## 6. React Frontend Architecture
-
-### Technology Choices
-
-| Technology | Version | Why |
-|------------|---------|-----|
-| React | 19.x | Standard; team familiarity |
-| Vite | 6.x | Fast builds, HMR, TypeScript out of box |
-| TypeScript | 5.x | Type safety for API response shapes |
-| Tailwind CSS | 4.x | Utility-first; easy dark theme with CSS variables |
-| TanStack Query (React Query) | 5.x | Server state management, built-in polling via `refetchInterval` |
-| React Router | 7.x | Client-side routing for SPA |
-
-**No component library (shadcn/ui, MUI, etc.).** The dashboard has 3 pages with simple tables and cards. Tailwind utility classes are sufficient. Adding a component library for 3 pages adds bundle size for no benefit.
-
-### Page Structure
-
-```
-/                   -> Today's Predictions (home page)
-/results            -> Historical Results
-/about              -> About the model (static content)
-```
-
-### Page Data Requirements
-
-**Page: Today's Predictions (`/`)**
-
-| Data Source | Endpoint | Polling | Notes |
-|-------------|----------|---------|-------|
-| Today's games + predictions | `GET /api/v1/predictions/today` | Every 60 seconds (initial fetch, then refetch) | Main content |
-| Latest update timestamp | `GET /api/v1/predictions/latest-timestamp` | Every 30 seconds | Lightweight check for change notification |
-
-**Display per game:**
-- Home team vs. Away team
-- Starting pitchers (with "TBD" if unconfirmed)
-- Pre-lineup predictions: LR / RF / XGB probabilities
-- Post-lineup predictions: LR / RF / XGB probabilities (or "Pending" if 10am run hasn't happened yet)
-- Kalshi price
-- Edge signals (color-coded: green = positive edge, red = negative, gray = no Kalshi price)
-- Prediction version timestamp
-
-**Page: Historical Results (`/results`)**
-
-| Data Source | Endpoint | Polling | Notes |
-|-------------|----------|---------|-------|
-| Past results with outcomes | `GET /api/v1/results?page=1&per_page=20` | None (static data) | Paginated table |
-| Accuracy statistics | `GET /api/v1/results/accuracy` | None | Aggregate Brier scores |
-
-**Display:**
-- Table: date, teams, model predictions, actual outcome, Kalshi price, edge, P&L
-- Summary cards: aggregate Brier score per model, win rate, total simulated P&L
-
-**Page: About (`/about`)**
-- Static content. No API calls. Describes methodology, model details, data sources.
-
-### Client-Side Timestamp Polling for Change Notifications
-
-The dashboard needs to detect when new predictions are available (10am pre-lineup run, 1pm post-lineup run) without WebSocket or push notifications.
-
-**Pattern:**
+### Polling Strategy (Frontend)
 
 ```typescript
-// In the main layout component:
-const { data: timestamp } = useQuery({
-    queryKey: ['latest-timestamp'],
-    queryFn: () => fetch('/api/v1/predictions/latest-timestamp').then(r => r.json()),
-    refetchInterval: 30_000,  // Poll every 30 seconds
-});
-
-const [lastSeen, setLastSeen] = useState<string | null>(null);
-const [showBanner, setShowBanner] = useState(false);
-
-useEffect(() => {
-    if (!timestamp?.timestamp) return;
-    if (lastSeen && timestamp.timestamp !== lastSeen) {
-        setShowBanner(true);  // Show "New predictions available" banner
-        // Optional: trigger browser Notification API
-        if (Notification.permission === 'granted') {
-            new Notification('MLB Forecaster', {
-                body: 'New predictions available',
-                icon: '/favicon.ico',
-            });
-        }
-    }
-    setLastSeen(timestamp.timestamp);
-}, [timestamp]);
-```
-
-**Why this works:** The `/api/v1/predictions/latest-timestamp` endpoint returns a single ISO timestamp string (~50 bytes). Polling every 30 seconds costs negligible bandwidth. When the timestamp changes (pipeline wrote new predictions), the frontend shows a banner and optionally fires a browser notification.
-
-**Browser Notification API setup:** On first visit, the frontend requests `Notification.requestPermission()`. Users who grant permission get desktop notifications when predictions update. No service worker, no push subscription, no server-side notification infrastructure.
-
-### Dark/Amber Aesthetic
-
-Tailwind CSS with custom CSS variables for the color palette:
-
-```css
-:root {
-    --bg-primary: #0f0f0f;
-    --bg-secondary: #1a1a1a;
-    --bg-card: #242424;
-    --text-primary: #e5e5e5;
-    --text-secondary: #a3a3a3;
-    --accent: #f59e0b;         /* amber-500 */
-    --accent-light: #fbbf24;   /* amber-400 */
-    --accent-dark: #d97706;    /* amber-600 */
-    --positive: #22c55e;       /* green for positive edge */
-    --negative: #ef4444;       /* red for negative edge */
-    --neutral: #6b7280;        /* gray for no data */
+export function useLiveGames(date: string) {
+  const isToday = date === getTodayET();
+  return useQuery({
+    queryKey: ['live-games', date],
+    queryFn: () => fetchJson<LiveGamesResponse>(`/games/live?date=${date}`),
+    refetchInterval: isToday ? 90_000 : false,  // 90s only for today
+    refetchIntervalInBackground: false,          // respect visibilityState
+    enabled: isToday,                            // don't poll for past/future dates
+    staleTime: 60_000,
+  });
 }
 ```
 
-### Frontend Build and Deployment
+---
 
-The React app is built at Docker image build time:
+## Feature 4: Outcome Reconciliation (Nightly Job)
 
-```dockerfile
-# frontend/Dockerfile (multi-stage)
-FROM node:20-alpine AS build
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
+### Architecture Decision
 
-# Output: /app/dist/ (static files served by FastAPI StaticFiles mount)
-FROM scratch AS export
-COPY --from=build /app/dist /dist
+**What:** Add a fourth APScheduler job to the existing `BlockingScheduler`. This is purely additive -- no existing jobs are modified.
+
+**When:** 2:00 AM ET -- after all West Coast games have concluded (latest regular season start: ~10pm ET, rarely extends past 1:30am ET).
+
+### Integration Points
+
+| Layer | Change Type | Details |
+|-------|-------------|---------|
+| `src/pipeline/schema.sql` | MODIFY | `ALTER TABLE predictions ADD COLUMN actual_winner VARCHAR(3), ADD COLUMN prediction_correct BOOLEAN, ADD COLUMN reconciled_at TIMESTAMPTZ` |
+| `src/pipeline/db.py` | ADD FUNCTION | `reconcile_outcomes(pool, game_date)` -- fetches Final games from MLB API, updates predictions table |
+| `src/pipeline/reconciler.py` | NEW FILE | `run_reconciliation(pool)` -- the job function |
+| `src/pipeline/scheduler.py` | MODIFY | Add 4th job: `scheduler.add_job(run_reconciliation, CronTrigger(hour=2, minute=0, timezone="US/Eastern"), args=[pool], id="reconciliation")` |
+| `scripts/run_pipeline.py` | MODIFY | Pass `pool` to reconciliation job (no artifacts needed) |
+
+### Reconciliation Logic
+
+```python
+def run_reconciliation(pool):
+    """Reconcile outcomes for yesterday's games (safety net for live poller)."""
+    yesterday = (date.today() - timedelta(days=1)).strftime("%Y-%m-%d")
+
+    # 1. Find predictions with actual_winner IS NULL for yesterday
+    # 2. Fetch final scores from statsapi.schedule(date=yesterday)
+    # 3. For each Final game: UPDATE predictions SET actual_winner, prediction_correct, reconciled_at
+    # 4. Log any games still not Final (rain delays, suspended games)
 ```
 
-The API Dockerfile copies the frontend build output into `/app/frontend/dist/` where FastAPI's `StaticFiles` mount serves it. This means the frontend does not need its own container at runtime -- it is baked into the API image.
+### Why a Separate Reconciler (Not Part of run_pipeline)
 
-**Revised Docker Compose (final):** Remove the `frontend` service. The `api` service includes and serves the frontend build. Three services total: `db`, `api`, `worker`.
+1. **No model artifacts needed** -- reconciliation is pure data lookup + DB update. Loading 6 model artifacts (the current `run_pipeline` prerequisite) would waste memory.
+2. **Different failure mode** -- if reconciliation fails, predictions are unaffected. If it ran inside `run_pipeline`, a reconciliation error could abort the prediction pipeline.
+3. **Different schedule** -- 2am ET vs 10am/1pm/5pm ET.
+
+### prediction_correct Computation
+
+```sql
+-- For each prediction row, compare ensemble probability to actual outcome
+prediction_correct = CASE
+    WHEN actual_winner = home_team AND (lr_prob + rf_prob + xgb_prob) / 3 > 0.5 THEN TRUE
+    WHEN actual_winner = away_team AND (lr_prob + rf_prob + xgb_prob) / 3 < 0.5 THEN TRUE
+    ELSE FALSE
+END
+```
+
+**Note:** This is per-row (per prediction_version). Each version (pre_lineup, post_lineup, confirmation) gets its own `prediction_correct` value, enabling accuracy comparison across pipeline runs.
+
+### Schema Migration Strategy
+
+The three new columns are NULLable and have no constraints. They can be added via `ALTER TABLE` in `apply_schema()` without downtime:
+
+```sql
+-- Idempotent: IF NOT EXISTS equivalent via DO block
+DO $$ BEGIN
+    ALTER TABLE predictions ADD COLUMN actual_winner VARCHAR(3);
+EXCEPTION WHEN duplicate_column THEN NULL;
+END $$;
+
+DO $$ BEGIN
+    ALTER TABLE predictions ADD COLUMN prediction_correct BOOLEAN;
+EXCEPTION WHEN duplicate_column THEN NULL;
+END $$;
+
+DO $$ BEGIN
+    ALTER TABLE predictions ADD COLUMN reconciled_at TIMESTAMPTZ;
+EXCEPTION WHEN duplicate_column THEN NULL;
+END $$;
+```
+
+### New Index
+
+```sql
+CREATE INDEX IF NOT EXISTS idx_predictions_unreconciled
+    ON predictions (game_date)
+    WHERE actual_winner IS NULL AND is_latest = TRUE;
+```
+
+This partial index accelerates the reconciliation query (find games needing outcome data).
 
 ---
 
-## 7. Complete v2.0 System Architecture
+## Feature 5: History Route
 
+### Architecture Decision: New FastAPI Endpoint + New React Route
+
+This is the first feature requiring **client-side routing** in the frontend.
+
+### New Backend Endpoint: `GET /api/v1/history`
+
+**Query parameters:**
+- `start_date` (required): YYYY-MM-DD
+- `end_date` (required): YYYY-MM-DD
+- `model` (optional): filter by prediction_version (pre_lineup, post_lineup, confirmation)
+
+**Response:** Aggregated accuracy data + per-game prediction records.
+
+```python
+class HistoryGameRecord(BaseModel):
+    game_date: date
+    home_team: str
+    away_team: str
+    prediction_version: str
+    ensemble_prob: float | None
+    actual_winner: str | None
+    prediction_correct: bool | None
+    home_sp: str | None
+    away_sp: str | None
+
+class AccuracySummary(BaseModel):
+    total_games: int
+    correct_predictions: int
+    accuracy_pct: float
+    brier_score: float | None      # Requires actual outcome probabilities
+    by_model: dict[str, dict]      # {version: {total, correct, accuracy_pct}}
+
+class HistoryResponse(BaseModel):
+    records: list[HistoryGameRecord]
+    summary: AccuracySummary
+    date_range: tuple[str, str]
 ```
-                         INTERNET
-                            |
-                    [ Certbot SSL ]
-                            |
-                +-----------v-----------+
-                |   Host Nginx (1.24)   |
-                |   mlbforecaster.      |
-                |   silverreyes.net     |
-                |   :443 -> :8082       |
-                +-----------+-----------+
-                            |
-                    port 8082 (localhost)
-                            |
-          +-----------------v-----------------+
-          |     Docker Compose Network        |
-          |                                   |
-          |   +----------+    +-----------+   |
-          |   |   api    |    |  worker   |   |
-          |   | FastAPI  |    | supercronic|  |
-          |   | uvicorn  |    | 10am/1pm  |   |
-          |   | :8000    |    | pipeline  |   |
-          |   | + React  |    |           |   |
-          |   | static   |    |           |   |
-          |   +----+-----+    +-----+-----+   |
-          |        |                |          |
-          |        |  model_artifacts vol      |
-          |        |    (shared r/w)           |
-          |        |                |          |
-          |   +----v-----+    +----v------+   |
-          |   | Postgres |<---| data_cache|   |
-          |   |  :5432   |    | volume    |   |
-          |   | pgdata   |    |           |   |
-          |   +----------+    +-----------+   |
-          +-----------------------------------+
+
+### SQL Queries for History
+
+**Per-game records:**
+```sql
+SELECT game_date, home_team, away_team, prediction_version,
+       lr_prob, rf_prob, xgb_prob,
+       (lr_prob + rf_prob + xgb_prob) / 3.0 AS ensemble_prob,
+       actual_winner, prediction_correct, home_sp, away_sp
+FROM predictions
+WHERE game_date BETWEEN %(start_date)s AND %(end_date)s
+  AND is_latest = TRUE
+  AND actual_winner IS NOT NULL
+ORDER BY game_date DESC, home_team
 ```
 
-### Component Inventory
+**Rolling accuracy by model (per prediction_version):**
+```sql
+SELECT prediction_version,
+       COUNT(*) AS total_games,
+       SUM(CASE WHEN prediction_correct THEN 1 ELSE 0 END) AS correct,
+       ROUND(
+           SUM(CASE WHEN prediction_correct THEN 1 ELSE 0 END)::numeric
+           / NULLIF(COUNT(*), 0) * 100, 1
+       ) AS accuracy_pct
+FROM predictions
+WHERE game_date BETWEEN %(start_date)s AND %(end_date)s
+  AND is_latest = TRUE
+  AND actual_winner IS NOT NULL
+GROUP BY prediction_version
+ORDER BY prediction_version
+```
 
-**Modified existing components (Track 1):**
+**Brier score computation (per prediction_version):**
+```sql
+SELECT prediction_version,
+       AVG(
+           POWER(
+               (lr_prob + rf_prob + xgb_prob) / 3.0
+               - CASE WHEN actual_winner = home_team THEN 1.0 ELSE 0.0 END,
+               2
+           )
+       ) AS brier_score
+FROM predictions
+WHERE game_date BETWEEN %(start_date)s AND %(end_date)s
+  AND is_latest = TRUE
+  AND actual_winner IS NOT NULL
+GROUP BY prediction_version
+```
 
-| Component | File | Change |
-|-----------|------|--------|
-| FeatureBuilder | `src/features/feature_builder.py` | Extend `_add_sp_features()` with ERA, BB%, WHIP, IP differentials |
-| FeatureBuilder | `src/features/feature_builder.py` | Fix `_add_advanced_features()` xwOBA column bug (ADVF-07) |
-| Feature sets | `src/models/feature_sets.py` | Add `SP_ENHANCED_FEATURE_COLS`, alias `TEAM_ONLY_FEATURE_COLS` |
-| Model training | `src/models/train.py` | No changes (factories are feature-set agnostic) |
-| Calibration | `src/models/calibrate.py` | No changes |
-| Backtest | `src/models/backtest.py` | Add new folds for expanded feature set validation |
+### Frontend Routing Setup
 
-**New components (Track 2):**
+**Install react-router:**
 
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| FastAPI app | `api/` | HTTP server, model serving, Postgres queries |
-| Pipeline runner | `pipeline/` | Twice-daily cron logic (fetch, predict, store) |
-| Model persistence | `scripts/train_and_persist.py` | One-time script: train all 6 model variants, save as joblib |
-| Docker Compose | `docker-compose.yml` | Service orchestration |
-| Dockerfile | `Dockerfile` | Multi-stage build (Python + frontend assets) |
-| Frontend | `frontend/` | React + Vite + Tailwind SPA |
-| Nginx vhost | Deploy config | Host reverse proxy for SSL termination |
-| DB schema | `db/init.sql` | Postgres schema (games, predictions, pipeline_runs) |
-| Alembic migrations | `alembic/` | Schema versioning for production |
+```bash
+npm install react-router
+```
+
+**Minimal router setup (no framework mode):**
+
+```typescript
+// main.tsx
+import { createBrowserRouter, RouterProvider } from 'react-router';
+
+const router = createBrowserRouter([
+  { path: '/', element: <App /> },
+  { path: '/history', element: <HistoryPage /> },
+]);
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>
+  </StrictMode>,
+);
+```
+
+**Why this works with the existing backend:** The `SPAStaticFiles` class in `api/spa.py` already catches unknown paths and serves `index.html`. When a user navigates to `/history`, Nginx forwards to the API, the API finds no static file at `/history`, and falls back to `index.html`, which loads the React app, which reads the URL and renders the `HistoryPage` component. Zero backend routing changes needed.
+
+### New Frontend Components
+
+| Component | Purpose |
+|-----------|---------|
+| `HistoryPage.tsx` | Top-level page: date range picker + accuracy summary + records table |
+| `DateRangePicker.tsx` | Start/end date inputs (native `<input type="date">` -- no library needed) |
+| `AccuracySummaryCard.tsx` | Displays overall accuracy, Brier score, per-model breakdown |
+| `HistoryTable.tsx` | Sortable table of prediction records with outcome markers |
+| `hooks/useHistory.ts` | TanStack Query hook for `/history?start_date=X&end_date=Y` |
+| `NavBar.tsx` | Minimal navigation: "Today" | "History" links (shared across pages) |
 
 ---
 
-## 8. Build Order (Dependency Graph)
+## New vs Modified Components Summary
 
-The build order is critical because Track 2 depends on Track 1 outputs (trained models, expanded FeatureBuilder). Within Track 2, database must exist before the API, and trained model artifacts must exist before the pipeline.
+### New Files
 
-### Phase Ordering
+| File | Layer | Purpose |
+|------|-------|---------|
+| `api/routes/live.py` | Backend | Live game scores endpoint + server cache + Final outcome writer |
+| `api/routes/history.py` | Backend | History endpoint with date range, accuracy aggregation |
+| `src/pipeline/reconciler.py` | Backend | Nightly reconciliation job logic |
+| `frontend/src/hooks/useLiveGames.ts` | Frontend | Live game polling hook |
+| `frontend/src/hooks/useHistory.ts` | Frontend | History data fetch hook |
+| `frontend/src/components/LiveScoreOverlay.tsx` | Frontend | Score + inning display on game cards |
+| `frontend/src/components/DateNavigator.tsx` | Frontend | Date arrows + display for navigation |
+| `frontend/src/components/HistoryPage.tsx` | Frontend | History route page |
+| `frontend/src/components/DateRangePicker.tsx` | Frontend | Date range inputs for history |
+| `frontend/src/components/AccuracySummaryCard.tsx` | Frontend | Accuracy metrics display |
+| `frontend/src/components/HistoryTable.tsx` | Frontend | Prediction records table |
+| `frontend/src/components/NavBar.tsx` | Frontend | Top-level navigation (Today / History) |
 
-```
-Phase 1: SP Feature Integration (Track 1)
-    |
-    |- 1a. Extend _add_sp_features() with new differentials
-    |- 1b. Fix ADVF-07 (xwOBA column bug)
-    |- 1c. Update feature_sets.py (TEAM_ONLY + SP_ENHANCED)
-    |- 1d. Rebuild feature store (FeatureBuilder.build())
-    |- 1e. Retrain all 6 model combinations with walk-forward backtest
-    |- 1f. Evaluate: compare v1 vs v2 Brier scores
-    |
-Phase 2: Model Persistence
-    |
-    |- 2a. Create train_and_persist.py (train final models, save joblib artifacts)
-    |- 2b. Generate 6 joblib files + model_metadata.json
-    |       (Depends on: Phase 1 complete -- feature sets finalized)
-    |
-Phase 3: Database & API Foundation
-    |
-    |- 3a. Write db/init.sql (schema from Section 2)
-    |- 3b. Set up Alembic
-    |- 3c. Build FastAPI app structure (routers, schemas, database.py)
-    |- 3d. Implement /health endpoint (verifies DB connection + models loaded)
-    |- 3e. Implement /predictions/today and /predictions/{date} endpoints
-    |- 3f. Implement /predictions/latest-timestamp endpoint
-    |- 3g. Implement /results endpoints
-    |       (Depends on: Phase 2 -- API loads model artifacts at startup)
-    |
-Phase 4: Pipeline Worker
-    |
-    |- 4a. Create pipeline/run.py (fetch schedule, build features, predict, store)
-    |- 4b. Integrate FeatureBuilder with live schedule fetch (not cached)
-    |- 4c. Add Kalshi live price fetch for edge computation
-    |- 4d. Create crontab file for supercronic
-    |- 4e. Test pipeline end-to-end locally (writes to local Postgres)
-    |       (Depends on: Phase 3 -- needs database schema and ORM models)
-    |
-Phase 5: Docker & Deployment
-    |
-    |- 5a. Write Dockerfile (multi-stage: frontend build + Python app)
-    |- 5b. Write docker-compose.yml
-    |- 5c. Test locally with docker compose up
-    |- 5d. Set up VPS: DNS record for mlbforecaster.silverreyes.net
-    |- 5e. Deploy to VPS: docker compose up -d
-    |- 5f. Configure host Nginx vhost + Certbot SSL
-    |- 5g. Verify end-to-end: HTTPS -> API -> predictions
-    |       (Depends on: Phase 4 -- needs working pipeline + API)
-    |
-Phase 6: React Frontend
-    |
-    |- 6a. Scaffold Vite + React + TypeScript + Tailwind project
-    |- 6b. Implement dark/amber theme CSS variables
-    |- 6c. Build Today's Predictions page (main dashboard)
-    |- 6d. Build Historical Results page
-    |- 6e. Implement timestamp polling + browser notifications
-    |- 6f. Build About page
-    |- 6g. Integrate into Dockerfile (multi-stage build)
-    |       (Can start in parallel with Phase 3 -- just needs API contract/types)
-    |
-Phase 7: Portfolio Integration
-    |
-    |- 7a. Create mlb-winforecaster page in Astro SSR site
-    |- 7b. Add project card to silverreyes.net portfolio
-    |       (Depends on: Phase 5 -- needs live URL to link to)
-```
+### Modified Files
 
-### Parallelization Opportunities
+| File | Layer | Changes |
+|------|-------|---------|
+| `src/pipeline/schema.sql` | Backend | Add 3 columns (actual_winner, prediction_correct, reconciled_at) + new index |
+| `src/pipeline/db.py` | Backend | Add `reconcile_outcomes()`, `record_final_outcome()` functions |
+| `src/pipeline/scheduler.py` | Backend | Add 4th CronTrigger job (reconciliation at 2am ET) |
+| `src/data/mlb_schedule.py` | Backend | Add `fetch_schedule_for_date(date_str)` parameterized function |
+| `api/main.py` | Backend | Register `live_router` and `history_router` |
+| `api/models.py` | Backend | Add `LiveGameData`, `LiveGamesResponse`, `HistoryGameRecord`, `AccuracySummary`, `HistoryResponse` models; modify `PredictionResponse` |
+| `api/routes/predictions.py` | Backend | Enhance schedule lookup with status/scores; support schedule-only entries |
+| `frontend/src/main.tsx` | Frontend | Add `createBrowserRouter` + `RouterProvider`; move `QueryClientProvider` to wrap router |
+| `frontend/src/App.tsx` | Frontend | Add `selectedDate` state; integrate `DateNavigator`; merge live game data |
+| `frontend/src/api/types.ts` | Frontend | Add `LiveGameData`, `LiveGamesResponse`, `HistoryResponse` types; modify `PredictionResponse` |
+| `frontend/src/hooks/usePredictions.ts` | Frontend | Accept `date` parameter; dynamic queryKey |
+| `frontend/src/components/GameCard.tsx` | Frontend | Show live scores, game status, outcome markers |
+| `frontend/package.json` | Frontend | Add `react-router` dependency |
 
-- **Phase 6 (frontend) can start during Phase 3** as long as API types/schemas are defined first. Use mock data during frontend dev.
-- **Phase 1a and 1b** are independent fixes within FeatureBuilder -- can be done in parallel.
-- **Phase 3a-3b (DB schema)** and **Phase 6a-6b (frontend scaffold)** are independent of each other.
+### Unchanged (Explicitly)
 
-### What Must Exist Before What
+| Component | Why Unchanged |
+|-----------|---------------|
+| `src/pipeline/runner.py` | Prediction pipeline logic untouched; reconciliation is a separate job |
+| `src/pipeline/inference.py` | Model loading and prediction unchanged |
+| `src/pipeline/live_features.py` | Feature building unchanged |
+| `src/pipeline/health.py` | Health endpoint unchanged |
+| `scripts/run_pipeline.py` | Entry point unchanged (scheduler picks up new job automatically) |
+| Model artifacts | No retraining needed |
+| `docker-compose.yml` | No new containers; no memory limit changes |
+| `Dockerfile` | No new dependencies that require system packages |
 
-| Dependency | Reason |
-|-----------|--------|
-| SP features (1) before model persistence (2) | Models must train on final feature set |
-| Model artifacts (2) before API (3) | API loads models at startup via lifespan |
-| DB schema (3a) before API endpoints (3c-3g) | Endpoints query Postgres |
-| DB schema (3a) before pipeline (4) | Pipeline writes to Postgres |
-| API + pipeline (3+4) before Docker deploy (5) | Docker wraps working services |
-| Docker deploy (5) before SSL/Nginx (5f) | SSL cert needs the server running |
-| Live URL (5g) before portfolio (7) | Portfolio page links to dashboard |
+---
+
+## Recommended Build Order
+
+The features have dependencies. Build in this order:
+
+### Phase 1: Schema + Game Visibility Fix (Foundation)
+
+**Depends on:** Nothing
+**Enables:** Features 3, 4, 5
+
+1. Add 3 new columns to `schema.sql` (idempotent ALTER TABLE)
+2. Add new index for unreconciled predictions
+3. Add `fetch_schedule_for_date()` to `mlb_schedule.py`
+4. Enhance `_build_schedule_lookup()` to include status/scores
+5. Add `game_status` to `PredictionResponse` (backend + frontend)
+6. Update `GameCard.tsx` to show game status badge
+
+**Why first:** The schema migration is the foundation for Features 3, 4, and 5. The game visibility fix is the simplest change and validates the schedule enrichment pattern used by all subsequent features.
+
+### Phase 2: Date Navigation (Frontend-Heavy)
+
+**Depends on:** Phase 1 (schedule enrichment)
+**Enables:** Feature 5 (establishes date parameter pattern)
+
+1. Add `DateNavigator` component
+2. Modify `usePredictions` to accept date parameter
+3. Add `schedule_only` flag for future dates
+4. Modify `GameCard` to handle schedule-only rendering
+5. Wire date state through `App.tsx`
+
+**Why second:** Establishes the date-parameterized data flow that history will also use. Pure frontend change (backend date endpoint already exists).
+
+### Phase 3: Live Score Polling (New Endpoint)
+
+**Depends on:** Phase 1 (schema columns for outcome writing), Phase 2 (date parameterization)
+**Enables:** Feature 4 (live poller writes outcomes that reconciler verifies)
+
+1. Create `api/routes/live.py` with server-side cache
+2. Add `LiveGameData` / `LiveGamesResponse` Pydantic models
+3. Implement MLB Stats API calls for live scores
+4. Implement auto-write of Final outcomes to Postgres
+5. Register live router in `api/main.py`
+6. Create `useLiveGames` hook
+7. Create `LiveScoreOverlay` component
+8. Integrate live data into `GameCard`
+
+**Why third:** This is the most complex new feature. Having the schema and date navigation in place means the live poller has a target to write to and a UI framework to display in.
+
+### Phase 4: Nightly Reconciliation (Backend-Only)
+
+**Depends on:** Phase 1 (schema columns), Phase 3 (live poller sets the primary outcome path)
+**Enables:** Feature 5 (history page needs reconciled outcomes)
+
+1. Create `src/pipeline/reconciler.py`
+2. Add `reconcile_outcomes()` to `db.py`
+3. Add 4th job to `scheduler.py`
+4. Test with `--once reconciliation` flag
+
+**Why fourth:** The reconciler is a safety net for the live poller. It needs the schema in place (Phase 1) and the live outcome writing pattern established (Phase 3) so it can fill gaps rather than duplicate work.
+
+### Phase 5: History Route (Full-Stack)
+
+**Depends on:** Phase 1 (schema), Phase 4 (reconciled data to display)
+**Enables:** Nothing (terminal feature)
+
+1. Create `api/routes/history.py` with aggregation queries
+2. Add history Pydantic models
+3. Register history router
+4. Install `react-router`; set up `createBrowserRouter` in `main.tsx`
+5. Create `HistoryPage`, `DateRangePicker`, `AccuracySummaryCard`, `HistoryTable`
+6. Create `useHistory` hook
+7. Add `NavBar` component for page navigation
+
+**Why last:** Requires reconciled outcome data to be meaningful. All other features must be in place first.
 
 ---
 
 ## Scalability Considerations
 
-| Concern | Current (v2.0) | If 10K daily users | If 100K daily users |
-|---------|----------------|---------------------|---------------------|
-| API throughput | 2 uvicorn workers, ~200 req/s | Sufficient | Add workers or second VPS |
-| Database | Single Postgres, ~5K rows/season | Sufficient for decades | Sufficient for decades |
-| Model inference | In-memory, <10ms per prediction | Sufficient | Sufficient (batch, not per-request) |
-| Static assets | Served by FastAPI StaticFiles | Add CDN (Cloudflare) | Add CDN |
-| Cron pipeline | 2 runs/day, ~30s each | Sufficient | Sufficient |
+| Concern | Current (Day 1) | Season Midpoint (~1K games) | Full Season (~2.4K games) |
+|---------|-----------------|----------------------------|--------------------------|
+| Predictions table rows | ~50/day (15 games x 3 versions + updates) | ~7.5K rows | ~18K rows |
+| History query | <100 rows | Indexed scan, <50ms | Indexed scan, <100ms |
+| Live polling load | 15 games, 1 API call/30s | Same (server cache) | Same |
+| Memory (API) | ~200MB baseline | No growth (no caching of history) | No growth |
+| Memory (Worker) | ~800MB peak during pipeline | No growth (reconciler is lightweight) | No growth |
 
-**This system is dramatically over-provisioned for its workload.** 15 games/day, 2 prediction runs, ~5K annual rows. The VPS with 2 CPU / 8 GB RAM could handle 100x the load. No scaling concerns for the foreseeable future.
+The predictions table will not need partitioning or archival within a single MLB season. With ~18K rows and proper indexes, all queries complete in single-digit milliseconds.
+
+---
+
+## Anti-Patterns to Avoid
+
+### Anti-Pattern 1: Storing Mutable Game State in Predictions Table
+**What:** Adding columns like `current_inning`, `home_score` to the predictions table and updating them during games.
+**Why bad:** Predictions are write-once snapshots. Updating them with live data mixes concerns, creates update contention, and makes the table's semantics ambiguous (is this row a prediction or a game record?).
+**Instead:** Serve live game data from a separate endpoint that reads from MLB Stats API with server-side caching. Write only final outcomes (actual_winner, prediction_correct) once.
+
+### Anti-Pattern 2: WebSocket for Live Scores
+**What:** Adding WebSocket infrastructure for real-time score pushes.
+**Why bad:** The project already established client-side polling as the pattern (v2.0 decision, documented in Out of Scope). Adding WebSocket requires new infrastructure (different Gunicorn worker type, sticky sessions, reconnection logic). The 90s polling interval for live scores does not justify the complexity.
+**Instead:** Continue the polling pattern with TanStack Query's `refetchInterval`.
+
+### Anti-Pattern 3: Running Predictions for Tomorrow
+**What:** Scheduling or triggering model inference for tomorrow's games.
+**Why bad:** Tomorrow's SP assignments are unreliable (change overnight, day-of scratches common). Running TEAM_ONLY predictions without SP data provides marginal value and may mislead users. Memory-constrained worker (1536M) should not run additional inference passes.
+**Instead:** Show schedule-only view for future dates with explicit "Predictions available on game day" messaging.
+
+### Anti-Pattern 4: Separate Database for Live Game Data
+**What:** Adding Redis or a second Postgres database for live game state.
+**Why bad:** Adds operational complexity (another container, another backup target, another failure point) for data that is cached in-memory for 30 seconds and thrown away.
+**Instead:** In-memory dict cache in the API process. Zero infrastructure additions.
 
 ---
 
 ## Sources
 
-- [FastAPI Lifespan Events (official docs)](https://fastapi.tiangolo.com/advanced/events/)
-- [FastAPI in Docker Containers (official docs)](https://fastapi.tiangolo.com/deployment/docker/)
-- [Loading Models into FastAPI Applications](https://apxml.com/courses/fastapi-ml-deployment/chapter-3-integrating-ml-models/loading-models-fastapi)
-- [FastAPI + PostgreSQL + Celery Stack with Docker Compose](https://oneuptime.com/blog/post/2026-02-08-how-to-set-up-a-fastapi-postgresql-celery-stack-with-docker-compose/view)
-- [Production-Ready FastAPI Project Structure (2026)](https://dev.to/thesius_code_7a136ae718b7/production-ready-fastapi-project-structure-2026-guide-b1g)
-- [APScheduler vs Celery comparison](https://leapcell.io/blog/scheduling-tasks-in-python-apscheduler-vs-celery-beat)
-- [Docker Compose Cron Jobs with Supercronic](https://distr.sh/blog/docker-compose-cron-jobs/)
-- [How to Run Cron Jobs Inside Docker Containers](https://oneuptime.com/blog/post/2026-01-06-docker-cron-jobs/view)
+- [MLB-StatsAPI PyPI](https://pypi.org/project/MLB-StatsAPI/) -- Python wrapper for MLB Stats API (already in requirements.txt as `MLB-StatsAPI==1.9.0`)
+- [MLB-StatsAPI Endpoints Wiki](https://github.com/toddrob99/MLB-StatsAPI/wiki/Endpoints) -- game, game_linescore, game_boxscore, schedule endpoints
+- [MLB-StatsAPI schedule() Function](https://github.com/toddrob99/MLB-StatsAPI/wiki/Function:-schedule) -- returns game_id, status, home_score, away_score, current_inning, inning_state
+- [MLB-StatsAPI linescore() Function](https://github.com/toddrob99/MLB-StatsAPI/wiki/Function:-linescore) -- inning-by-inning scoring with gamePk parameter
+- [APScheduler 3.x Interval Trigger](https://apscheduler.readthedocs.io/en/3.x/modules/triggers/interval.html) -- multiple trigger types on one scheduler
+- [APScheduler 3.x User Guide](https://apscheduler.readthedocs.io/en/3.x/userguide.html) -- BlockingScheduler with mixed CronTrigger + IntervalTrigger jobs
+- [React Router v7 Installation](https://reactrouter.com/start/library/installation) -- library mode for existing Vite/React apps
+- [TanStack Query + React Router Example](https://tanstack.com/query/latest/docs/framework/react/examples/react-router) -- integration patterns
+- [React Router v7 Guide (LogRocket)](https://blog.logrocket.com/react-router-v7-guide/) -- createBrowserRouter setup for React 19

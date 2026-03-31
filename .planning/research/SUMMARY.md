@@ -1,286 +1,188 @@
 # Project Research Summary
 
-**Project:** MLB Win Forecaster v2.0
-**Domain:** Sports analytics — pre-game MLB win probability modeling with SP feature expansion and live dashboard deployment
-**Researched:** 2026-03-29
+**Project:** MLB Win Forecaster — v2.2 Game Lifecycle, Live Scores & Historical Accuracy
+**Domain:** Sports prediction dashboard — game lifecycle completion and historical accuracy tracking
+**Researched:** 2026-03-30
 **Confidence:** HIGH
 
 ## Executive Summary
 
-The MLB Win Forecaster v2.0 is an evolution of an existing, working v1 system. The v1 model trains three classifiers (Logistic Regression, Random Forest, XGBoost) on a 14-feature matrix covering team-level offense, bullpen quality, starting pitcher season aggregates, and park factors. Research confirms the right approach for v2 is iterative and surgical: fix the known xwOBA bug (ADVF-07), expand SP features using per-game rolling window computation to eliminate temporal leakage, retrain and recalibrate all six model/feature-set combinations, then deploy a FastAPI + Postgres + React stack to a Hostinger KVM 2 VPS that already hosts Ghost CMS and GamePredictor. The recommended stack is stable and fully pinned — Python 3.12, pandas 2.2.x (explicitly not 3.0 due to breaking PyArrow string dtype changes with pybaseball), scikit-learn 1.8 (for temperature scaling calibration), XGBoost 3.2 as the primary model, and supercronic for twice-daily cron scheduling inside Docker.
+This milestone adds game lifecycle awareness, live score display, date navigation, and a historical accuracy page to an existing MLB pre-game win probability dashboard. The existing stack (React 19, Vite 8, TanStack Query 5, FastAPI, psycopg3, APScheduler, MLB-StatsAPI 1.9.0) handles all new requirements with minimal additions: only `react-router` is added to the frontend bundle, and zero new Python packages are needed. The backend adds two new API routes, one new scheduler job, and three nullable columns to the predictions table. This is an evolution of an existing system, not a greenfield build.
 
-The single most critical design decision is converting season-aggregate SP features to proper season-to-date rolling window computation using per-game logs with shift(1)-on-cumsum. The existing v1 code uses full-season FanGraphs totals as game-level features, which means a game on June 15 uses pitcher statistics that include starts from July through September — a form of temporal leakage that inflates backtest Brier scores and will not hold in live prediction. Fixing this is more important than adding any new SP feature. The second structural risk is the FanGraphs/pybaseball data source: Cloudflare protection has been blocking scraping since mid-2025 (GitHub issue #479, still open March 2026), and while a curl_cffi fix exists in pybaseball master, it may not be in the pinned version. The historical data cache (2015–2024) is already on disk and must be treated as immutable; all new feature development should route through MLB Stats API game logs wherever possible.
+The recommended approach follows clear dependency ordering: schema migration first (enables all downstream writes), then game visibility and date navigation (foundational UX), then live score polling (most complex), then nightly reconciliation (safety net), and finally the history page (requires accumulated data to be meaningful). Every major architectural decision has a documented anti-pattern to avoid — most critically: do not store mutable game state in the predictions table, do not add WebSocket infrastructure, and do not run model predictions for non-today dates.
 
-The deployment pattern is well-understood because GamePredictor on the same VPS already follows it: Docker Compose with FastAPI + Postgres + worker + Nginx frontend exposed on port 8082 via host-level Nginx reverse proxy with Certbot SSL. The new constraints are shared-RAM risk (8 GB across four services) and the requirement to set explicit memory limits before first deploy. All infrastructure pitfalls have known, documented mitigations and are low-recovery-cost if they occur. The research flags temporal leakage and pybaseball reliability as the high-cost risks that must be addressed before any retraining occurs.
-
----
+The most critical risk is data correctness, not technical complexity. Three specific pitfalls can corrupt historical accuracy data silently: doubleheader prediction collision (the unique constraint is missing `game_id`), UTC/ET date boundary mismatch (affects late West Coast games), and pipeline UPSERT overwriting reconciliation writes (race condition when confirmation run fires after a game goes Final). All three have clear, tested mitigations. Implementing them correctly in the schema migration and reconciliation phases is the difference between a trustworthy accuracy record and a dashboard users stop believing.
 
 ## Key Findings
 
 ### Recommended Stack
 
-The stack is anchored by a critical version constraint: pandas 2.2.x paired with numpy 2.2.x. Pandas 3.0 (Jan 2026) introduced PyArrow-backed string dtypes that break compatibility with pybaseball's object-dtype DataFrames — this is a hard blocker, not a preference. Python 3.12 is the recommended runtime. The ML layer uses scikit-learn 1.8 (temperature scaling now available in CalibratedClassifierCV), XGBoost 3.2 as the primary gradient boosting model (better sports analytics documentation and examples than LightGBM), and SHAP 0.51 for feature importance validation.
+The existing stack requires only one new dependency: `react-router@^7.13.2` for the `/history` client-side route. React Router 7 is the current stable release with confirmed React 19 support, adds ~14kB gzipped, and integrates with the existing `SPAStaticFiles` SPA fallback middleware without any backend routing changes. Every other frontend need is met with native browser APIs: `<input type="date">` for date navigation, inline SVG for the bases diamond component, and `Intl.DateTimeFormat` (already in use) for date formatting. No charting library is added in v2.2 — the history page launches with a styled HTML table; Recharts is deferred until 50+ games accumulate.
+
+On the backend, all new capabilities (live schedule hydration, APScheduler cron jobs, psycopg3 column writes) are already available. New work is code, not dependencies. One critical API detail: `statsapi.schedule()` strips linescore data during its internal parsing; the new live score proxy must use `statsapi.get('schedule', params)` to preserve the full hydrated response.
 
 **Core technologies:**
-- Python 3.12: runtime — minimum for the full dependency graph; avoid 3.14 (pybaseball not tested)
-- pandas 2.2.3 + numpy 2.2.x: data processing — hard pin below pandas 3.0 to avoid PyArrow dtype breaking changes
-- scikit-learn 1.8.0: modeling and calibration — temperature scaling (new in 1.8) is a better calibration option than isotonic for small calibration sets
-- XGBoost 3.2.0: primary gradient boosting — full sklearn API; better documentation for sports analytics than LightGBM
-- LightGBM 4.6.0: benchmarking only — keep for comparison; do not make it the primary model
-- SHAP 0.51.0: explainability — TreeExplainer works natively with XGBoost; required for feature importance validation
-- Optuna 4.8.0: hyperparameter search — pruning callbacks for XGBoost are dramatically faster than GridSearchCV
-- pybaseball 2.2.7: historical data ingestion — treat 2015-2024 cache as immutable; watch for 403s on new season data
-- MLB-StatsAPI 1.9.0: schedules, rosters, pitcher game logs — more reliable than FanGraphs for live data
-- kalshi-python 2.1.4: prediction market prices — official SDK with RSA-PSS auth
-- FastAPI + SQLAlchemy 2.0 async + asyncpg: API layer — same proven pattern as GamePredictor on same VPS
-- Postgres 16 (Docker): persistence — ACID, trivially handles 2,430 rows/season
-- supercronic: cron in Docker — purpose-built for containers; avoids every cron-in-Docker failure mode
-
-**Do not use:** pandas 3.0, numpy 2.4, TensorFlow/PyTorch (overkill for 12K-row tabular data), Spark/Dask (dataset is trivially small), Streamlit/Dash (out of scope), Celery (overkill for 2 cron jobs/day).
+- `react-router@^7.13.2`: client-side routing for `/history` page — only new package; declarative mode; ~14kB gzipped
+- `MLB-StatsAPI==1.9.0` (existing): live score data via `statsapi.get('schedule', {'hydrate': 'linescore,team'})` — raw call required, not `statsapi.schedule()`
+- `APScheduler 3.x` (existing): fourth `CronTrigger` job at 2am ET (plus optional 4am ET) for nightly outcome reconciliation
+- `psycopg3` (existing): writes `actual_winner`, `prediction_correct`, `reconciled_at` to predictions table
+- Inline SVG (no library): `<BasesDiamond>` component — four shapes, conditional amber fill, ~30 lines TSX
+- Native `<input type="date">` (no library): date picker for `DateNavigator` and `DateRangePicker` — saves ~22kB vs react-day-picker
 
 ### Expected Features
 
-Research identifies a specific set of SP features to add, fix, and drop relative to the v1 feature matrix. The v1 baseline (14 features, including the broken `xwoba_diff`) is the starting point.
+Features are organized around four user needs: seeing all games regardless of status, understanding what is happening in live games, verifying predictions against actual outcomes, and reviewing historical accuracy.
 
-**Must have (fix existing or add with high evidence):**
-- xwOBA differential fix (ADVF-07) — column is `est_woba` not `xwoba`; join column is `"last_name, first_name"` as a single merged string (verified against live Baseball Savant CSV 2026-03-29)
-- Season-to-date SP features — convert all season-aggregate FanGraphs stats to rolling window (cumsum + shift(1)) to eliminate temporal leakage; this is the highest-priority engineering task
-- K-BB% differential (`sp_k_bb_pct_diff`) — replace `sp_k_pct_diff`; K-BB% explains 17.92% of future RA9 variance vs. under 10% for K/BB; computed as K% minus BB% from existing `pitching_stats()` data
-- WHIP differential (`sp_whip_diff`) — already in FanGraphs data, just not used; top-tier run prevention predictor with independent signal from FIP-family
+**Must have (table stakes):**
+- All-day game visibility — games currently vanish once In Progress or Final; this is a usability bug, not a feature gap
+- Game status badges (Pre-Game / Live / FINAL) — users cannot orient themselves without this
+- Live score + inning on in-progress cards — every sports dashboard shows this; absent means users leave for ESPN
+- Final score on completed cards — required to confirm prediction outcome
+- Prediction outcome marker (checkmark/X) — the core value proposition of a prediction tool
+- Date navigation (today + past) — users return next day expecting yesterday's results
 
-**Should have (differentiators with moderate evidence):**
-- SP ERA differential season-to-date (`sp_era_diff`) — captures BABIP/sequencing signal that FIP strips out; comes naturally from season-to-date conversion
-- Recent form FIP differential (`sp_recent_fip_diff`) — 30-day rolling FIP from game log K/BB/HR/IP; more stable than recent ERA at small samples
-- SP workload: pitch count last start (`sp_pitch_count_last_diff`) — each pitch increases next-game ERA by 0.007 (peer-reviewed); impute NaN first start with league-average 93 pitches
-- SP days rest differential (`sp_days_rest_diff`) — encode as integer [3,7] capped; cheap to compute; mixed evidence but not harmful
+**Should have (differentiators):**
+- Bases diamond on live cards — instantly recognizable to baseball fans; ~30 lines TSX, no library required
+- Expanded live card (pitcher/batter/count/outs) — power user feature, collapsed by default using existing `<details>/<summary>` pattern
+- Prediction vs. actual overlay on final cards — "Model said 62% home win; home won" — more informative than bare checkmark
+- Nightly reconciliation job — safety net ensuring no Final games are missed
+- Tomorrow schedule-only mode — show matchups without predictions when no pipeline data exists
+- Future-date schedule-only view — "Predictions available on game day" placeholder
 
-**Drop from v1 feature set (redundancy pruning):**
-- `sp_fip_diff` — redundant with SIERA; SIERA RMSE 0.964 vs FIP 1.010 for year-to-year prediction; SIERA strictly dominates
-- `sp_xfip_diff` — nearly identical to SIERA for predictive purposes; pick one, keep SIERA
-- `sp_k_pct_diff` — replaced by `sp_k_bb_pct_diff` which is strictly more informative
+**Defer to v2.3+:**
+- Rolling accuracy chart (Recharts) — needs 50+ games to be meaningful; table launches first
+- Model-specific Brier score trend chart — same data volume requirement
+- Edge signal performance tracking — lower priority than core accuracy display
+- Tomorrow's preliminary predictions — stale SP data makes this misleading; schedule-only is the correct default
 
-**Defer to v2+:**
-- Home/away splits per SP — sample size insufficient (BABIP needs 2000 BIP; single-season H/A split provides ~200-250 BIP)
-- Batter vs. pitcher matchups — confirmed anti-feature; pure noise at typical career PA sample sizes
-- xERA from Statcast — redundant with xwOBA; same batted-ball signal; adds noise not signal
-
-**Two-model architecture:** `TEAM_ONLY_FEATURE_COLS` (pre-lineup, 10am run) and `SP_ENHANCED_FEATURE_COLS` (post-lineup, 1pm run). Three model types times two feature sets equals six model artifacts total.
+**Explicit anti-features (do not build):**
+- In-game win probability updates — different problem, different models, out of scope per PROJECT.md
+- WebSocket real-time push — 90s polling is sufficient at this scale; WebSocket adds infrastructure complexity for marginal UX gain
+- Historical backfill of predictions — only show predictions actually generated by the live pipeline; backtested results displayed as live predictions is dishonest
+- Team logos — licensing, asset management, visual clutter; abbreviations are sufficient
 
 ### Architecture Approach
 
-The v2 architecture extends the existing v1 codebase without a rewrite. All new SP features are added inside the existing `_add_sp_features()` method (not a new method) to preserve the single-pass lookup pattern. The `feature_sets.py` contract between FeatureBuilder and model input defines two named feature set constants; the v1 constants are preserved (renamed `V1_*`) for apples-to-apples backtest comparison. The deployment follows GamePredictor's proven pattern: Docker Compose on port 8082, host-level Nginx reverse proxy with Certbot SSL at `mlbforecaster.silverreyes.net`.
+The architecture extends the existing system cleanly with two new API routes and one new scheduler job. A new `api/routes/live.py` handles live score proxying with a 30-second in-memory cache (prevents MLB API amplification from concurrent clients), a new `api/routes/history.py` handles date-range accuracy queries against Postgres, and a new `src/pipeline/reconciler.py` runs as a fourth APScheduler job. The predictions table gets three additive columns applied via idempotent `DO $$ BEGIN ALTER TABLE...EXCEPTION WHEN duplicate_column THEN NULL; END $$` blocks. The key architectural constraint is the write-once semantics of the predictions table: live game state is served from the separate `/games/live` endpoint and never stored in predictions rows; only final outcomes are written once per game.
 
 **Major components:**
-1. FeatureBuilder (`src/features/feature_builder.py`) — ingests raw data, computes all features, outputs feature matrix Parquet; single source of truth for feature engineering; both backtest and live pipeline use identical code path
-2. Six model artifacts (joblib files) — LR/RF/XGBoost x team_only/sp_enhanced, each paired with IsotonicRegression calibrator; stored in Docker named volume shared between worker and API containers
-3. Postgres schema (`games`, `predictions`, `pipeline_runs`) — `predictions` stores both prediction versions as separate rows with `is_latest` flag; edge values computed at insert time by the worker, not at query time by the API
-4. FastAPI service (6 endpoints) — read-only API backed by async SQLAlchemy; loads all 6 model artifacts at startup via lifespan event; no computation in request handlers
-5. Pipeline worker (supercronic) — twice-daily execution (10am pre-lineup using team-only features, 1pm post-lineup using SP-enhanced features); writes to Postgres, marks old predictions `is_latest=FALSE`
-6. React frontend + host Nginx — static build served via Docker-internal Nginx; host Nginx reverse-proxies all traffic from port 8082
-
-**Feature data flow:**
-```
-MLB Stats API game logs (per-pitcher, per-game)
-  -> cumsum + shift(1) per season -> season-to-date SP stats
-  -> 30-day calendar window -> recent form SP stats
-  -> shift(1) on sorted log -> workload (pitch count, days rest)
-
-FanGraphs via pybaseball (season aggregate, cached 2015-2024)
-  -> cold-start fallback for first start of season
-
-Baseball Savant via pybaseball (est_woba from "last_name, first_name" column)
-  -> xwoba_diff after ADVF-07 fix
-```
+1. `api/routes/live.py` (NEW) — proxies MLB Stats API with 30s server-side dict cache; detects Final games and writes outcomes to Postgres; serves `GET /api/v1/games/live?date=YYYY-MM-DD`
+2. `api/routes/history.py` (NEW) — aggregation queries (accuracy %, Brier score, per-model breakdown) over date ranges; serves `GET /api/v1/history?start_date=X&end_date=Y`
+3. `src/pipeline/reconciler.py` (NEW) — nightly safety net job at 2am ET; writes outcomes for Final games the live poller missed; idempotent via `WHERE actual_winner IS NULL`
+4. `frontend/src/components/DateNavigator.tsx` (NEW) — left/right arrows, date display, "Today" button; date is `selectedDate` state in `App.tsx`, not a URL route
+5. `frontend/src/components/LiveScoreOverlay.tsx` (NEW) — renders score, inning, bases diamond on in-progress game cards
+6. `frontend/src/components/HistoryPage.tsx` (NEW) — date range picker, accuracy summary card, prediction records table; accessed via `/history` route
+7. `GameCard.tsx` (MODIFIED) — card state machine: PRE_GAME / IN_PROGRESS / FINAL / POSTPONED, each with distinct hero display and polling behavior
 
 ### Critical Pitfalls
 
-1. **Temporal leakage in season-aggregate SP features** — v1 uses full-season FanGraphs totals as game-level features; a June game sees September stats. Convert to per-game rolling aggregates with `shift(1)` on cumulative sums before adding or expanding any SP feature. Getting this wrong invalidates the entire retrained model. Recovery cost: HIGH (full pipeline rebuild, 4-8 hours).
+All 11 pitfalls identified are grounded in direct codebase analysis. The five requiring design decisions before writing code:
 
-2. **pybaseball FanGraphs endpoints return HTTP 403** — Cloudflare protection active since mid-2025 (issue #479, still open March 2026); treat the existing 2015-2024 historical Parquet cache as immutable; add `try/except` with specific `HTTPError` catch around every pybaseball call; fall back to MLB Stats API game logs for current-season data if FanGraphs fails.
-
-3. **Feature matrix shape change breaks model pipeline** — adding SP columns requires a strict sequence: (a) update FeatureBuilder, (b) regenerate feature store Parquet (version it as `feature_store_v2.parquet`), (c) verify new columns are non-NaN, (d) update `feature_sets.py`, (e) retrain all 6 models. Out-of-order steps cause `KeyError` crashes or silent NaN imputation of new columns. Add a schema validation assertion at the top of `run_backtest()`.
-
-4. **Isotonic calibration invalidation after retrain** — adding features changes the raw probability distribution; the old isotonic mapping is invalid; always recalibrate from scratch after any feature set change; verify with reliability diagrams for all 6 model/feature-set combinations before declaring v2 complete.
-
-5. **Docker OOM kills Ghost CMS and GamePredictor** — 8 GB VPS shared across four services (Ghost, GamePredictor, new MLB stack, host OS); set explicit memory limits in `docker-compose.yml` before first deploy (api: 512M, worker: 1G, postgres: 512M); budget only 60-70% of total RAM for the new stack.
-
-6. **SP name matching silently produces NaN features** — v1 has ~17% NaN rate from name format mismatches between MLB Stats API and FanGraphs; new SP features inherit this NaN pattern; NaN is imputed to median (league average), incorrectly treating elite/terrible pitchers as average; evaluate ID-based matching via `mlb_player_id -> fangraphs_id` cross-reference before Phase 1 commits to an implementation.
-
----
+1. **Doubleheader collision on unique constraint** — the predictions table unique key `(game_date, home_team, away_team, prediction_version, is_latest)` is missing `game_id`; add `game_id INTEGER` and include it in the constraint; must be the very first schema change; downstream features (reconciliation, history) depend on uniquely identifying a prediction per game
+2. **UTC/ET date boundary mismatch** — `CURRENT_DATE` in Postgres and `date.today()` in Python return UTC; after ~8pm ET, "today" rolls to tomorrow, breaking late West Coast game display; fix by computing ET date via `datetime.now(ZoneInfo("US/Eastern"))` server-side and using MLB `officialDate` for storage
+3. **Pipeline UPSERT overwrites reconciliation writes** — the confirmation run at 5pm ET can overwrite `actual_winner` written by the live poller if reconciliation columns are included in `_PREDICTION_UPDATE_COLS`; explicitly exclude all three reconciliation columns from UPSERT updates; use a separate `reconcile_prediction()` function with `WHERE actual_winner IS NULL` guard
+4. **MLB Stats API has 127 game statuses** — string-matching on `"Final"` misses rain-shortened, forfeited, and completed-early games; use `abstractGameState == "Final"` (three abstract states only: Preview/Live/Final); never write `actual_winner` for suspended or postponed games
+5. **APScheduler max_instances collision** — APScheduler counts running instances per callable; live poller and pipeline jobs must use completely distinct callables or the poller is silently skipped during pipeline windows; set `misfire_grace_time=90` on the poller
 
 ## Implications for Roadmap
 
-Research shows a clear dependency ordering: fix data integrity first, then add features, then retrain, then deploy. Each phase has well-defined inputs and outputs. Phases 3-5 are largely sequential; Phase 1 is where the most design decisions live and where the most re-work cost is incurred if done wrong.
+Based on research, the feature dependency graph mandates this ordering. Each phase builds the foundation the next requires.
 
-### Phase 1: SP Feature Integration (Data Layer)
+### Phase 1: Schema Migration + Game Visibility Fix
+**Rationale:** Every downstream feature writes to or reads from the three new columns, and requires `game_id` in the unique constraint. The game visibility fix is the simplest user-facing change and validates the schedule enrichment pattern. Must come first.
+**Delivers:** Three new Postgres columns (`actual_winner`, `prediction_correct`, `reconciled_at`) with idempotent migration; `game_id` added to predictions table and unique constraint; `game_status` field added to `PredictionResponse`; status badges (Pre-Game / Live / FINAL) render on existing game cards.
+**Addresses:** All-day game visibility (table stakes), game status indicator (table stakes)
+**Avoids:** Doubleheader collision (Pitfall 1), Frontend doubleheader grouping (Pitfall 10)
+**Research flag:** Standard patterns — schema migration is well-documented; idempotent `ALTER TABLE` approach verified in ARCHITECTURE.md
 
-**Rationale:** Temporal leakage in existing SP features is the highest-priority risk. Fixing the data layer before retraining is mandatory — every model trained on leaked data produces invalid Brier scores that will not reproduce in live deployment. This phase has no external deployment dependencies and is pure data engineering.
+### Phase 2: Date Navigation
+**Rationale:** Establishes the `selectedDate` state and date-parameterized data flow that live polling, reconciliation display, and history all depend on. Pure frontend change (backend `/predictions/{date}` endpoint already exists). Resolves the UTC/ET boundary issue before it can affect any polling feature.
+**Delivers:** `DateNavigator` component (arrows + date display + Today button); `usePredictions` hook parameterized by date; schedule-only display for future dates with "Predictions available on game day" placeholder; correct ET date computation replacing `CURRENT_DATE`
+**Addresses:** Date navigation (table stakes), Tomorrow schedule-only mode (should-have), Future-date schedule-only (should-have)
+**Avoids:** UTC/ET boundary mismatch (Pitfall 3), Tomorrow stale SP predictions (Pitfall 7)
+**Research flag:** Standard patterns — date state management, TanStack Query key parameterization, native date input
 
-**Delivers:**
-- ADVF-07 fix: `xwoba_diff` working with correct `est_woba` column name and `"last_name, first_name"` join strategy
-- Season-to-date rolling SP features replacing season-aggregate lookups (cumsum + shift(1) per season per pitcher)
-- New SP feature columns: `sp_k_bb_pct_diff` (replaces `sp_k_pct_diff`), `sp_whip_diff`, `sp_era_diff`, `sp_recent_fip_diff`, `sp_pitch_count_last_diff`, `sp_days_rest_diff`
-- Dropped columns: `sp_fip_diff`, `sp_xfip_diff`, `sp_k_pct_diff` (redundant with SIERA and K-BB%)
-- `SP_ENHANCED_FEATURE_COLS` and `TEAM_ONLY_FEATURE_COLS` defined in `feature_sets.py`; `V1_FULL_FEATURE_COLS` preserved for comparison
-- Feature store versioned as `feature_store_v2.parquet`
-- Temporal safety test suite extended to cover all new SP columns (all new features must pass: feature values change game-to-game, no constant values within a season per pitcher)
-- Cold-start handling: previous season aggregate as prior; league-average replacement level for rookies
+### Phase 3: Live Score Polling
+**Rationale:** Most complex new feature. Requires schema (Phase 1) to have a target for outcome writes, and date parameterization (Phase 2) for UI integration. The live poller is the primary mechanism for outcome recording; reconciliation (Phase 4) is its safety net.
+**Delivers:** `GET /api/v1/games/live?date=YYYY-MM-DD` backend endpoint with 30s server-side cache; `useLiveGames` hook polling at 90s only when date is today and games are Live; `LiveScoreOverlay` component on in-progress cards; auto-write of Final outcomes to Postgres; `BasesDiamond` SVG component; expanded live card section (pitcher/batter/count)
+**Addresses:** Live score on in-progress cards (table stakes), Final score on completed cards (table stakes), Bases diamond (differentiator), Expanded live card (differentiator)
+**Avoids:** Live poller/pipeline race condition (Pitfall 4), APScheduler collision (Pitfall 5), Status zoo problem (Pitfall 6), API amplification (Pitfall 11), Worker memory pressure (Pitfall 9)
+**Research flag:** Needs attention — five pitfalls converge here; APScheduler callable isolation and `abstractGameState` usage must be explicitly called out in the implementation plan
 
-**Addresses:** FEATURES.md table stakes (xwOBA fix, K-BB%, WHIP), differentiators (ERA STD, recent FIP, workload)
-**Avoids:** Pitfall #2 (temporal leakage), Pitfall #1 (add pybaseball error handling), Pitfall #5 (SP name matching — decide on ID vs. name approach before writing feature code)
+### Phase 4: Nightly Reconciliation
+**Rationale:** Safety net for games the live poller missed. Backend-only change. Requires schema (Phase 1) and the outcome-writing pattern from Phase 3.
+**Delivers:** `reconcile_outcomes()` function in `db.py`; `run_reconciliation()` as fourth CronTrigger job at 2am ET (plus 4am ET for West Coast coverage); partial index on unreconciled rows; prediction outcome marker (checkmark/X) displayed on final cards
+**Addresses:** Prediction outcome marker (table stakes), Nightly reconciliation (differentiator)
+**Avoids:** Late West Coast game missing reconciliation (Pitfall 8), Status filter cascade hiding reconciliation outcomes (Pitfall 2)
+**Research flag:** Standard patterns — APScheduler job addition is additive; idempotency pattern well-documented
 
-**Research flag:** Standard patterns. The shift(1)-on-cumsum pattern is already used in v1 for `rolling_ops_diff`. Cold-start handling edge cases deserve careful task breakdown.
-
-### Phase 2: Model Retrain and Calibration
-
-**Rationale:** Cannot retrain until the feature store Parquet is verified correct (Phase 1 output). This phase produces the 6 model artifacts needed by both the live pipeline and the API. The calibration step is load-bearing — isotonic regression must be re-fitted from scratch on the new probability distribution.
-
-**Delivers:**
-- 6 retrained and calibrated models: LR/RF/XGBoost x team_only/sp_enhanced
-- Brier score comparison: v2 vs. v1 on identical test folds using respective feature sets (apples-to-apples, not different folds)
-- Reliability diagrams for all 6 model/feature-set combinations (visual inspection required, not just Brier score)
-- VIF analysis on expanded SP feature set; any feature with VIF > 10 dropped
-- XGBoost feature importance (SHAP) ranking; near-zero-gain features dropped before final model
-- Ablation study: retrain with and without new SP features to quantify Brier score contribution
-- `model_metadata.json` with training date, feature columns, fold info, and Brier scores per fold
-
-**Uses:** scikit-learn 1.8 temperature scaling (compare against isotonic on 2020 fold with only ~891 games), Optuna 4.8 for hyperparameter search, SHAP 0.51 for feature importance
-**Avoids:** Pitfall #3 (schema change sequence — regenerate Parquet before updating feature_sets.py), Pitfall #4 (calibration invalidation — always recalibrate from scratch)
-
-**Research flag:** Standard patterns. Walk-forward backtest with `FOLD_MAP` and isotonic calibration are already implemented in v1. The temperature scaling comparison vs. isotonic on small folds is a new decision point worth testing empirically.
-
-### Phase 3: Live Pipeline and Database
-
-**Rationale:** Pipeline logic builds on the trained models (Phase 2 outputs) and the database schema. This phase wires together FeatureBuilder, model artifacts, Postgres, and supercronic scheduling. Must be complete and validated locally before Phase 4 (API) can serve live data.
-
-**Delivers:**
-- Postgres schema: `games`, `predictions`, `pipeline_runs` tables with `is_latest` flag and appropriate indexes
-- `pipeline/run.py`: twice-daily execution with `--version pre_lineup` / `--version post_lineup` argument
-- Pre-lineup fallback: uses `TEAM_ONLY_FEATURE_COLS` for all games; SP features skipped even if accidentally available
-- SP-change detection: SP name stored per prediction row; dashboard can show "SP may have changed" for predictions older than 3 hours
-- Health check endpoint returning `last_pipeline_run` timestamp
-- Pipeline log to persistent file; external uptime monitor (UptimeRobot) configured on `/api/v1/health`
-- Kalshi price fetch and edge computation stored per prediction row at insert time
-
-**Implements:** ARCHITECTURE.md Postgres schema, worker pipeline logic, supercronic crontab
-**Avoids:** Pitfall #6 (SP scratch/stale prediction — SP name in database, timestamp on dashboard), Pitfall #10 (silent cron failure — supercronic logs to stdout, health check endpoint)
-
-**Research flag:** Supercronic and the twice-daily pipeline pattern are well-documented. The SP-change detection between 1pm and first pitch (every 30 minutes) is the one novel component — design whether this triggers a full re-run or just a "possibly stale" flag before implementation.
-
-### Phase 4: API and Dashboard
-
-**Rationale:** The API is a thin read layer over Postgres. Once the database is populated by Phase 3, this phase is straightforward. The React frontend is the user-facing output of the entire project.
-
-**Delivers:**
-- FastAPI service with 6 endpoints: `/api/v1/predictions/today`, `/api/v1/predictions/{date}`, `/api/v1/predictions/latest-timestamp`, `/api/v1/results`, `/api/v1/results/accuracy`, `/api/v1/health`
-- All 6 model artifacts loaded at startup via lifespan event; no model loading in request handlers
-- React dashboard: today's predictions with LR/RF/XGB probabilities, Kalshi prices, edge values, SP names, and confirmation status
-- "Last updated: [timestamp]" displayed prominently; predictions grayed out if older than 3 hours
-- "SP TBD — team-only estimate" visual indicator for unconfirmed starters
-- Explicit error state when API is unreachable (not a blank page or infinite spinner)
-- Client polling every 60 seconds with `If-Modified-Since` headers; polling paused when browser tab is hidden
-
-**Implements:** ARCHITECTURE.md FastAPI project structure, response schemas, lifespan model loading pattern
-**Avoids:** PITFALLS.md UX pitfalls (stale predictions, no error state, aggressive polling at 10-second intervals, hiding uncertainty)
-
-**Research flag:** Standard FastAPI + async SQLAlchemy + React patterns. No research-phase needed.
-
-### Phase 5: Infrastructure and Deployment
-
-**Rationale:** Deploy last, after all components are validated locally. The VPS hosting environment has shared resources; infrastructure mistakes can take down Ghost CMS and GamePredictor. All pitfalls here are preventable with upfront configuration but are high-impact if skipped.
-
-**Delivers:**
-- Docker Compose stack on port 8082 with explicit memory limits (api: 512M, worker: 1G, postgres: 512M)
-- Named Docker volume for Postgres (`pgdata`); anonymous volumes prohibited; persistence test before go-live
-- Host Nginx server block for `mlbforecaster.silverreyes.net` validated with `nginx -t` before enabling
-- Certbot SSL cert issued and renewal dry-run tested
-- Daily Postgres backup via `pg_dump` to `/opt/backups/`
-- Deployment checklist document: "Never run `docker-compose down -v` on production"
-- Memory monitoring cron: `docker stats --no-stream` every 5 minutes to log
-
-**Implements:** ARCHITECTURE.md Docker Compose topology and host Nginx vhost config
-**Avoids:** Pitfall #7 (Docker OOM), Pitfall #8 (Nginx config kills all sites), Pitfall #9 (Postgres volume loss)
-
-**Research flag:** Follows established GamePredictor pattern on same VPS. No research-phase needed — exact Nginx config and Docker Compose structure are fully documented in ARCHITECTURE.md.
+### Phase 5: History Route
+**Rationale:** Terminal feature requiring all other phases to be in place and data to have accumulated (~50+ games, roughly 4 full days of MLB schedule). Build the infrastructure first, let data accumulate, then build the UI.
+**Delivers:** `GET /api/v1/history?start_date=X&end_date=Y` backend endpoint with per-game records, accuracy %, and Brier score; `HistoryPage` React component with date range picker, `AccuracySummaryCard`, and sortable `HistoryTable`; `NavBar` for page navigation; `react-router` installed with `createBrowserRouter` in `main.tsx`; rolling accuracy chart (Recharts) deferred to v2.3+
+**Addresses:** History page with accuracy tracking (highest trust-building differentiator per FEATURES.md)
+**Avoids:** Accuracy denominator including postponed/suspended games, infinite scroll anti-pattern, full-season unindexed SELECT
+**Research flag:** Standard patterns for most of it; confirm Brier score SQL computation against actual prediction column layout before implementing
 
 ### Phase Ordering Rationale
 
-- **Data before models:** Temporal leakage is a correctness problem, not a performance problem. Training on leaked data produces invalid results that require a full re-do when caught late.
-- **Models before pipeline:** The pipeline worker loads model artifacts. Artifacts must exist before the pipeline can be deployed and tested end-to-end.
-- **Pipeline before API:** The API serves data from Postgres. Postgres must be populated before the API returns meaningful responses.
-- **API before infrastructure:** Validate all components working in Docker locally before touching the production VPS. One bad Nginx config takes down four services simultaneously.
-- **Phase 1 is the critical path:** It is where the most design decisions live (ID matching strategy, cumsum pattern, cold-start handling) and where the most re-work cost is incurred if done wrong.
+- Schema first because the unique constraint fix (Pitfall 1) must precede any reconciliation writes; retrofitting it after Phase 3 would require data repair on existing rows
+- Date navigation before live polling because `selectedDate` state is the foundation the live polling UI integration builds on; also resolves UTC/ET before it causes live polling bugs
+- Live polling before reconciliation because the poller is the primary outcome recording mechanism; the reconciler fills gaps but should not be the primary path
+- History last because it has no value until Phases 1-4 have generated reconciled data
 
 ### Research Flags
 
-**Phases needing closer attention during planning:**
-- **Phase 1 (SP Feature Integration):** The season-to-date cumulative computation with shift(1) requires careful design, especially around the cold-start edge case (first start of season, rookies, mid-season call-ups). The ID-based name matching feasibility decision needs to be made before feature code is written. Recommend a detailed task breakdown.
-- **Phase 3 (Live Pipeline):** The SP-change detection logic between 1pm and first pitch is the one genuinely novel component. Decide before implementation whether a "flag as possibly stale" approach is sufficient vs. a full re-run trigger for changed starters.
+Phases needing attention during planning:
 
-**Phases with standard patterns (no additional research needed):**
-- **Phase 2 (Model Retrain):** Walk-forward backtest, isotonic calibration, and SHAP feature importance are all implemented in v1. Extend, do not rewrite. Temperature scaling vs. isotonic is an empirical decision, not a research gap.
-- **Phase 4 (API and Dashboard):** FastAPI + async SQLAlchemy + React is thoroughly documented with established patterns.
-- **Phase 5 (Infrastructure):** Follows GamePredictor's proven deployment pattern on the same VPS with exact configuration documented.
+- **Phase 3 (Live Score Polling):** Five pitfalls converge here (race condition, APScheduler collision, 127-status zoo, API amplification, memory pressure). The implementation plan should explicitly document how each is addressed: separate callable from `run_pipeline`; `abstractGameState` not `detailedState`; 30s server-side cache; no `LiveFeatureBuilder` import in poller.
+- **Phase 4 (Nightly Reconciliation):** The reconciliation write must target ALL prediction rows for a `game_id`, not just `is_latest = TRUE` rows (Pitfall 2). Plan must call this out explicitly to prevent `mark_not_latest()` calls from hiding reconciled outcomes.
 
----
+Phases with standard patterns (research-phase can be skipped):
+
+- **Phase 1 (Schema Migration):** Idempotent `ALTER TABLE` via `DO $$ BEGIN...EXCEPTION` blocks is a well-established Postgres pattern. Game visibility fix is enriching an existing API response.
+- **Phase 2 (Date Navigation):** TanStack Query key parameterization, React state lifting, native date input — all established patterns with no novel integrations.
+- **Phase 5 (History Route):** React Router declarative setup, TanStack Query fetching, HTML table with date range filter — standard patterns. SQL aggregation queries are specified in full in ARCHITECTURE.md.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | All versions verified on PyPI; pandas 2.2.x pin justified with official migration guide; scikit-learn 1.8 temperature scaling confirmed in release highlights; XGBoost 3.2 sklearn API compatibility verified |
-| Features | HIGH | xwOBA bug root-cause verified against live Baseball Savant CSV endpoint 2026-03-29; SIERA RMSE advantage confirmed from Pitcher List peer analysis; K-BB% finding from multiple FanGraphs community studies; BABIP stabilization data from FanGraphs Sabermetrics Library |
-| Architecture | HIGH | Based on direct analysis of v1 codebase source files; deployment pattern mirrors verified GamePredictor stack on same VPS; Postgres schema is standard and well-reasoned; FastAPI lifespan pattern from official docs |
-| Pitfalls | HIGH | pybaseball 403 issue verified against open GitHub issues (March 2026); temporal leakage analysis based on direct code inspection of `feature_builder.py`; Docker OOM and Nginx pitfalls from official Docker docs and v1 VPS lessons |
+| Stack | HIGH | React Router 7.13.2 verified on reactrouter.com; MLB Stats API response verified via live call 2026-03-30; all other decisions use existing validated dependencies |
+| Features | HIGH | Feature set derived from direct competitor analysis (ESPN, MLB.com, FanGraphs) plus live API verification of data availability; bases data confirmed in live game 2026-03-30 |
+| Architecture | HIGH | Research performed against actual source files; all integration points traced to real code; SQL queries written against verified schema |
+| Pitfalls | HIGH | 11 of 11 pitfalls derived from direct codebase analysis or verified API behavior; doubleheader constraint verified in schema.sql; UTC issue verified in docker-compose.yml |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **pybaseball curl_cffi fix version:** The Cloudflare bypass fix exists in pybaseball master but may not be in v2.2.7. Before Phase 1 begins, test `pitching_stats()` against a 2025 or 2026 season to determine if a version upgrade is needed. Document the exact working version.
-
-- **MLB Stats API game log field coverage:** FEATURES.md notes that cached pitcher game logs may lack K/BB/HR per game (needed for `sp_recent_fip_diff`) and `numberOfPitches` may not be in cached logs (needed for `sp_pitch_count_last_diff`). Inspect an actual cached log file before implementing those features. A re-fetch with additional stat hydration may be required.
-
-- **Temperature scaling vs. isotonic on small folds:** The 2020 calibration fold has only ~891 games, which is marginal for isotonic regression. During Phase 2, compare reliability diagrams for temperature scaling vs. isotonic on the smallest fold to determine which is more robust for this dataset.
-
-- **ID-based SP name matching feasibility:** PITFALLS.md recommends building a `mlb_player_id -> fangraphs_id` cross-reference table to fix the ~17% NaN rate from name mismatches. The data source for this mapping (Chadwick Bureau register, pybaseball `playerid_lookup()`, or a hand-built table) needs to be evaluated before Phase 1 implementation begins.
-
-- **Kalshi historical data scope:** Kalshi sports markets launched in early 2025. The edge analysis and model-vs-Kalshi comparison is limited to approximately one season. This is a hard constraint noted in v1 research that carries forward.
-
----
+- **MLB Stats API rate limit behavior:** The rate limit is undocumented. The 30s server-side cache and 90s polling interval are conservative. Monitor for 429 responses after Phase 3 ships; add 200ms inter-request delay as a precaution.
+- **Recharts timing decision:** The history endpoint design returns per-game records in the shape Recharts needs. Roadmap should flag Phase 5 as "table only at launch; chart added when game count exceeds 50."
+- **Reconciliation run time for Phase 4:** PITFALLS.md recommends single run at 3am ET or double run at 1am + 4am ET. The roadmap plan should make an explicit choice and document it rather than leaving it to the implementer.
+- **`statsapi.get()` vs `statsapi.schedule()` distinction:** Must be explicitly called out in the Phase 3 implementation plan. Using `statsapi.schedule()` for the live score proxy silently returns empty linescore data.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- pybaseball PyPI (v2.2.7, Sep 2023) and GitHub issues #479, #492, #495 — version confirmed; Cloudflare issue verified March 2026
-- MLB-StatsAPI PyPI (v1.9.0, Apr 2025) — schedule, roster, and game log functions confirmed
-- kalshi-python PyPI (v2.1.4, Sep 2025) — official SDK with RSA-PSS auth
-- pandas 3.0 migration guide (official) — breaking PyArrow string dtype changes documented
-- scikit-learn 1.8 release highlights (official) — temperature scaling calibration confirmed
-- Baseball Savant Expected Statistics CSV (verified 2026-03-29) — `est_woba` and `last_name, first_name` column names confirmed at primary source
-- FanGraphs Sabermetrics Library: Sample Size — K% stabilizes at 70 BF, BB% at 170 BF, BABIP at 2000 BIP
-- Pitcher List: Going Deep on FIP/xFIP/SIERA — SIERA RMSE 0.964 vs FIP 1.010 for year-to-year prediction
-- v1 codebase direct analysis — `feature_builder.py`, `sp_stats.py`, `sp_recent_form.py`, `feature_sets.py`, `backtest.py`, `team_mappings.py`
-- SHAP PyPI (v0.51.0, Mar 2026) — verified
-- Optuna PyPI (v4.8.0) — verified
-- joblib PyPI (v1.5.3, Dec 2025) — verified
-- JupyterLab PyPI (v4.5.6, Mar 2026) — verified
-- Docker docs: Resource constraints and volume persistence — memory limits and OOM behavior
+- [MLB Stats API schedule endpoint](https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=03/30/2026&hydrate=linescore,team) — live response verified 2026-03-30; linescore structure confirmed including `offense.first/second/third` for bases
+- [MLB Stats API game status endpoint](https://statsapi.mlb.com/api/v1/gameStatus) — 127 status codes verified; `abstractGameState` three-value taxonomy confirmed
+- [React Router v7 home](https://reactrouter.com/home) — v7.13.2 current stable, React 19 support confirmed
+- [React Router declarative installation](https://reactrouter.com/start/declarative/installation) — setup guide confirmed
+- [MLB-StatsAPI wiki: schedule function](https://github.com/toddrob99/MLB-StatsAPI/wiki/Function:-schedule) — `statsapi.schedule()` vs `statsapi.get()` distinction documented
+- [APScheduler 3.x User Guide](https://apscheduler.readthedocs.io/en/3.x/userguide.html) — BlockingScheduler, CronTrigger, max_instances behavior
+- Direct codebase analysis: `src/pipeline/schema.sql`, `src/pipeline/db.py`, `src/pipeline/scheduler.py`, `api/routes/predictions.py`, `frontend/src/hooks/usePredictions.ts`, `docker-compose.yml`, `Dockerfile`
 
 ### Secondary (MEDIUM confidence)
-- FanGraphs Community: K-BB% analysis — K-BB% explains 17.92% of future RA9 variance (community study, consistent with FanGraphs main site)
-- Pitcher List Part II: xFIP and SIERA most predictive forward-looking metrics
-- FiveThirtyEight MLB methodology — SP adjustment worth ~1% correct-call improvement; opener handling strategy
-- Journal of Strength and Conditioning Research (2012, PubMed) — pitch count effect on next-game ERA (~0.007 per pitch); peer-reviewed but effect is small
-- FanGraphs Community: Days of rest analysis — no significant difference across rest categories (single study)
-- PMC: Feature Selection for MLB Game Prediction — RFE feature selection methodology
-- Wharton thesis: Forecasting MLB Game Outcomes — 10-day trailing differentials, cold-start handling approaches
-- Beyond the Box Score: Stop using K/BB — K-BB% vs. K/BB ratio argument (well-reasoned, single article)
+- [ESPN MLB Scoreboard](https://www.espn.com/mlb/scoreboard) — date navigation, live card layout reference
+- [FanGraphs Live Scoreboard](https://library.fangraphs.com/features/live-scoreboard/) — expanded card tabs, game odds display patterns
+- [MLB.com Scores](https://www.mlb.com/scores) — standard scoreboard layout reference
+- [GUMBO Documentation](https://bdata-research-blog-prod.s3.amazonaws.com/uploads/2019/03/GUMBOPDF3-29.pdf) — MLB live data feed spec (2019 doc; structure verified via live API calls instead)
+- [APScheduler Issue #423](https://github.com/agronholm/apscheduler/issues/423) — function-level max_instances counting behavior confirmed
+- [react-day-picker v9 changelog](https://daypicker.dev/changelog) — date-fns bundled dependency confirmed; used to justify native input decision
 
 ### Tertiary (LOW confidence)
-- Baseball Prospectus: Siren Song of Expected Metrics — xwOBA not clearly better than FIP for pitcher prediction (single analysis; counters the "more Statcast = better" assumption but should be validated against current data)
-- pybaseball GitHub issue #479 comment thread — curl_cffi fix details; community-reported, not confirmed by pybaseball maintainers
+- [Native date input styling](https://dev.to/codeclown/styling-a-native-date-input-into-a-custom-no-library-datepicker-2in) — cross-browser styling approach; acceptable inconsistency for a single-user dashboard
 
 ---
-*Research completed: 2026-03-29*
+*Research completed: 2026-03-30*
 *Ready for roadmap: yes*
