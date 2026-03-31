@@ -1,7 +1,7 @@
 ---
 phase: 15
 slug: live-score-polling
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-03-31
@@ -221,7 +221,7 @@ Position: Between `.headerRow` and `.predictionBody` inside `.card`.
 
 .expandChevron {
   color: var(--color-accent);
-  font-size: 14px;
+  font-size: 13px; /* label/meta tier — no 5th font size */
   transition: transform 150ms ease;
   margin-left: var(--space-sm);
 }
@@ -282,7 +282,7 @@ Outs: always singular "out" (not "outs") -- e.g., "0 out", "1 out", "2 out".
 .batterRow {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-xs); /* 4px — smallest token, no sub-grid values */
 }
 
 .batterName {
