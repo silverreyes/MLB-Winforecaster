@@ -110,7 +110,7 @@ def test_pre_lineup_run(
     mock_artifacts,
     mock_feature_builder,
 ):
-    """Pre-lineup inserts TEAM_ONLY with sp_uncertainty=True and null SPs."""
+    """Pre-lineup inserts TEAM_ONLY with sp_uncertainty=True and pitcher names."""
     run_pipeline("pre_lineup", mock_artifacts, mock_pool, mock_feature_builder)
 
     mock_insert_pred.assert_called_once()
@@ -118,9 +118,38 @@ def test_pre_lineup_run(
     assert pred_data["prediction_version"] == "pre_lineup"
     assert pred_data["prediction_status"] == "tbd"
     assert pred_data["feature_set"] == "team_only"
-    assert pred_data["sp_uncertainty"] is True
+    assert pred_data["sp_uncertainty"] is True  # still True — TEAM_ONLY models
+    assert pred_data["home_sp"] == "Gerrit Cole"
+    assert pred_data["away_sp"] == "Brayan Bello"
+
+
+@patch("src.pipeline.runner.fetch_kalshi_live_prices", return_value={})
+@patch("src.pipeline.runner.predict_game", return_value=_make_probs())
+@patch("src.pipeline.runner.insert_prediction")
+@patch("src.pipeline.runner.insert_pipeline_run", return_value=1)
+@patch("src.pipeline.runner.update_pipeline_run")
+def test_pre_lineup_no_pitcher_available(
+    mock_update_run,
+    mock_insert_run,
+    mock_insert_pred,
+    mock_predict,
+    mock_kalshi,
+    mock_pool,
+    mock_artifacts,
+):
+    """Pre-lineup with no pitcher data sets home_sp/away_sp to None."""
+    fb = MagicMock()
+    fb.get_today_games.return_value = [_make_game(home_sp=None, away_sp=None)]
+    fb.build_features_for_game.return_value = {"feat1": 0.5, "feat2": 0.3}
+    fb.sp_confirmed.return_value = False
+
+    run_pipeline("pre_lineup", mock_artifacts, mock_pool, fb)
+
+    mock_insert_pred.assert_called_once()
+    pred_data = mock_insert_pred.call_args[0][1]
     assert pred_data["home_sp"] is None
     assert pred_data["away_sp"] is None
+    assert pred_data["sp_uncertainty"] is True
 
 
 # ---------------------------------------------------------------------------
