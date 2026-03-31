@@ -76,10 +76,12 @@ Plans:
   3. Viewing today shows live pipeline predictions with active polling behavior
   4. Viewing tomorrow shows games with both SPs confirmed as PRELIMINARY predictions and games without confirmed SPs as schedule-only entries
   5. Viewing a date beyond tomorrow shows scheduled matchups with a "Predictions available on game day" message and no prediction data
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 14-01: TBD
+- [ ] 14-01-PLAN.md — Backend: view_mode computation, probable pitcher hydration, tomorrow PRELIMINARY logic, tests
+- [ ] 14-02-PLAN.md — Frontend: TypeScript types, DateNavigator component, useGames conditional polling, App.tsx wiring
+- [ ] 14-03-PLAN.md — Frontend: FutureDateBanner, EmptyState date-aware copy, GameCard PRELIMINARY badge, visual verification
 
 ### Phase 15: Live Score Polling
 **Goal**: Users see real-time game progress on in-progress cards and the system automatically records outcomes when games finish
@@ -141,7 +143,7 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17
 | 11. Header Date and Clock | v2.1 | 1/1 | Complete | 2026-03-30 |
 | 12. Explanatory Content and Tooltips | v2.1 | 1/1 | Complete | 2026-03-30 |
 | 13. Schema Migration & Game Visibility | 4/4 | Complete   | 2026-03-31 | - |
-| 14. Date Navigation | v2.2 | 0/? | Not started | - |
+| 14. Date Navigation | v2.2 | 0/3 | Not started | - |
 | 15. Live Score Polling | v2.2 | 0/? | Not started | - |
 | 16. Final Outcomes & Nightly Reconciliation | v2.2 | 0/? | Not started | - |
 | 17. History Route | v2.2 | 0/? | Not started | - |
