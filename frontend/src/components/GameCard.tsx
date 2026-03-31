@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import type { GameResponse, ViewMode } from '../api/types';
 import { PredictionColumn } from './PredictionColumn';
 import { KalshiSection } from './KalshiSection';
+import { LiveDetail } from './LiveDetail';
 import { SpBadge } from './SpBadge';
 import { StatusBadge } from './StatusBadge';
 import styles from './GameCard.module.css';
@@ -20,6 +22,17 @@ function formatGameTime(isoString: string | null): string {
   }
 }
 
+function formatInningOrdinal(inning: number): string {
+  if (inning === 1) return '1st';
+  if (inning === 2) return '2nd';
+  if (inning === 3) return '3rd';
+  return `${inning}th`;
+}
+
+function formatInningHalf(half: 'top' | 'bottom'): string {
+  return half === 'top' ? 'Top' : 'Bot';
+}
+
 interface GameCardProps {
   game: GameResponse;
   viewMode: ViewMode | null;
@@ -27,6 +40,7 @@ interface GameCardProps {
 
 export function GameCard({ game, viewMode }: GameCardProps) {
   const { home_team, away_team, prediction, game_status } = game;
+  const [expanded, setExpanded] = useState(false);
 
   const pre_lineup = prediction?.pre_lineup ?? null;
   const post_lineup = prediction?.post_lineup ?? null;
@@ -88,6 +102,38 @@ export function GameCard({ game, viewMode }: GameCardProps) {
           )}
         </div>
       </div>
+
+      {/* Score row -- LIVE games only */}
+      {game_status === 'LIVE' && game.live_score && (
+        <>
+          <div
+            className={styles.scoreRow}
+            role="button"
+            tabIndex={0}
+            aria-expanded={expanded}
+            onClick={() => setExpanded(prev => !prev)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setExpanded(prev => !prev);
+              }
+            }}
+          >
+            <div className={styles.scoreText}>
+              <span className={styles.scoreTeams}>
+                {away_team} {game.live_score.away_score} - {home_team} {game.live_score.home_score}
+              </span>
+              <span className={styles.scoreInning}>
+                {'\u00B7'} {formatInningHalf(game.live_score.inning_half)} {formatInningOrdinal(game.live_score.inning)} {'\u00B7'} {game.live_score.outs} out
+              </span>
+            </div>
+            <span className={`${styles.expandChevron} ${expanded ? styles.expandChevronOpen : ''}`}>
+              {'\u25BE'}
+            </span>
+          </div>
+          {expanded && <LiveDetail liveScore={game.live_score} />}
+        </>
+      )}
 
       {/* Prediction body -- absent for stub cards and future mode */}
       {hasPrediction && viewMode !== 'future' && (
