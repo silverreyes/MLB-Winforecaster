@@ -4,10 +4,17 @@ Uses mocked schedule and DB data -- no real Postgres or MLB API needed.
 """
 
 import pytest
-from datetime import datetime, timezone, date
+from datetime import datetime, timezone, date, timedelta
 from unittest.mock import patch, MagicMock
 
-from api.routes.games import build_games_response, _build_prediction_group
+from api.models import GameResponse
+from api.routes.games import (
+    build_games_response,
+    _build_prediction_group,
+    compute_view_mode,
+    _is_pitcher_confirmed,
+    _apply_tomorrow_labels,
+)
 from src.data.mlb_schedule import map_game_status
 
 
@@ -210,3 +217,153 @@ class TestGamesEndpoint:
         response = client.get("/api/v1/games/2025-12-25")
         assert response.status_code == 200
         assert response.json()["games"] == []
+
+
+class TestDateNavigation:
+    """Tests for view_mode computation (live/historical/tomorrow/future)."""
+
+    FIXED_NOW = datetime(2025, 7, 15, 18, 0, 0)  # 6pm ET on July 15, 2025
+
+    @patch("api.routes.games.datetime")
+    def test_compute_view_mode_today(self, mock_dt):
+        """Today's date returns 'live'."""
+        mock_dt.now.return_value = self.FIXED_NOW
+        mock_dt.side_effect = lambda *a, **kw: datetime(*a, **kw)
+        assert compute_view_mode("2025-07-15") == "live"
+
+    @patch("api.routes.games.datetime")
+    def test_compute_view_mode_past(self, mock_dt):
+        """Past date returns 'historical'."""
+        mock_dt.now.return_value = self.FIXED_NOW
+        mock_dt.side_effect = lambda *a, **kw: datetime(*a, **kw)
+        assert compute_view_mode("2025-07-14") == "historical"
+
+    @patch("api.routes.games.datetime")
+    def test_compute_view_mode_tomorrow(self, mock_dt):
+        """Tomorrow's date returns 'tomorrow'."""
+        mock_dt.now.return_value = self.FIXED_NOW
+        mock_dt.side_effect = lambda *a, **kw: datetime(*a, **kw)
+        assert compute_view_mode("2025-07-16") == "tomorrow"
+
+    @patch("api.routes.games.datetime")
+    def test_compute_view_mode_future(self, mock_dt):
+        """Date 2+ days ahead returns 'future'."""
+        mock_dt.now.return_value = self.FIXED_NOW
+        mock_dt.side_effect = lambda *a, **kw: datetime(*a, **kw)
+        assert compute_view_mode("2025-07-17") == "future"
+
+    @patch("api.routes.games.compute_view_mode", return_value="historical")
+    @patch("api.routes.games.get_schedule_cached")
+    @patch("api.routes.games._fetch_predictions_for_date")
+    def test_endpoint_returns_view_mode_historical(self, mock_preds, mock_schedule, mock_vm, client):
+        """GET /games/{past-date} includes view_mode='historical'."""
+        mock_schedule.return_value = []
+        mock_preds.return_value = []
+
+        response = client.get("/api/v1/games/2025-01-01")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["view_mode"] == "historical"
+
+    @patch("api.routes.games.compute_view_mode", return_value="live")
+    @patch("api.routes.games.get_schedule_cached")
+    @patch("api.routes.games._fetch_predictions_for_date")
+    def test_endpoint_returns_view_mode_live(self, mock_preds, mock_schedule, mock_vm, client):
+        """GET /games/{today} includes view_mode='live'."""
+        mock_schedule.return_value = []
+        mock_preds.return_value = []
+
+        response = client.get("/api/v1/games/2025-07-15")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["view_mode"] == "live"
+
+    @patch("api.routes.games.compute_view_mode", return_value="future")
+    @patch("api.routes.games.get_schedule_cached")
+    @patch("api.routes.games._fetch_predictions_for_date")
+    def test_endpoint_returns_view_mode_future(self, mock_preds, mock_schedule, mock_vm, client):
+        """GET /games/{future-date} includes view_mode='future'."""
+        mock_schedule.return_value = []
+        mock_preds.return_value = []
+
+        response = client.get("/api/v1/games/2099-07-15")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["view_mode"] == "future"
+
+
+class TestTomorrowPreliminary:
+    """Tests for pitcher confirmation and PRELIMINARY label logic."""
+
+    def test_is_pitcher_confirmed_real_name(self):
+        """Real pitcher name is confirmed."""
+        assert _is_pitcher_confirmed("Gerrit Cole") is True
+
+    def test_is_pitcher_confirmed_none(self):
+        """None is not confirmed."""
+        assert _is_pitcher_confirmed(None) is False
+
+    def test_is_pitcher_confirmed_empty(self):
+        """Empty string is not confirmed."""
+        assert _is_pitcher_confirmed("") is False
+
+    def test_is_pitcher_confirmed_tbd(self):
+        """'TBD' is not confirmed."""
+        assert _is_pitcher_confirmed("TBD") is False
+
+    def test_is_pitcher_confirmed_tbd_whitespace(self):
+        """' TBD ' with whitespace is not confirmed."""
+        assert _is_pitcher_confirmed(" TBD ") is False
+
+    def test_both_sps_confirmed_gets_preliminary(self):
+        """Both SPs confirmed -> prediction_label='PRELIMINARY', pitcher names populated."""
+        game = GameResponse(
+            game_id=718520,
+            home_team="NYY",
+            away_team="BOS",
+            game_time=None,
+            game_status="PRE_GAME",
+        )
+        schedule = [{
+            "game_id": 718520,
+            "home_probable_pitcher": "Gerrit Cole",
+            "away_probable_pitcher": "Chris Sale",
+        }]
+        _apply_tomorrow_labels([game], schedule)
+        assert game.prediction_label == "PRELIMINARY"
+        assert game.home_probable_pitcher == "Gerrit Cole"
+        assert game.away_probable_pitcher == "Chris Sale"
+
+    def test_missing_sp_no_label(self):
+        """Missing home SP -> prediction_label stays None."""
+        game = GameResponse(
+            game_id=718520,
+            home_team="NYY",
+            away_team="BOS",
+            game_time=None,
+            game_status="PRE_GAME",
+        )
+        schedule = [{
+            "game_id": 718520,
+            "home_probable_pitcher": None,
+            "away_probable_pitcher": "Chris Sale",
+        }]
+        _apply_tomorrow_labels([game], schedule)
+        assert game.prediction_label is None
+
+    def test_tbd_sp_no_label(self):
+        """TBD away SP -> prediction_label stays None."""
+        game = GameResponse(
+            game_id=718520,
+            home_team="NYY",
+            away_team="BOS",
+            game_time=None,
+            game_status="PRE_GAME",
+        )
+        schedule = [{
+            "game_id": 718520,
+            "home_probable_pitcher": "Gerrit Cole",
+            "away_probable_pitcher": "TBD",
+        }]
+        _apply_tomorrow_labels([game], schedule)
+        assert game.prediction_label is None
