@@ -333,3 +333,114 @@ def get_latest_pipeline_runs(pool: ConnectionPool) -> list[dict]:
         with conn.cursor(row_factory=dict_row) as cur:
             cur.execute(sql)
             return cur.fetchall()
+
+
+# ---------------------------------------------------------------------------
+# Game log helpers (Phase 16: historical game cache)
+# ---------------------------------------------------------------------------
+
+# Imported at module level for testability (allows patch("src.pipeline.db.date_cls"))
+from datetime import date as date_cls
+from datetime import timedelta
+
+import statsapi
+
+
+def batch_insert_game_logs(pool: ConnectionPool, games: list[dict]) -> int:
+    """Batch insert completed games into game_logs. Returns count of newly inserted rows.
+
+    Uses INSERT ... ON CONFLICT (game_id) DO NOTHING for idempotency.
+    Completed games are immutable -- never overwritten.
+    """
+    sql = """
+        INSERT INTO game_logs (
+            game_id, game_date, home_team, away_team,
+            home_score, away_score, winning_team, losing_team,
+            home_probable_pitcher, away_probable_pitcher, season
+        ) VALUES (
+            %(game_id)s, %(game_date)s, %(home_team)s, %(away_team)s,
+            %(home_score)s, %(away_score)s, %(winning_team)s, %(losing_team)s,
+            %(home_probable_pitcher)s, %(away_probable_pitcher)s, %(season)s
+        )
+        ON CONFLICT (game_id) DO NOTHING
+    """
+    inserted = 0
+    with pool.connection() as conn:
+        for game in games:
+            cur = conn.execute(sql, game)
+            inserted += cur.rowcount
+        conn.commit()
+    return inserted
+
+
+def sync_game_logs(pool: ConnectionPool) -> int:
+    """Fetch newly completed games since last known date in game_logs.
+
+    Queries MAX(game_date), fetches from (MAX - 1 day) to yesterday,
+    filters to Final regular-season games, normalizes team names,
+    and batch inserts. Returns count of new rows inserted.
+
+    If table is empty, logs warning and returns 0 (run seed script first).
+    """
+    from src.data.team_mappings import normalize_team
+
+    # Get last known date
+    with pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT MAX(game_date) FROM game_logs")
+            row = cur.fetchone()
+            last_date = row[0] if row else None
+
+    if last_date is None:
+        logger.warning("game_logs table is empty -- run scripts/seed_game_logs.py first")
+        return 0
+
+    # Overlap by 1 day to catch late West Coast games
+    start = (last_date - timedelta(days=1))
+    end = date_cls.today() - timedelta(days=1)
+
+    if start > end:
+        logger.info("sync_game_logs: no new dates to sync (last_date=%s)", last_date)
+        return 0
+
+    start_str = start.strftime("%m/%d/%Y")
+    end_str = end.strftime("%m/%d/%Y")
+
+    logger.info("Fetching game_logs from %s to %s", start_str, end_str)
+    games = statsapi.schedule(start_date=start_str, end_date=end_str, sportId=1)
+
+    # Filter: Final + regular season only
+    _SKIP_NORMALIZE = {"", "Tie"}
+    final_games = []
+    for g in games:
+        if g.get("game_type") != "R" or g.get("status") != "Final":
+            continue
+        try:
+            final_games.append({
+                "game_id": str(g["game_id"]),
+                "game_date": g["game_date"],
+                "home_team": normalize_team(g["home_name"]),
+                "away_team": normalize_team(g["away_name"]),
+                "home_score": g["home_score"],
+                "away_score": g["away_score"],
+                "winning_team": (normalize_team(g["winning_team"])
+                                 if g.get("winning_team") not in _SKIP_NORMALIZE
+                                 else g.get("winning_team", "")),
+                "losing_team": (normalize_team(g["losing_team"])
+                                if g.get("losing_team") not in _SKIP_NORMALIZE
+                                else g.get("losing_team", "")),
+                "home_probable_pitcher": g.get("home_probable_pitcher") or None,
+                "away_probable_pitcher": g.get("away_probable_pitcher") or None,
+                "season": int(g["game_date"][:4]),  # extract from game date, NOT start.year
+            })
+        except (ValueError, KeyError) as exc:
+            logger.warning("sync_game_logs: skipping game %s: %s", g.get("game_id"), exc)
+            continue
+
+    if not final_games:
+        logger.info("sync_game_logs: no new Final games found")
+        return 0
+
+    inserted = batch_insert_game_logs(pool, final_games)
+    logger.info("sync_game_logs: %d new games inserted (%d total fetched)", inserted, len(final_games))
+    return inserted
