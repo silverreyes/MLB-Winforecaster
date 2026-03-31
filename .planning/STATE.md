@@ -3,30 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Game Lifecycle, Live Scores & Historical Accuracy
 status: executing
-stopped_at: Completed 15-02-PLAN.md
-last_updated: "2026-03-31T22:24:40Z"
-last_activity: 2026-03-31 -- Completed Plan 15-02 (live score route enrichment, write_game_outcome, live_poller_job, 8 tests)
+stopped_at: Completed 15-03-PLAN.md
+last_updated: "2026-03-31T22:32:03Z"
+last_activity: 2026-03-31 -- Completed Plan 15-03 (frontend live score display, ScoreRow, BasesDiamond, LiveDetail, 90s dual-gate polling)
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 14
-  completed_plans: 9
----
-
----
-gsd_state_version: 1.0
-milestone: v2.2
-milestone_name: Game Lifecycle, Live Scores & Historical Accuracy
-status: executing
-stopped_at: Completed 14-03-PLAN.md
-last_updated: "2026-03-31T18:45:00Z"
-last_activity: 2026-03-31 -- Completed Phase 14 date navigation (FutureDateBanner, EmptyState, GameCard future modes, visual verification on VPS)
-progress:
-  total_phases: 5
-  completed_phases: 2
-  total_plans: 7
-  completed_plans: 7
-  percent: 100
+  completed_plans: 10
+  percent: 71
 ---
 
 # Project State
@@ -41,18 +26,18 @@ See: .planning/PROJECT.md (updated 2026-03-30)
 ## Current Position
 
 Phase: 15 of 17 (Live Score Polling) — IN PROGRESS
-Plan: 2 of 4 in phase 15 — complete
-Status: Plan 15-02 complete, ready for 15-03
-Last activity: 2026-03-31 -- Completed Plan 15-02 (live score route enrichment, write_game_outcome, live_poller_job, 8 tests)
+Plan: 3 of 4 in phase 15 — complete
+Status: Plan 15-03 complete, ready for 15-04
+Last activity: 2026-03-31 -- Completed Plan 15-03 (frontend live score display, ScoreRow, BasesDiamond, LiveDetail, 90s dual-gate polling)
 
-Progress: [██████░░░░] 64% (milestone v2.2: 9 of 14 plans)
+Progress: [███████░░░] 71% (milestone v2.2: 10 of 14 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8 (v2.2)
+- Total plans completed: 10 (v2.2)
 - Average duration: 4min
-- Total execution time: 37min
+- Total execution time: 44min
 
 **By Phase:**
 
@@ -67,9 +52,10 @@ Progress: [██████░░░░] 64% (milestone v2.2: 9 of 14 plans)
 | Phase 14 P03 | 10min | 2 tasks | 7 files |
 | Phase 15 P01 | 4min | 2 tasks | 4 files |
 | Phase 15 P02 | 4min | 2 tasks | 4 files |
+| Phase 15 P03 | 3min | 2 tasks | 7 files |
 
 **Recent Trend:**
-- Last 5 plans: 5min, 3min, 10min, 4min, 4min
+- Last 5 plans: 3min, 10min, 4min, 4min, 3min
 - Trend: stable
 
 *Updated after each plan completion*
@@ -100,6 +86,9 @@ Progress: [██████░░░░] 64% (milestone v2.2: 9 of 14 plans)
 - inningHalf 'Middle'/'End' default to 'top' for display consistency (Phase 15)
 - build_games_response view_mode param defaults to 'historical' for backward compat with existing call sites (Phase 15)
 - live_poller_job uses direct statsapi.get() for linescore data, not the cached linescore function (Phase 15)
+- Always singular "out" (not "outs") per UI-SPEC copywriting contract (Phase 15)
+- useState for expand/collapse per UI-SPEC lock, not details/summary -- LIVE-to-FINAL transition clears state via conditional render (Phase 15)
+- ScoreRow conditional render gated on game_status === 'LIVE' prevents expand affordance on non-LIVE cards (Phase 15)
 
 ### Roadmap Decisions
 
@@ -121,6 +110,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-31T22:24:40Z
-Stopped at: Completed 15-02-PLAN.md
-Resume file: .planning/phases/15-live-score-polling/15-03-PLAN.md
+Last session: 2026-03-31T22:32:03Z
+Stopped at: Completed 15-03-PLAN.md
+Resume file: .planning/phases/15-live-score-polling/15-04-PLAN.md
