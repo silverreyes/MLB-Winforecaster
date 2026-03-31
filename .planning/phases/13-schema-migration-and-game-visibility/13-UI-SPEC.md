@@ -55,7 +55,7 @@ Exceptions: none -- all Phase 13 elements use the existing scale from `index.css
 Phase 13 new elements use:
 - **StatusBadge text**: 12px weight 600 line-height 1.3 (`--font-ui`) -- matches existing SpBadge and EdgeBadge pattern.
 - **Stub card matchup**: 16px weight 400 line-height 1.5 (`--font-ui`) -- same as existing `.matchup` class.
-- **Stub card game time**: 13px weight 400 line-height 1.3 (`--font-ui`) -- same as existing `.gameTime` class.
+- **Stub card game time**: inherits existing `.gameTime` styles (defined in `GameCard.module.css`); no new size token introduced.
 
 No new typography values introduced.
 
@@ -105,7 +105,7 @@ Accent reserved for: ensemble hero probability number, clock time display, "Last
 | Render | `<span>` with CSS class per status variant |
 | Display text | `PRE-GAME`, `LIVE`, `FINAL`, `POSTPONED` (underscores replaced with hyphens) |
 | Font | 12px, weight 600, line-height 1.3, `--font-ui`, uppercase inherited from text transform |
-| Padding | 2px block (`var(--space-xs)` minus 2px for tight fit), `var(--space-sm)` inline |
+| Padding | `var(--space-xs)` block (4px), `var(--space-sm)` inline (8px) |
 | Border radius | 4px |
 | White space | `nowrap` |
 | Pattern | Matches existing `SpBadge.tbd` and `EdgeBadge.badge` badge pattern exactly |
@@ -119,7 +119,7 @@ Accent reserved for: ensemble hero probability number, clock time display, "Last
   font-family: var(--font-ui);
   font-size: 12px;
   font-weight: 600;
-  padding: 2px var(--space-sm);
+  padding: var(--space-xs) var(--space-sm);
   border-radius: 4px;
   line-height: 1.3;
   white-space: nowrap;
@@ -219,6 +219,8 @@ Accent reserved for: ensemble hero probability number, clock time display, "Last
 
 ## Layout Contract
 
+Primary visual anchor: ensemble hero probability number (Hero Number, 32px DM Mono) on prediction cards; matchup heading (16px) on stub cards.
+
 ### Card placement of StatusBadge
 
 ```
@@ -226,7 +228,7 @@ Accent reserved for: ensemble hero probability number, clock time display, "Last
 | [Warning strip if SP changed]         |  <- existing, optional
 +---------------------------------------+
 | Matchup: Away @ Home                  |  <- .matchup (16px)
-| 7:05 PM ET                            |  <- .gameTime (13px)
+| 7:05 PM ET                            |  <- .gameTime styles
 | [PRE-GAME]                            |  <- NEW: StatusBadge
 | AwayPitcher | HomePitcher              |  <- .spRow (12px)
 +---------------------------------------+
