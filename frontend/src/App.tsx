@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useGames } from './hooks/useGames';
+import { useGames, todayDateStr } from './hooks/useGames';
 import { useLatestTimestamp } from './hooks/useLatestTimestamp';
 import { Header } from './components/Header';
+import { DateNavigator } from './components/DateNavigator';
 import { AccuracyStrip } from './components/AccuracyStrip';
 import { AboutModels } from './components/AboutModels';
 import { NewPredictionsBanner } from './components/NewPredictionsBanner';
@@ -15,7 +16,8 @@ const STALE_THRESHOLD_MS = 3 * 60 * 60 * 1000; // 3 hours
 const SKELETON_COUNT = 6;
 
 function App() {
-  const { data, isLoading, isError, games, refetch } = useGames();
+  const [selectedDate, setSelectedDate] = useState<string>(todayDateStr());
+  const { data, isLoading, isError, games, refetch, viewMode } = useGames(selectedDate);
   const { data: timestampData } = useLatestTimestamp();
 
   // Track displayed data timestamp for comparison
@@ -55,6 +57,11 @@ function App() {
         lastUpdated={displayedTimestamp}
         isStale={isStale}
         isOffline={isOffline}
+      />
+      <DateNavigator
+        selectedDate={selectedDate}
+        onDateChange={setSelectedDate}
+        viewMode={viewMode}
       />
       <AccuracyStrip />
       <AboutModels />
