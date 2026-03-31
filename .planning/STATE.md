@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Game Lifecycle, Live Scores & Historical Accuracy
 status: executing
-stopped_at: Completed 15-01-PLAN.md
-last_updated: "2026-03-31T22:17:17Z"
-last_activity: 2026-03-31 -- Completed Plan 15-01 (LiveScoreData model, linescore cache, parse function, test scaffolds)
+stopped_at: Completed 15-02-PLAN.md
+last_updated: "2026-03-31T22:24:40Z"
+last_activity: 2026-03-31 -- Completed Plan 15-02 (live score route enrichment, write_game_outcome, live_poller_job, 8 tests)
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 14
-  completed_plans: 8
+  completed_plans: 9
 ---
 
 ---
@@ -41,11 +41,11 @@ See: .planning/PROJECT.md (updated 2026-03-30)
 ## Current Position
 
 Phase: 15 of 17 (Live Score Polling) — IN PROGRESS
-Plan: 1 of 4 in phase 15 — complete
-Status: Plan 15-01 complete, ready for 15-02
-Last activity: 2026-03-31 -- Completed Plan 15-01 (LiveScoreData model, linescore cache, parse function, test scaffolds)
+Plan: 2 of 4 in phase 15 — complete
+Status: Plan 15-02 complete, ready for 15-03
+Last activity: 2026-03-31 -- Completed Plan 15-02 (live score route enrichment, write_game_outcome, live_poller_job, 8 tests)
 
-Progress: [██████░░░░] 57% (milestone v2.2: 8 of 14 plans)
+Progress: [██████░░░░] 64% (milestone v2.2: 9 of 14 plans)
 
 ## Performance Metrics
 
@@ -66,9 +66,10 @@ Progress: [██████░░░░] 57% (milestone v2.2: 8 of 14 plans)
 | Phase 14 P02 | 3min | 2 tasks | 5 files |
 | Phase 14 P03 | 10min | 2 tasks | 7 files |
 | Phase 15 P01 | 4min | 2 tasks | 4 files |
+| Phase 15 P02 | 4min | 2 tasks | 4 files |
 
 **Recent Trend:**
-- Last 5 plans: 3min, 5min, 3min, 10min, 4min
+- Last 5 plans: 5min, 3min, 10min, 4min, 4min
 - Trend: stable
 
 *Updated after each plan completion*
@@ -97,6 +98,8 @@ Progress: [██████░░░░] 57% (milestone v2.2: 8 of 14 plans)
 - Linescore cache uses same dict+Lock+TTL pattern as schedule cache, bounded to 20 entries (Phase 15)
 - statsapi.get('game') fields parameter reduces ~500KB response to ~5-10KB (Phase 15)
 - inningHalf 'Middle'/'End' default to 'top' for display consistency (Phase 15)
+- build_games_response view_mode param defaults to 'historical' for backward compat with existing call sites (Phase 15)
+- live_poller_job uses direct statsapi.get() for linescore data, not the cached linescore function (Phase 15)
 
 ### Roadmap Decisions
 
@@ -118,6 +121,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-31T22:17:17Z
-Stopped at: Completed 15-01-PLAN.md
-Resume file: .planning/phases/15-live-score-polling/15-02-PLAN.md
+Last session: 2026-03-31T22:24:40Z
+Stopped at: Completed 15-02-PLAN.md
+Resume file: .planning/phases/15-live-score-polling/15-03-PLAN.md

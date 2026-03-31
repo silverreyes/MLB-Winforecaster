@@ -163,6 +163,6 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17
 | 12. Explanatory Content and Tooltips | v2.1 | 1/1 | Complete | 2026-03-30 |
 | 13. Schema Migration & Game Visibility | 4/4 | Complete   | 2026-03-31 | - |
 | 14. Date Navigation | 3/3 | Complete   | 2026-03-31 | - |
-| 15. Live Score Polling | 1/4 | In Progress|  | - |
+| 15. Live Score Polling | 2/4 | In Progress|  | - |
 | 16. Final Outcomes & Nightly Reconciliation | v2.2 | 0/? | Not started | - |
 | 17. History Route | v2.2 | 0/? | Not started | - |

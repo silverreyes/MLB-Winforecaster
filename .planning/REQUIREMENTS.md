@@ -36,7 +36,7 @@
 - [x] **LIVE-05**: Expanded in-progress card shows current pitch count (balls / strikes / outs)
 - [x] **LIVE-06**: Expanded in-progress card shows current batter name and key stats
 - [x] **LIVE-07**: Expanded in-progress card shows on-deck batter name
-- [ ] **LIVE-08**: When the live poller detects a game transition to Final, it immediately writes `actual_winner` and `prediction_correct` to that game's prediction row in Postgres
+- [x] **LIVE-08**: When the live poller detects a game transition to Final, it immediately writes `actual_winner` and `prediction_correct` to that game's prediction row in Postgres
 
 ### Final Outcomes (FINL)
 
@@ -95,7 +95,7 @@
 | LIVE-05 | Phase 15 | Complete |
 | LIVE-06 | Phase 15 | Complete |
 | LIVE-07 | Phase 15 | Complete |
-| LIVE-08 | Phase 15 | Pending |
+| LIVE-08 | Phase 15 | Complete |
 | FINL-01 | Phase 16 | Pending |
 | FINL-02 | Phase 16 | Pending |
 | FINL-03 | Phase 16 | Pending |
