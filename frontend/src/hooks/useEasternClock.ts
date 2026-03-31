@@ -1,19 +1,14 @@
 import { useState, useEffect } from 'react';
 
 interface EasternClockState {
-  dateStr: string;   // e.g., "Monday, March 30"
-  timeStr: string;   // e.g., "2:34 PM ET"
-  nextUpdate: string; // e.g., "Next update: 1:00 PM ET" or "Next update: 10:00 AM ET tomorrow"
+  dateStr: string;   // e.g., "Monday, March 30" (ET date — baseball context)
+  timeStr: string;   // e.g., "2:34 PM" (browser local time, no ET label)
+  nextUpdate: string; // e.g., "Next update: 1:00 PM" or "Next update: 10:00 AM tomorrow"
 }
 
-const PIPELINE_RUN_HOURS = [10, 13, 17]; // 10 AM, 1 PM, 5 PM ET
+const PIPELINE_RUN_HOURS_ET = [10, 13, 17]; // 10 AM, 1 PM, 5 PM ET
 
-const RUN_LABELS: Record<number, string> = {
-  10: '10:00 AM',
-  13: '1:00 PM',
-  17: '5:00 PM',
-};
-
+// ET date formatter — kept in ET for baseball-day context
 const dateFmt = new Intl.DateTimeFormat('en-US', {
   weekday: 'long',
   month: 'long',
@@ -21,48 +16,73 @@ const dateFmt = new Intl.DateTimeFormat('en-US', {
   timeZone: 'America/New_York',
 });
 
-const timeFmt = new Intl.DateTimeFormat('en-US', {
+// Browser-local time formatter — no timeZone specified, uses browser locale
+const localTimeFmt = new Intl.DateTimeFormat('en-US', {
   hour: 'numeric',
   minute: '2-digit',
-  timeZone: 'America/New_York',
+  hour12: true,
 });
 
-const etPartsFmt = new Intl.DateTimeFormat('en-US', {
+// ET hour extractor — used internally to determine which run is next
+const etHourFmt = new Intl.DateTimeFormat('en-US', {
   hour: 'numeric',
   minute: '2-digit',
   hour12: false,
   timeZone: 'America/New_York',
 });
 
-function computeNextUpdate(now: Date): string {
-  const parts = etPartsFmt.formatToParts(now);
-  let currentHour = 0;
-  let currentMinute = 0;
-  for (const part of parts) {
-    if (part.type === 'hour') currentHour = Number(part.value);
-    if (part.type === 'minute') currentMinute = Number(part.value);
+/**
+ * Convert a pipeline run hour (in ET) to a display string in the user's browser timezone.
+ *
+ * Strategy: compute the current offset between local hour and ET hour, then
+ * apply that offset to the target run hour to get the local equivalent.
+ */
+function etRunHourToLocalDisplay(now: Date, etRunHour: number, tomorrow: boolean): string {
+  // Get current ET hour (24h)
+  const etParts = etHourFmt.formatToParts(now);
+  let currentEtHour = 0;
+  for (const part of etParts) {
+    if (part.type === 'hour') currentEtHour = Number(part.value);
   }
 
-  const currentTotalMinutes = currentHour * 60 + currentMinute;
+  // Local hour (24h)
+  const currentLocalHour = now.getHours();
+  const hourOffset = currentLocalHour - currentEtHour;
 
-  for (const runHour of PIPELINE_RUN_HOURS) {
-    const runTotalMinutes = runHour * 60;
-    if (runTotalMinutes > currentTotalMinutes) {
-      return 'Next update: ' + RUN_LABELS[runHour] + ' ET';
+  // Build a Date representing "today (or tomorrow) at etRunHour:00 local-equivalent"
+  const runDate = new Date(now);
+  if (tomorrow) runDate.setDate(runDate.getDate() + 1);
+  runDate.setHours(etRunHour + hourOffset, 0, 0, 0);
+
+  return localTimeFmt.format(runDate);
+}
+
+function computeNextUpdate(now: Date): string {
+  // Determine current ET time to pick which run is next
+  const etParts = etHourFmt.formatToParts(now);
+  let currentEtHour = 0;
+  let currentEtMinute = 0;
+  for (const part of etParts) {
+    if (part.type === 'hour') currentEtHour = Number(part.value);
+    if (part.type === 'minute') currentEtMinute = Number(part.value);
+  }
+  const currentEtTotal = currentEtHour * 60 + currentEtMinute;
+
+  for (const runHour of PIPELINE_RUN_HOURS_ET) {
+    if (runHour * 60 > currentEtTotal) {
+      return 'Next update: ' + etRunHourToLocalDisplay(now, runHour, false);
     }
   }
 
-  // No future run today (current time >= 17:00 ET)
-  return 'Next update: 10:00 AM ET tomorrow';
+  // Past all runs today — next is 10 AM ET tomorrow
+  return 'Next update: ' + etRunHourToLocalDisplay(now, 10, true) + ' tomorrow';
 }
 
 function computeClock(): EasternClockState {
   const now = new Date();
-
   const dateStr = dateFmt.format(now);
-  const timeStr = timeFmt.format(now) + ' ET';
+  const timeStr = localTimeFmt.format(now);
   const nextUpdate = computeNextUpdate(now);
-
   return { dateStr, timeStr, nextUpdate };
 }
 
