@@ -108,10 +108,13 @@ Plans:
   2. User can expand an in-progress card to see a bases diamond with runners highlighted, pitch count (balls/strikes/outs), current batter with stats, and on-deck batter
   3. When a game transitions to Final, the live poller immediately writes `actual_winner` and `prediction_correct` to the corresponding prediction row in Postgres
   4. The live score endpoint uses a server-side cache to prevent MLB API amplification from multiple browser tabs or clients
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] 15-01: TBD
+- [ ] 15-01-PLAN.md — Test scaffolds + LiveScoreData model + linescore cache + parse_linescore function
+- [ ] 15-02-PLAN.md — Games route enrichment + live_poller_job + write_game_outcome + poller tests
+- [ ] 15-03-PLAN.md — Frontend: TypeScript types, useGames 90s gate, ScoreRow, LiveDetail, BasesDiamond
+- [ ] 15-04-PLAN.md — Full test suite verification + human VPS deployment check
 
 ### Phase 16: Final Outcomes & Nightly Reconciliation
 **Goal**: Users see prediction results on completed game cards, and a nightly safety net ensures no Final game is missed
@@ -160,6 +163,6 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17
 | 12. Explanatory Content and Tooltips | v2.1 | 1/1 | Complete | 2026-03-30 |
 | 13. Schema Migration & Game Visibility | 4/4 | Complete   | 2026-03-31 | - |
 | 14. Date Navigation | 3/3 | Complete   | 2026-03-31 | - |
-| 15. Live Score Polling | v2.2 | 0/? | Not started | - |
+| 15. Live Score Polling | v2.2 | 0/4 | Not started | - |
 | 16. Final Outcomes & Nightly Reconciliation | v2.2 | 0/? | Not started | - |
 | 17. History Route | v2.2 | 0/? | Not started | - |
