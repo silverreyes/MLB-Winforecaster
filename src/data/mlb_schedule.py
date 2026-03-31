@@ -1,5 +1,8 @@
 """MLB Stats API game schedule and probable pitcher loader with Parquet caching."""
 
+import time
+import threading
+
 import pandas as pd
 import statsapi
 from statsapi import schedule as statsapi_schedule
@@ -126,3 +129,120 @@ def fetch_today_schedule() -> list[dict]:
     games = statsapi_schedule(start_date=today, end_date=today, sportId=1)
     # Filter to regular season only (exclude spring training, exhibitions, postseason)
     return [g for g in games if g.get("game_type") == "R"]
+
+
+# ---------------------------------------------------------------------------
+# Phase 13: Date-parameterized schedule with status fields
+# ---------------------------------------------------------------------------
+
+_schedule_cache: dict[str, tuple[float, list[dict]]] = {}
+_cache_lock = threading.Lock()
+_CACHE_TTL_SECONDS = 75  # 60-90s range per CONTEXT.md
+_CACHE_MAX_ENTRIES = 7   # Prevent unbounded growth before Phase 14
+
+
+def map_game_status(status_obj: dict) -> str:
+    """Map MLB status object to badge status string.
+
+    Args:
+        status_obj: The 'status' dict from raw schedule API containing
+                    abstractGameState, codedGameState, detailedState.
+
+    Returns:
+        One of: 'PRE_GAME', 'LIVE', 'FINAL', 'POSTPONED'
+    """
+    coded = status_obj.get('codedGameState', 'S')
+    abstract = status_obj.get('abstractGameState', 'Preview')
+
+    # Check postponed FIRST -- codedGameState "D" overrides abstractGameState "Final"
+    if coded == 'D':
+        return 'POSTPONED'
+
+    if abstract == 'Final':
+        return 'FINAL'
+    elif abstract == 'Live':
+        return 'LIVE'
+    else:
+        return 'PRE_GAME'
+
+
+def fetch_schedule_for_date(date_str: str) -> list[dict]:
+    """Fetch MLB schedule using raw API to get status fields.
+
+    Unlike fetch_today_schedule() which uses the statsapi.schedule() wrapper
+    (which strips abstractGameState/codedGameState), this uses statsapi.get()
+    to access the raw JSON with full status information.
+
+    Args:
+        date_str: Date in YYYY-MM-DD format.
+
+    Returns:
+        List of game dicts with keys: game_id, home_name, away_name,
+        game_datetime, game_status, doubleheader, game_num.
+        Filtered to regular season games only (gameType == 'R').
+    """
+    from datetime import datetime as _dt
+    dt = _dt.strptime(date_str, "%Y-%m-%d")
+    api_date = dt.strftime("%m/%d/%Y")
+
+    data = statsapi.get('schedule', {
+        'sportId': 1,
+        'date': api_date,
+    })
+
+    games = []
+    for date_entry in data.get('dates', []):
+        for game in date_entry.get('games', []):
+            if game.get('gameType') != 'R':
+                continue  # Regular season only
+
+            status = game.get('status', {})
+            game_status = map_game_status(status)
+
+            game_pk = game.get('gamePk')
+            if game_pk is None:
+                continue  # Skip games without a gamePk (shouldn't happen)
+
+            games.append({
+                'game_id': game_pk,
+                'home_name': game['teams']['home']['team']['name'],
+                'away_name': game['teams']['away']['team']['name'],
+                'game_datetime': game.get('gameDate'),
+                'game_status': game_status,
+                'doubleheader': game.get('doubleHeader', 'N'),
+                'game_num': game.get('gameNumber', 1),
+            })
+
+    return games
+
+
+def get_schedule_cached(date_str: str) -> list[dict]:
+    """Return cached schedule, fetching fresh if expired.
+
+    Thread-safe via Lock. Fetch happens outside the lock to avoid blocking
+    concurrent requests during the API call.
+
+    Args:
+        date_str: Date in YYYY-MM-DD format.
+
+    Returns:
+        Same as fetch_schedule_for_date().
+    """
+    now = time.monotonic()
+    with _cache_lock:
+        if date_str in _schedule_cache:
+            ts, data = _schedule_cache[date_str]
+            if now - ts < _CACHE_TTL_SECONDS:
+                return data
+
+    # Fetch fresh data outside the lock
+    fresh = fetch_schedule_for_date(date_str)
+
+    with _cache_lock:
+        # Evict oldest entries if at capacity
+        if len(_schedule_cache) >= _CACHE_MAX_ENTRIES and date_str not in _schedule_cache:
+            oldest_key = min(_schedule_cache, key=lambda k: _schedule_cache[k][0])
+            del _schedule_cache[oldest_key]
+        _schedule_cache[date_str] = (now, fresh)
+
+    return fresh
