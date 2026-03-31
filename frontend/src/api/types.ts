@@ -44,6 +44,9 @@ export interface GameGroup {
 
 export type GameStatus = 'PRE_GAME' | 'LIVE' | 'FINAL' | 'POSTPONED';
 
+// Phase 14: view mode for date navigation
+export type ViewMode = 'live' | 'historical' | 'tomorrow' | 'future';
+
 export interface PredictionGroup {
   pre_lineup: PredictionResponse | null;
   post_lineup: PredictionResponse | null;
@@ -56,9 +59,13 @@ export interface GameResponse {
   game_time: string | null;
   game_status: GameStatus;
   prediction: PredictionGroup | null;
+  prediction_label: 'PRELIMINARY' | null;
+  home_probable_pitcher: string | null;
+  away_probable_pitcher: string | null;
 }
 
 export interface GamesDateResponse {
   games: GameResponse[];
   generated_at: string;
+  view_mode: ViewMode;
 }

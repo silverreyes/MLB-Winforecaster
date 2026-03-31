@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchJson } from '../api/client';
-import type { GamesDateResponse, GameResponse } from '../api/types';
+import type { GamesDateResponse, GameResponse, ViewMode } from '../api/types';
 
-function todayDateStr(): string {
+export function todayDateStr(): string {
   // Format as YYYY-MM-DD in local timezone
   const d = new Date();
   const year = d.getFullYear();
@@ -18,7 +18,10 @@ export function useGames(dateStr?: string) {
     queryKey: ['games', date],
     queryFn: () => fetchJson<GamesDateResponse>(`/games/${date}`),
     staleTime: 55_000,
-    refetchInterval: 60_000,
+    refetchInterval: (query) => {
+      const viewMode = query.state.data?.view_mode;
+      return viewMode === 'live' ? 60_000 : false;
+    },
   });
 
   const games: GameResponse[] = query.data?.games ?? [];
@@ -26,6 +29,7 @@ export function useGames(dateStr?: string) {
   return {
     ...query,
     games,
+    viewMode: (query.data?.view_mode ?? null) as ViewMode | null,
     generatedAt: query.data?.generated_at ?? null,
   };
 }
