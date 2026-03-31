@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useGames, todayDateStr } from './hooks/useGames';
 import { useLatestTimestamp } from './hooks/useLatestTimestamp';
 import { Header } from './components/Header';
@@ -21,31 +21,39 @@ function App() {
   const { data, isLoading, isError, games, refetch, viewMode } = useGames(selectedDate);
   const { data: timestampData } = useLatestTimestamp();
 
-  // Track displayed data timestamp for comparison
-  const displayedTimestamp = data?.generated_at ?? null;
+  // Pipeline run timestamp (from /predictions/latest-timestamp)
+  const pipelineTimestamp = timestampData?.timestamp ?? null;
 
-  // DASH-05: Staleness check (3-hour threshold)
-  const isStale = displayedTimestamp
-    ? Date.now() - new Date(displayedTimestamp).getTime() > STALE_THRESHOLD_MS
+  // Track the pipeline timestamp that was current when this page loaded
+  const initialTimestampRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (timestampData?.timestamp && !initialTimestampRef.current) {
+      initialTimestampRef.current = timestampData.timestamp;
+    }
+  }, [timestampData?.timestamp]);
+
+  // DASH-05: Staleness check against pipeline run time (3-hour threshold)
+  const isStale = pipelineTimestamp
+    ? Date.now() - new Date(pipelineTimestamp).getTime() > STALE_THRESHOLD_MS
     : false;
 
-  // DASH-06: New predictions detection
+  // DASH-06: New predictions detection — fires when pipeline runs after page load
   const hasNewPredictions = !!(
     timestampData?.timestamp &&
-    displayedTimestamp &&
-    new Date(timestampData.timestamp).getTime() > new Date(displayedTimestamp).getTime()
+    initialTimestampRef.current &&
+    new Date(timestampData.timestamp).getTime() > new Date(initialTimestampRef.current).getTime()
   );
 
   // DASH-07: Error state
   const isOffline = isError;
 
-  // Track last successful timestamp for error state display
+  // Track last successful pipeline timestamp for error state display
   const [lastSuccessTimestamp, setLastSuccessTimestamp] = useState<string | null>(null);
   useEffect(() => {
-    if (displayedTimestamp) {
-      setLastSuccessTimestamp(displayedTimestamp);
+    if (pipelineTimestamp) {
+      setLastSuccessTimestamp(pipelineTimestamp);
     }
-  }, [displayedTimestamp]);
+  }, [pipelineTimestamp]);
 
   // Handler for "Load latest predictions" banner button
   const handleRefresh = () => {
@@ -55,7 +63,7 @@ function App() {
   return (
     <div>
       <Header
-        lastUpdated={displayedTimestamp}
+        lastUpdated={pipelineTimestamp}
         isStale={isStale}
         isOffline={isOffline}
       />
