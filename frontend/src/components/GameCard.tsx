@@ -22,11 +22,10 @@ function formatGameTime(isoString: string | null): string {
 
 interface GameCardProps {
   game: GameResponse;
-  isStale: boolean;
   viewMode: ViewMode | null;
 }
 
-export function GameCard({ game, isStale, viewMode }: GameCardProps) {
+export function GameCard({ game, viewMode }: GameCardProps) {
   const { home_team, away_team, prediction, game_status } = game;
 
   const pre_lineup = prediction?.pre_lineup ?? null;

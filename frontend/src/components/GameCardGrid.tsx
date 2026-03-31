@@ -15,7 +15,6 @@ export function GameCardGrid({ games, isStale, viewMode }: GameCardGridProps) {
         <GameCard
           key={game.game_id}
           game={game}
-          isStale={isStale}
           viewMode={viewMode}
         />
       ))}
