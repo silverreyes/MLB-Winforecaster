@@ -52,7 +52,6 @@ Source: existing `index.css` `:root` block -- tokens `--space-xs` through `--spa
 |------|------|--------|-------------|-------------|
 | Body | 16px | 400 | 1.5 | `--font-ui` (DM Sans) |
 | Label / Small | 12px | 600 | 1.3 | `--font-ui` (DM Sans) |
-| Sub-heading | 13px | 400 | 1.3 | `--font-ui` (DM Sans) |
 | Heading | 20px | 600 | 1.2 | `--font-ui` (DM Sans) |
 | Data values | 14px | 400 | 1.3 | `--font-data` (DM Mono) |
 
@@ -61,16 +60,16 @@ Phase 14-specific typographic assignments:
 | Element | Size | Weight | Font Family | Line Height |
 |---------|------|--------|-------------|-------------|
 | DateNavigator date display (`<input type="date">`) | 14px | 400 | `--font-data` | 1.3 |
-| DateNavigator arrow buttons | 18px | 400 | system default | 1.0 |
+| DateNavigator arrow buttons | 16px | 400 | system default | 1.0 |
 | "Today" button label | 12px | 600 | `--font-ui` | 1.3 |
 | PRELIMINARY badge text | 12px | 600 | `--font-ui` | 1.3 |
 | FutureDateBanner heading | 16px | 400 | `--font-ui` | 1.5 |
 | FutureDateBanner body | 14px | 400 | `--font-ui` | 1.5 |
-| Date-context label ("Viewing: March 28, 2026") | 13px | 400 | `--font-ui` | 1.3 |
+| Date-context label ("Viewing: March 28, 2026") | 14px | 400 | `--font-ui` | 1.3 |
 | EmptyState heading (all modes) | 20px | 600 | `--font-ui` | 1.2 |
 | EmptyState body (all modes) | 16px | 400 | `--font-ui` | 1.5 |
 
-Source: existing component CSS files -- sizes 12, 13, 16, 20 are the established scale. 14px used for `--font-data` values in PredictionColumn and the date input (monospace data display).
+Source: existing component CSS files -- sizes 12, 14, 16, 20 are the consolidated 4-size scale. 14px used for `--font-data` values in PredictionColumn, the date input (monospace data display), and secondary UI text like the date-context label.
 
 ---
 
@@ -95,6 +94,7 @@ Accent (`#F59E0B`) reserved for:
 3. Clock time display in header (existing)
 4. Brier score values in AccuracyStrip (existing)
 5. Date input text color when displaying today's date
+6. Left/right arrow button border on hover
 
 PRELIMINARY badge color contract:
 - Text: `#D97706` (`--color-accent-muted`)
@@ -117,7 +117,7 @@ Source: existing `index.css` `:root` block and `StatusBadge.module.css` patterns
 | Sub-element | Spec |
 |-------------|------|
 | Container | `display: flex; align-items: center; gap: var(--space-sm);` within a full-width bar with `background: var(--color-surface); border-bottom: 1px solid var(--color-border); padding: var(--space-sm) var(--space-md);` and inner `max-width: 1200px; margin: 0 auto;` |
-| Left arrow button | 32px x 32px, `border: 1px solid var(--color-border); border-radius: 4px; background: none; color: var(--color-text-primary);` hover: `border-color: var(--color-accent);` Content: Unicode `\u2190` at 18px. `cursor: pointer;` `aria-label="Previous day"` |
+| Left arrow button | 32px x 32px, `border: 1px solid var(--color-border); border-radius: 4px; background: none; color: var(--color-text-primary);` hover: `border-color: var(--color-accent);` Content: Unicode `\u2190` at 16px. `cursor: pointer;` `aria-label="Previous day"` |
 | Right arrow button | Same as left arrow. Content: Unicode `\u2192`. `aria-label="Next day"` |
 | Date input | `<input type="date">` with `font-family: var(--font-data); font-size: 14px; color: var(--color-text-primary); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 4px; padding: var(--space-xs) var(--space-sm); color-scheme: dark;` |
 | Today button | `<button>` with text "Today". `font-family: var(--font-ui); font-size: 12px; font-weight: 600; color: var(--color-text-secondary); background: none; border: 1px solid var(--color-border); border-radius: 4px; padding: var(--space-xs) var(--space-sm); cursor: pointer;` Hover: `border-color: var(--color-accent); color: var(--color-accent);` When already on today: `opacity: 0.4; cursor: default; pointer-events: none;` `aria-label="Go to today"` |
