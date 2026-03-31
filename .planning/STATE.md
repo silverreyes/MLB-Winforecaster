@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Game Lifecycle, Live Scores & Historical Accuracy
-status: planning
-stopped_at: Phase 13 context gathered
-last_updated: "2026-03-31T04:37:39.644Z"
-last_activity: 2026-03-30 -- Roadmap created for v2.2 milestone
+status: executing
+stopped_at: Completed 13-01-PLAN.md
+last_updated: "2026-03-31T12:40:23.393Z"
+last_activity: 2026-03-31 -- Completed 13-01 schema migration plan
 progress:
   total_phases: 5
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_plans: 3
+  completed_plans: 1
+  percent: 33
 ---
 
 # Project State
@@ -26,27 +26,27 @@ See: .planning/PROJECT.md (updated 2026-03-30)
 ## Current Position
 
 Phase: 13 of 17 (Schema Migration & Game Visibility)
-Plan: 0 of ? in current phase
-Status: Ready to plan
-Last activity: 2026-03-30 -- Roadmap created for v2.2 milestone
+Plan: 1 of 3 in current phase
+Status: Executing
+Last activity: 2026-03-31 -- Completed 13-01 schema migration plan
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [███░░░░░░░] 33%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0 (v2.2)
-- Average duration: -
-- Total execution time: -
+- Total plans completed: 1 (v2.2)
+- Average duration: 3min
+- Total execution time: 3min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| Phase 13 P01 | 3min | 2 tasks | 5 files |
 
 **Recent Trend:**
-- Last 5 plans: -
+- Last 5 plans: 3min
 - Trend: -
 
 *Updated after each plan completion*
@@ -60,6 +60,8 @@ Progress: [░░░░░░░░░░] 0%
 - Kalshi historical data only available from 2025
 - Postgres schema changes must be additive only (no drops, no renames)
 - Docker Compose stack must remain deployable with docker compose up
+- Migration SQL executed after main schema.sql in apply_schema(), not inline (Phase 13)
+- game_id added to _PREDICTION_COLS but NOT _PREDICTION_UPDATE_COLS -- immutable per prediction (Phase 13)
 
 ### Roadmap Decisions
 
@@ -81,6 +83,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-31T04:37:39.642Z
-Stopped at: Phase 13 context gathered
-Resume file: .planning/phases/13-schema-migration-and-game-visibility/13-CONTEXT.md
+Last session: 2026-03-31T12:40:23.390Z
+Stopped at: Completed 13-01-PLAN.md
+Resume file: None

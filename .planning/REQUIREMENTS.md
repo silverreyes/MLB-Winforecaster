@@ -13,8 +13,8 @@
 
 ### Schema Migration (SCHM)
 
-- [ ] **SCHM-01**: Predictions table gains `game_id` column (integer); unique constraint updated to include `game_id` to prevent doubleheader row collision -- applied via idempotent migration
-- [ ] **SCHM-02**: Predictions table gains additive nullable columns: `actual_winner` (text), `prediction_correct` (boolean), `reconciled_at` (timestamp) -- applied via idempotent migration
+- [x] **SCHM-01**: Predictions table gains `game_id` column (integer); unique constraint updated to include `game_id` to prevent doubleheader row collision -- applied via idempotent migration
+- [x] **SCHM-02**: Predictions table gains additive nullable columns: `actual_winner` (text), `prediction_correct` (boolean), `reconciled_at` (timestamp) -- applied via idempotent migration
 
 ### Date Navigation (DATE)
 
@@ -78,8 +78,8 @@
 |-------------|-------|--------|
 | VIBL-01 | Phase 13 | Pending |
 | VIBL-02 | Phase 13 | Pending |
-| SCHM-01 | Phase 13 | Pending |
-| SCHM-02 | Phase 13 | Pending |
+| SCHM-01 | Phase 13 | Complete |
+| SCHM-02 | Phase 13 | Complete |
 | DATE-01 | Phase 14 | Pending |
 | DATE-02 | Phase 14 | Pending |
 | DATE-03 | Phase 14 | Pending |
