@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Game Lifecycle, Live Scores & Historical Accuracy
-status: ready_to_plan
-stopped_at: Roadmap created
-last_updated: "2026-03-30T00:00:00.000Z"
+status: planning
+stopped_at: Phase 13 context gathered
+last_updated: "2026-03-31T04:37:39.644Z"
 last_activity: 2026-03-30 -- Roadmap created for v2.2 milestone
 progress:
   total_phases: 5
@@ -81,6 +81,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30
-Stopped at: Roadmap created for v2.2 milestone
-Resume file: None
+Last session: 2026-03-31T04:37:39.642Z
+Stopped at: Phase 13 context gathered
+Resume file: .planning/phases/13-schema-migration-and-game-visibility/13-CONTEXT.md
