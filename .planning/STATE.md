@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Game Lifecycle, Live Scores & Historical Accuracy
 status: executing
-stopped_at: Completed 14-02-PLAN.md
-last_updated: "2026-03-31T17:38:00Z"
-last_activity: 2026-03-31 -- Completed 14-02 DateNavigator component and conditional polling
+stopped_at: Completed 14-03-PLAN.md
+last_updated: "2026-03-31T18:45:00Z"
+last_activity: 2026-03-31 -- Completed Phase 14 date navigation (FutureDateBanner, EmptyState, GameCard future modes, visual verification on VPS)
 progress:
   total_phases: 5
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 7
-  completed_plans: 6
-  percent: 86
+  completed_plans: 7
+  percent: 100
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-30)
 
 **Core value:** Produce well-calibrated win probability estimates that can be rigorously compared against Kalshi market prices, surfacing where models agree, disagree, and where edges may exist.
-**Current focus:** Phase 14 - Date Navigation
+**Current focus:** Phase 15 - Live Score Polling
 
 ## Current Position
 
-Phase: 14 of 17 (Date Navigation)
-Plan: 2 of 3 in current phase
-Status: Executing
-Last activity: 2026-03-31 -- Completed 14-02 DateNavigator component and conditional polling
+Phase: 14 of 17 (Date Navigation) — COMPLETE
+Plan: 3 of 3 in phase 14 — all complete
+Status: Phase complete — ready for Phase 15
+Last activity: 2026-03-31 -- Completed Phase 14 (all 3 plans, human-verified on VPS)
 
-Progress: [████████░░] 86%
+Progress: [██████████] 100% (milestone v2.2 phase 14 of 17)
 
 ## Performance Metrics
 
@@ -49,6 +49,7 @@ Progress: [████████░░] 86%
 | Phase 13 P04 | 3min | 2 tasks | 3 files |
 | Phase 14 P01 | 5min | 1 task | 4 files |
 | Phase 14 P02 | 3min | 2 tasks | 5 files |
+| Phase 14 P03 | 10min | 2 tasks | 7 files |
 
 **Recent Trend:**
 - Last 5 plans: 5min, 4min, 3min, 5min, 3min
@@ -100,4 +101,4 @@ None yet.
 
 Last session: 2026-03-31T17:38:00Z
 Stopped at: Completed 14-02-PLAN.md
-Resume file: .planning/phases/14-date-navigation/14-03-PLAN.md
+Resume file: .planning/phases/15-live-score-polling/ (next phase)

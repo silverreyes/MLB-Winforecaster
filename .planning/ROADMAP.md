@@ -42,7 +42,7 @@
 ### v2.2 Game Lifecycle, Live Scores & Historical Accuracy
 
 - [x] **Phase 13: Schema Migration & Game Visibility** - Add game_id and outcome columns to predictions table; make all games visible regardless of status (gap closure in progress) (completed 2026-03-31)
-- [ ] **Phase 14: Date Navigation** - Arrow/calendar date controls with today default, past predictions, and future schedule-only mode
+- [x] **Phase 14: Date Navigation** - Arrow/calendar date controls with today default, past predictions, and future schedule-only mode (completed 2026-03-31)
 - [ ] **Phase 15: Live Score Polling** - In-progress game scores, inning display, expanded card with bases/pitcher/batter, auto-Final outcome writes
 - [ ] **Phase 16: Final Outcomes & Nightly Reconciliation** - Completed game cards with score/prediction/outcome marker; safety-net reconciler for missed Finals
 - [ ] **Phase 17: History Route** - Date range picker, predictions vs actuals table, rolling accuracy by model
@@ -143,7 +143,7 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17
 | 11. Header Date and Clock | v2.1 | 1/1 | Complete | 2026-03-30 |
 | 12. Explanatory Content and Tooltips | v2.1 | 1/1 | Complete | 2026-03-30 |
 | 13. Schema Migration & Game Visibility | 4/4 | Complete   | 2026-03-31 | - |
-| 14. Date Navigation | 2/3 | In Progress|  | - |
+| 14. Date Navigation | 3/3 | Complete   | 2026-03-31 | - |
 | 15. Live Score Polling | v2.2 | 0/? | Not started | - |
 | 16. Final Outcomes & Nightly Reconciliation | v2.2 | 0/? | Not started | - |
 | 17. History Route | v2.2 | 0/? | Not started | - |
