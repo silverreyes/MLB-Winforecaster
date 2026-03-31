@@ -1,5 +1,25 @@
 # Milestones
 
+## v2.1 Dashboard UX / Contextual Clarity (Shipped: 2026-03-31)
+
+**Phases completed:** 3 phases (10–12) · 3 plans
+**Timeline:** 2026-03-30 (single day)
+**Git commits:** 22 · **Files changed:** 31 · **Lines:** +3,012 / -84
+**Requirements:** 15/15 shipped
+
+**Key accomplishments:**
+1. Backend `game_time` field (UTC ISO or null) added to PredictionResponse; `_build_schedule_lookup()` joins MLB Stats API `game_datetime` to predictions; ET-formatted time ("7:05 PM ET" / "Time TBD") displayed on every game card with responsive CSS
+2. `useEasternClock` hook with drift-corrected `setInterval` (setTimeout aligns to wall-clock second boundary); header clockRow shows today's date, live ET clock updating every second, and next pipeline run time (10 AM / 1 PM / 5 PM ET, "tomorrow" after 5 PM)
+3. Collapsible `<details>`/`<summary>` "About the Models" section (zero JS) explaining LR/RF/XGBoost in plain English, calibration, PRE/POST-LINEUP distinction, and Kalshi mechanics with 7% fee disclosure and explicit no-trading-advice disclaimer
+4. Reusable `Tooltip` component (CSS-only hover/focus-visible, keyboard accessible via tabIndex + aria-label) wired to EdgeBadge (?) icons explaining Buy Yes/No contract mechanics
+
+**Archive:**
+- `.planning/milestones/v2.1-ROADMAP.md`
+- `.planning/milestones/v2.1-REQUIREMENTS.md`
+- `.planning/milestones/v2.1-MILESTONE-AUDIT.md`
+
+---
+
 ## v2.0 Live Platform (Shipped: 2026-03-30)
 
 **Phases completed:** 5 phases (5–9) · 16 plans

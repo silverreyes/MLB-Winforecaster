@@ -4,7 +4,7 @@ milestone: v2.1
 milestone_name: Dashboard UX / Contextual Clarity
 status: completed
 stopped_at: Completed 12-01-PLAN.md
-last_updated: "2026-03-30T22:46:22.996Z"
+last_updated: "2026-03-31T02:49:42.537Z"
 last_activity: 2026-03-30 -- Phase 12 Plan 01 completed (explanatory content and tooltips)
 progress:
   total_phases: 3
@@ -18,10 +18,10 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-30 -- after Phase 11)
+See: .planning/PROJECT.md (updated 2026-03-31 -- after v2.1 milestone)
 
 **Core value:** Produce well-calibrated win probability estimates that can be rigorously compared against Kalshi market prices, surfacing where models agree, disagree, and where edges may exist.
-**Current focus:** v2.1 complete -- all 3 phases (10-12) delivered
+**Current focus:** v2.1 shipped and archived — planning next milestone
 
 ## Current Position
 

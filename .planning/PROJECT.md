@@ -6,6 +6,7 @@ A live MLB win probability forecasting platform that predicts game outcomes day-
 
 **Shipped v1.0** (2026-03-29): full Jupyter pipeline from raw ingestion to fee-adjusted edge identification.
 **Shipped v2.0** (2026-03-30): live prediction dashboard, SP-enhanced models, daily automated pipeline.
+**Shipped v2.1** (2026-03-31): game time display, live ET header clock, explanatory content and tooltips.
 
 ## Core Value
 
@@ -13,7 +14,7 @@ Produce well-calibrated win probability estimates that can be rigorously compare
 
 ## Requirements
 
-### Validated
+### Validated (v1.0–v2.1)
 
 - ✓ Fetch game schedules and starting pitcher assignments from MLB Stats API — v1.0
 - ✓ Ingest historical team batting statistics (wOBA, OPS, OBP, SLG) via pybaseball/FanGraphs — v1.0
@@ -50,28 +51,14 @@ Produce well-calibrated win probability estimates that can be rigorously compare
 - ✓ Client-side polling (60s interval, visibilityState-gated) with new-predictions banner — v2.0
 - ✓ Docker Compose stack (api 512M, worker 1536M, db 512M) on Hostinger KVM2 with Nginx + SSL — v2.0
 - ✓ Daily pg_dump backups to /opt/backups/mlb/ with 7-day retention — v2.0
+- ✓ game_time field (UTC ISO or null) in PredictionResponse; ET-formatted time ("7:05 PM ET" / "Time TBD") on game cards — v2.1
+- ✓ Dashboard header: today's date, live drift-corrected ET clock (every second), next pipeline run time — v2.1
+- ✓ Collapsible "About the Models" section: LR/RF/XGBoost plain-English, calibration, PRE/POST-LINEUP, Kalshi mechanics + 7% fee disclosure — v2.1
+- ✓ Reusable Tooltip component (CSS-only, keyboard accessible); EdgeBadge (?) icons explaining Buy Yes/No contract mechanics — v2.1
 
-## Current Milestone: v2.1 Dashboard UX / Contextual Clarity
+## Current State: v2.1 Shipped — Planning v3.0
 
-**Goal:** Add game times, a live date/time header, and explanatory UI copy to the dashboard — primarily frontend changes with one small backend addition for game time.
-
-**Target features:**
-- Game time display (UTC→ET conversion) on each game card, sourced from game_datetime in MLB Stats API response
-- Dashboard header with today's date and live clock in Eastern Time
-- Collapsible "About the Models" section explaining LR/RF/XGBoost, calibration, and PRE/POST-LINEUP distinction
-- Kalshi market explanation with fee disclosure (no trading recommendation)
-- Buy Yes / Buy No inline tooltip on each game card
-
-### Validated (v2.1)
-
-- ✓ Add game_time to prediction response model, populated from game_datetime (UTC ISO string) — Phase 10
-- ✓ Display game time in ET on each game card ("7:05 PM ET" / "Time TBD" when null) — Phase 10
-- ✓ Dashboard header: today's date, live clock (every second), and next-update countdown in Eastern Time — Phase 11
-
-### Active
-
-- [ ] Collapsible "About the Models" section covering all 4 explanation points
-- [ ] Buy Yes / Buy No inline (?) tooltip on game cards
+All three milestones shipped. Dashboard is live at mlbforecaster.silverreyes.net with full contextual clarity for users.
 
 ### Out of Scope
 
@@ -93,12 +80,12 @@ Produce well-calibrated win probability estimates that can be rigorously compare
 
 ## Context
 
-**Current state (v2.0 — shipped 2026-03-30):**
-- ~5,322 Python LOC across `src/` (data loaders, feature builder, models, pipeline, API) + ~1,087 TypeScript/CSS
+**Current state (v2.1 — shipped 2026-03-31):**
+- ~5,322 Python LOC across `src/` (data loaders, feature builder, models, pipeline, API) + ~1,150 TypeScript/CSS (added game time, clock hook, AboutModels, Tooltip, EdgeBadge updates)
 - 6 model artifacts: LR/RF/XGB × TEAM_ONLY/SP_ENHANCED, all joblib with IsotonicRegression calibrators
 - Live dashboard at mlbforecaster.silverreyes.net — deployed Opening Day 2026
 - Three-run daily pipeline (10am/1pm/5pm ET) automated via APScheduler in Docker worker
-- 45 requirements shipped, all 16 v2.0 plans complete across 5 phases
+- 60 requirements shipped across 12 phases (v1.0: 18, v2.0: 27, v2.1: 15)
 
 **Tech stack:** Python 3.11 · pandas 2.2.x (pinned) · pyarrow · pybaseball · statsapi · scikit-learn · XGBoost · FastAPI · psycopg3 · psycopg_pool · APScheduler · React 19 · Vite · TypeScript · TanStack Query · Docker · Nginx · Postgres 16
 
@@ -149,6 +136,9 @@ Produce well-calibrated win probability estimates that can be rigorously compare
 | Static RUN_LABELS lookup for pipeline schedule | Avoids constructing Date objects for 10/13/17 hour labels; simpler and no TZ edge cases | ✓ Good — readable and correct |
 | Drift-corrected clock: setTimeout to second boundary + setInterval | Date.now() % 1000 aligns first tick to wall-clock second, then 1000ms interval; no visual lag | ✓ Good — smooth, no drift |
 | Column layout for header (topRow + clockRow) | Separates title/badges from date/clock/next-update; mobile-responsive at 768px breakpoint | ✓ Good — clean layout hierarchy |
+| Native `<details>`/`<summary>` for AboutModels collapsible (zero JS) | No state management needed for a single static expand/collapse; chevron via CSS transform | ✓ Good — simplest correct solution |
+| CSS-only Tooltip (hover + focus-visible, no library) | Only two static tooltips needed; a library would be overkill | ✓ Good — 68 lines CSS, fully accessible |
+| Shortened tooltip text with pricing clause preserved | Original overflow fix removed "you pay" clause; restored as spec requirement in audit | ✓ Good — audit caught regression before milestone close |
 
 ---
-*Last updated: 2026-03-30 — after Phase 11 (Header Date and Clock)*
+*Last updated: 2026-03-31 — after v2.1 milestone (Dashboard UX / Contextual Clarity)*

@@ -115,9 +115,47 @@ Living document. One section per milestone, updated on completion.
 
 ---
 
+## Milestone: v2.1 — Dashboard UX / Contextual Clarity
+
+**Shipped:** 2026-03-31
+**Phases:** 3 (10–12) | **Plans:** 3 | **Timeline:** 1 day | **Commits:** 22
+
+### What Was Built
+
+- Backend `game_time` field in PredictionResponse with schedule join; ET time display on game cards ("7:05 PM ET" / "Time TBD")
+- `useEasternClock` hook with drift-corrected setInterval; header date, clock, and next pipeline run time
+- Collapsible `<details>`/`<summary>` "About the Models" section (zero JS) with model type, calibration, PRE/POST-LINEUP, and Kalshi explanations
+- CSS-only `Tooltip` component (hover + focus-visible, keyboard accessible); EdgeBadge (?) icons wired to contract mechanic explanations
+
+### What Worked
+
+- **Native HTML first**: Using `<details>`/`<summary>` for the collapsible section instead of React state was the right call — zero JS, browser handles all the interaction, chevron animation via CSS only.
+- **Drift-corrected clock pattern**: `setTimeout` to wall-clock second boundary then `setInterval` is simple, well-understood, and correct. Works for the lifetime of a browser tab.
+- **Audit caught regression**: The milestone audit correctly flagged that the TLTP-01/TLTP-02 tooltip text had been shortened post-verification, removing the spec-required "you pay" clause. The fix was 2 lines, but without the audit it would have shipped incomplete.
+- **Small milestone scope**: 3 phases, 3 plans, all frontend. Executed in ~4 hours total. Right-sized for UI polish work.
+
+### What Was Inefficient
+
+- **Tooltip overflow fix loop**: The tooltip positioning went through 3 commits (`d2ec1a4` → `8d0cd77` → `92c6247`) as we fixed overflow, then realized shortening the text had dropped required content. A single commit with both the layout fix AND content review would have been cleaner.
+- **Deploy step confusion**: User didn't know to push to remote before pulling on server — git pull had nothing to fetch. Worth calling out explicitly in deploy instructions.
+
+### Patterns Established
+
+- `<details>/<summary>` for single-use collapsibles: no React state, no library, works perfectly for static explanatory sections
+- `nowrap` tooltip = overflow risk: any tooltip text containing a "you pay" style clause needs `white-space: normal` + `max-width`, not `nowrap`
+- Post-verification code changes (even small ones) need re-verification or audit before milestone close
+
+### Key Lessons
+
+- **Audit is not optional after fixes**: If code changes after a VERIFICATION.md is written, the verification is stale. The audit step exists exactly to catch this gap — use it.
+- **Ship to remote before deploy**: The full deploy flow is: push to GitHub → SSH to server → `git pull` → `docker compose up --build -d`. Step 1 is easy to forget.
+
+---
+
 ## Cross-Milestone Trends
 
 | Milestone | Days | Commits | Plans | Tests | Key Risk |
 |-----------|------|---------|-------|-------|----------|
 | v1.0 MVP | 2 | 81 | 10 | 120 | External API reliability (BRef, Kalshi) |
 | v2.0 Live Platform | 3 | ~99 | 16 | — | Production cold-start OOM; Opening Day NaN features |
+| v2.1 Dashboard UX | 1 | 22 | 3 | — | Post-verify code changes breaking spec compliance |
