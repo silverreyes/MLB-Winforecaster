@@ -400,8 +400,12 @@ The SVG is rendered inline in `BasesDiamond.tsx` as a React component accepting 
 | Open indicator | Chevron rotates 180 degrees (points up) |
 | Animation | `transform 150ms ease` on chevron only; expanded section has no height animation (instant show/hide via conditional render) |
 | Default state | Collapsed |
+| **Implementation** | **`useState<boolean>(false)` + conditional render — NOT `<details>/<summary>`** |
 | Persistence | Per-card `useState<boolean>(false)` -- resets on page navigation or data refresh |
 | Scope | Only available on `game_status === 'LIVE'` cards; score row is not rendered for any other status |
+
+> **⚠ LOCKED — Planner must use `useState`, not `<details>/<summary>`.**
+> `<details>/<summary>` exists in the codebase and was considered during discussion, but `useState` is the chosen implementation for this phase. Reasons: (1) the LIVE→FINAL transition must implicitly clear expand state via React's conditional render — a native `<details>` element would retain its `open` attribute across re-renders until explicitly reset; (2) `useState` keeps the expand affordance fully within React's data-driven render model, consistent with how the rest of `GameCard` manages conditional sections. The CONTEXT.md mentions both patterns — the UI-SPEC resolves the ambiguity: **`useState`**.
 
 ### Polling Behavior
 
