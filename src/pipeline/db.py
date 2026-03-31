@@ -158,6 +158,47 @@ def mark_not_latest(
         conn.commit()
 
 
+def write_game_outcome(pool: ConnectionPool, game_id: int, home_team: str,
+                       away_team: str, home_score: int, away_score: int) -> int:
+    """Write actual_winner and prediction_correct for all predictions of a game.
+
+    Targets ALL prediction rows matching game_id (not just is_latest=TRUE)
+    per STATE.md carry-forward decision.
+
+    prediction_correct is computed by comparing the ensemble probability
+    ((lr_prob + rf_prob + xgb_prob) / 3.0) against 0.5 to determine if the
+    model predicted the home team, then checking if actual_winner matches.
+
+    Returns number of rows updated. Skips rows already reconciled
+    (WHERE actual_winner IS NULL).
+    """
+    actual_winner = home_team if home_score > away_score else away_team
+
+    sql = """
+        UPDATE predictions
+        SET actual_winner = %(actual_winner)s,
+            prediction_correct = (
+                CASE
+                    WHEN (lr_prob + rf_prob + xgb_prob) / 3.0 >= 0.5
+                    THEN %(actual_winner)s = home_team
+                    ELSE %(actual_winner)s = away_team
+                END
+            ),
+            reconciled_at = %(reconciled_at)s
+        WHERE game_id = %(game_id)s
+          AND actual_winner IS NULL
+    """
+    with pool.connection() as conn:
+        cur = conn.execute(sql, {
+            'game_id': game_id,
+            'actual_winner': actual_winner,
+            'reconciled_at': datetime.now(timezone.utc),
+        })
+        count = cur.rowcount
+        conn.commit()
+    return count
+
+
 def get_post_lineup_prediction(
     pool: ConnectionPool,
     game_date: str,

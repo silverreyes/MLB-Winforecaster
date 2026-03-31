@@ -17,10 +17,11 @@ from psycopg.rows import dict_row
 from api.models import (
     GameResponse,
     GamesDateResponse,
+    LiveScoreData,
     PredictionGroup,
     PredictionResponse,
 )
-from src.data.mlb_schedule import get_schedule_cached
+from src.data.mlb_schedule import get_linescore_cached, get_schedule_cached, parse_linescore
 from src.data.team_mappings import normalize_team
 
 ET = ZoneInfo("America/New_York")
@@ -166,16 +167,19 @@ def _fetch_predictions_for_date(pool, date_str: str) -> list[dict]:
 def build_games_response(
     schedule: list[dict],
     predictions: list[dict],
+    view_mode: str = "historical",
 ) -> list[GameResponse]:
     """Merge schedule games with prediction rows.
 
     - Games with predictions: prediction populated with PredictionGroup
     - Games without predictions: stub card (prediction = None)
     - Matching priority: game_id first, then (home_team, away_team) fallback
+    - LIVE games in 'live' view_mode get enriched with live score data
 
     Args:
         schedule: List of game dicts from get_schedule_cached().
         predictions: List of row dicts from _fetch_predictions_for_date().
+        view_mode: Rendering context ('live', 'historical', 'tomorrow', 'future').
 
     Returns:
         List of GameResponse objects, one per scheduled game.
@@ -194,6 +198,7 @@ def build_games_response(
     results = []
     for game in schedule:
         game_id = game["game_id"]
+        game_status = game["game_status"]
         try:
             home = normalize_team(game["home_name"])
             away = normalize_team(game["away_name"])
@@ -208,14 +213,24 @@ def build_games_response(
 
         prediction_group = _build_prediction_group(preds)
 
-        results.append(GameResponse(
+        game_resp = GameResponse(
             game_id=game_id,
             home_team=home,
             away_team=away,
             game_time=_parse_game_time(game.get("game_datetime")),
-            game_status=game["game_status"],
+            game_status=game_status,
             prediction=prediction_group,
-        ))
+        )
+
+        # Enrich LIVE games with live score data (only in live view mode)
+        if game_status == 'LIVE' and view_mode == 'live':
+            raw = get_linescore_cached(game_id)
+            if raw is not None:
+                parsed = parse_linescore(raw)
+                if parsed is not None:
+                    game_resp.live_score = LiveScoreData(**parsed)
+
+        results.append(game_resp)
 
     return results
 
@@ -248,8 +263,8 @@ def get_games_for_date(request: Request, date: str):
     # Fetch predictions from DB
     predictions = _fetch_predictions_for_date(pool, date)
 
-    # Merge
-    games = build_games_response(schedule, predictions)
+    # Merge (pass view_mode so LIVE games get linescore enrichment)
+    games = build_games_response(schedule, predictions, view_mode=view_mode)
 
     # Apply PRELIMINARY labels for tomorrow's games with confirmed SPs
     if view_mode == "tomorrow":
