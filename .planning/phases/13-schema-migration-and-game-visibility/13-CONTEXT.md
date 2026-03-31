@@ -27,11 +27,12 @@ Date navigation, live score display, and outcome reconciliation are separate pha
 - Badge is **live** — it updates on the existing 60s prediction-poll interval. No extra polling needed.
 - Status source: `abstractGameState` from MLB Stats API (3 values: Preview → PRE-GAME, Live → LIVE, Final → FINAL). POSTPONED detected via `codedGameState` or `detailedState` from the same schedule response.
 
-### New /games/today endpoint (VIBL-01/02 architecture)
-- Add `GET /api/v1/games/today` — fetches today's MLB schedule, merges with `predictions` rows, returns a unified list.
+### New /games/{date} endpoint (VIBL-01/02 architecture)
+- Add `GET /api/v1/games/{date}` — fetches the MLB schedule for the given date, merges with `predictions` rows, returns a unified list.
+- **Date-parameterized from the start** so Phase 14 (date navigation) can call `/games/2026-04-01`, `/games/2026-03-29`, etc. without a retroactive API change.
 - **Existing `/predictions/today` remains unchanged** — no breaking change to current consumers.
-- The frontend switches to `/games/today` as the primary data source for the dashboard.
-- Schedule response cached in-memory with a **60–90s TTL** to avoid hitting the MLB Stats API on every poll cycle.
+- The frontend switches to `/games/{date}` as the primary data source for the dashboard, defaulting to today's date on load.
+- Schedule response cached in-memory with a **60–90s TTL** per date to avoid hitting the MLB Stats API on every poll cycle.
 
 ### GameResponse shape
 - New `GameResponse` type: `{ game_id, home_team, away_team, game_time, game_status, prediction: PredictionGroup | null }`
@@ -74,11 +75,11 @@ Date navigation, live score display, and outcome reconciliation are separate pha
 
 ### Current API layer
 - `api/models.py` — existing Pydantic models (`PredictionResponse`, `TodayResponse`) — new `GameResponse` sits alongside these
-- `api/routes/predictions.py` — existing `/predictions/today` behavior; new `/games/today` must not break this route
+- `api/routes/predictions.py` — existing `/predictions/today` behavior; new `/games/{date}` must not break this route
 - `frontend/src/api/types.ts` — existing `GameGroup` type that new `GameResponse` supersedes for the dashboard
 
 ### MLB Stats API
-- `src/data/mlb_schedule.py` — `fetch_today_schedule()` already returns `game_datetime` and game info; check what status fields are available (need `abstractGameState` and `codedGameState`)
+- `src/data/mlb_schedule.py` — `fetch_today_schedule()` already returns `game_datetime` and game info; needs a date parameter added so `/games/{date}` can pass arbitrary dates; check what status fields are available (need `abstractGameState` and `codedGameState`)
 
 </canonical_refs>
 
@@ -91,7 +92,7 @@ Date navigation, live score display, and outcome reconciliation are separate pha
 - `src/data/mlb_schedule.py` `fetch_today_schedule()` — already fetches schedule; needs extension to return status fields
 
 ### Established Patterns
-- Sync `def` handlers in FastAPI (not async) — psycopg3 sync connections, runs in thread pool; new `/games/today` route follows same pattern
+- Sync `def` handlers in FastAPI (not async) — psycopg3 sync connections, runs in thread pool; new `/games/{date}` route follows same pattern
 - `IS NOT EXISTS` / idempotent DDL pattern — already used in `schema.sql`; migration follows same convention
 - 60s polling via TanStack Query — existing `refetchInterval` in frontend hooks; badge updates ride this naturally
 
@@ -99,15 +100,15 @@ Date navigation, live score display, and outcome reconciliation are separate pha
 - `apply_schema()` in `src/pipeline/db.py` — called at container startup; migration SQL added here
 - `api/routes/` — new `games.py` route file added alongside `predictions.py`
 - `api/main.py` — new router registered in lifespan
-- Frontend `App.tsx` or hooks layer — switches from `/predictions/today` to `/games/today` as data source
+- Frontend `App.tsx` or hooks layer — switches from `/predictions/today` to `/games/{date}` as data source (today's date by default)
 
 </code_context>
 
 <specifics>
 ## Specific Ideas
 
-- The `/games/today` endpoint is the authoritative source for the dashboard from Phase 13 onward. Phase 15 (live scores) will extend `GameResponse` with live score fields — keeping `/predictions/today` stable avoids churn on existing integrations.
-- game_id flows `schedule API → db (predictions.game_id) → /games/today response → frontend → Phase 15 statsapi call`. The whole chain is established here so Phase 15 doesn't need to add it.
+- `GET /games/{date}` is the authoritative data source for the dashboard from Phase 13 onward. Phase 14 (date navigation) passes the selected date directly to this endpoint — no API change needed at that phase. Phase 15 (live scores) will extend `GameResponse` with live score fields — keeping `/predictions/today` stable avoids churn on existing integrations.
+- game_id flows `schedule API → db (predictions.game_id) → /games/{date} response → frontend → Phase 15 statsapi call`. The whole chain is established here so Phase 15 doesn't need to add it.
 
 </specifics>
 
