@@ -58,10 +58,12 @@
   2. Each game card displays a status badge (PRE-GAME / LIVE / FINAL / POSTPONED) that reflects the game's current state
   3. The predictions table contains a `game_id` column with an updated unique constraint that prevents doubleheader row collisions
   4. The predictions table contains nullable `actual_winner`, `prediction_correct`, and `reconciled_at` columns ready for downstream writes
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 13-01: TBD
+- [ ] 13-01-PLAN.md — Schema migration: game_id + reconciliation columns, pipeline UPSERT update, tests
+- [ ] 13-02-PLAN.md — Backend API: /games/{date} endpoint with schedule+prediction merge, status mapping, TTL cache
+- [ ] 13-03-PLAN.md — Frontend: StatusBadge component, GameCard/Grid updates, useGames hook, stub cards
 
 ### Phase 14: Date Navigation
 **Goal**: Users can browse predictions and schedules across any date, with appropriate content for past, today, tomorrow, and future dates
@@ -137,7 +139,7 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17
 | 10. Game Time Display | v2.1 | 1/1 | Complete | 2026-03-30 |
 | 11. Header Date and Clock | v2.1 | 1/1 | Complete | 2026-03-30 |
 | 12. Explanatory Content and Tooltips | v2.1 | 1/1 | Complete | 2026-03-30 |
-| 13. Schema Migration & Game Visibility | v2.2 | 0/? | Not started | - |
+| 13. Schema Migration & Game Visibility | v2.2 | 0/3 | Not started | - |
 | 14. Date Navigation | v2.2 | 0/? | Not started | - |
 | 15. Live Score Polling | v2.2 | 0/? | Not started | - |
 | 16. Final Outcomes & Nightly Reconciliation | v2.2 | 0/? | Not started | - |
