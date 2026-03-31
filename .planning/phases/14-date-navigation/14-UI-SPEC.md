@@ -63,7 +63,7 @@ Phase 14-specific typographic assignments:
 | DateNavigator arrow buttons | 16px | 400 | system default | 1.0 |
 | "Today" button label | 12px | 600 | `--font-ui` | 1.3 |
 | PRELIMINARY badge text | 12px | 600 | `--font-ui` | 1.3 |
-| FutureDateBanner heading | 16px | 400 | `--font-ui` | 1.5 |
+| FutureDateBanner heading | 20px | 600 | `--font-ui` | 1.2 |
 | FutureDateBanner body | 14px | 400 | `--font-ui` | 1.5 |
 | Date-context label ("Viewing: March 28, 2026") | 14px | 400 | `--font-ui` | 1.3 |
 | EmptyState heading (all modes) | 20px | 600 | `--font-ui` | 1.2 |
@@ -93,8 +93,7 @@ Accent (`#F59E0B`) reserved for:
 2. "Today" button text when the selected date is NOT today (call-to-action state)
 3. Clock time display in header (existing)
 4. Brier score values in AccuracyStrip (existing)
-5. Date input text color when displaying today's date
-6. Left/right arrow button border on hover
+5. Left/right arrow button border on hover
 
 PRELIMINARY badge color contract:
 - Text: `#D97706` (`--color-accent-muted`)
@@ -150,7 +149,6 @@ interface DateNavigatorProps {
 ```typescript
 interface FutureDateBannerProps {
   viewMode: 'tomorrow' | 'future';
-  selectedDate: string;  // YYYY-MM-DD, for display formatting
 }
 ```
 
