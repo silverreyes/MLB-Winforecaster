@@ -41,7 +41,7 @@
 
 ### v2.2 Game Lifecycle, Live Scores & Historical Accuracy
 
-- [x] **Phase 13: Schema Migration & Game Visibility** - Add game_id and outcome columns to predictions table; make all games visible regardless of status (completed 2026-03-31)
+- [ ] **Phase 13: Schema Migration & Game Visibility** - Add game_id and outcome columns to predictions table; make all games visible regardless of status (gap closure in progress)
 - [ ] **Phase 14: Date Navigation** - Arrow/calendar date controls with today default, past predictions, and future schedule-only mode
 - [ ] **Phase 15: Live Score Polling** - In-progress game scores, inning display, expanded card with bases/pitcher/batter, auto-Final outcome writes
 - [ ] **Phase 16: Final Outcomes & Nightly Reconciliation** - Completed game cards with score/prediction/outcome marker; safety-net reconciler for missed Finals
@@ -58,12 +58,13 @@
   2. Each game card displays a status badge (PRE-GAME / LIVE / FINAL / POSTPONED) that reflects the game's current state
   3. The predictions table contains a `game_id` column with an updated unique constraint that prevents doubleheader row collisions
   4. The predictions table contains nullable `actual_winner`, `prediction_correct`, and `reconciled_at` columns ready for downstream writes
-**Plans**: 3 plans
+**Plans**: 4 plans
 
 Plans:
-- [ ] 13-01-PLAN.md — Schema migration: game_id + reconciliation columns, pipeline UPSERT update, tests
-- [ ] 13-02-PLAN.md — Backend API: /games/{date} endpoint with schedule+prediction merge, status mapping, TTL cache
-- [ ] 13-03-PLAN.md — Frontend: StatusBadge component, GameCard/Grid updates, useGames hook, stub cards
+- [x] 13-01-PLAN.md — Schema migration: game_id + reconciliation columns, pipeline UPSERT update, tests
+- [x] 13-02-PLAN.md — Backend API: /games/{date} endpoint with schedule+prediction merge, status mapping, TTL cache
+- [x] 13-03-PLAN.md — Frontend: StatusBadge component, GameCard/Grid updates, useGames hook, stub cards
+- [ ] 13-04-PLAN.md — Gap closure: migration packaging fix, API startup migration call, pre-lineup pitcher name display
 
 ### Phase 14: Date Navigation
 **Goal**: Users can browse predictions and schedules across any date, with appropriate content for past, today, tomorrow, and future dates
@@ -139,7 +140,7 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17
 | 10. Game Time Display | v2.1 | 1/1 | Complete | 2026-03-30 |
 | 11. Header Date and Clock | v2.1 | 1/1 | Complete | 2026-03-30 |
 | 12. Explanatory Content and Tooltips | v2.1 | 1/1 | Complete | 2026-03-30 |
-| 13. Schema Migration & Game Visibility | 3/3 | Complete    | 2026-03-31 | - |
+| 13. Schema Migration & Game Visibility | v2.2 | 3/4 | Gap closure | - |
 | 14. Date Navigation | v2.2 | 0/? | Not started | - |
 | 15. Live Score Polling | v2.2 | 0/? | Not started | - |
 | 16. Final Outcomes & Nightly Reconciliation | v2.2 | 0/? | Not started | - |
