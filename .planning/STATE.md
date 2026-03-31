@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Game Lifecycle, Live Scores & Historical Accuracy
 status: executing
-stopped_at: Completed 14-01-PLAN.md
-last_updated: "2026-03-31T17:32:33Z"
-last_activity: 2026-03-31 -- Completed 14-01 API view_mode and tomorrow labels
+stopped_at: Completed 14-02-PLAN.md
+last_updated: "2026-03-31T17:38:00Z"
+last_activity: 2026-03-31 -- Completed 14-02 DateNavigator component and conditional polling
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 7
-  completed_plans: 5
-  percent: 71
+  completed_plans: 6
+  percent: 86
 ---
 
 # Project State
@@ -26,18 +26,18 @@ See: .planning/PROJECT.md (updated 2026-03-30)
 ## Current Position
 
 Phase: 14 of 17 (Date Navigation)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: Executing
-Last activity: 2026-03-31 -- Completed 14-01 API view_mode and tomorrow labels
+Last activity: 2026-03-31 -- Completed 14-02 DateNavigator component and conditional polling
 
-Progress: [███████░░░] 71%
+Progress: [████████░░] 86%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5 (v2.2)
-- Average duration: 4min
-- Total execution time: 17min
+- Total plans completed: 6 (v2.2)
+- Average duration: 3min
+- Total execution time: 20min
 
 **By Phase:**
 
@@ -48,9 +48,10 @@ Progress: [███████░░░] 71%
 | Phase 13 P03 | 4min | 2 tasks | 8 files |
 | Phase 13 P04 | 3min | 2 tasks | 3 files |
 | Phase 14 P01 | 5min | 1 task | 4 files |
+| Phase 14 P02 | 3min | 2 tasks | 5 files |
 
 **Recent Trend:**
-- Last 5 plans: 3min, 5min, 4min, 3min, 5min
+- Last 5 plans: 5min, 4min, 3min, 5min, 3min
 - Trend: stable
 
 *Updated after each plan completion*
@@ -74,6 +75,8 @@ Progress: [███████░░░] 71%
 - Server-side view_mode via ET timezone avoids client-side date math pitfalls (Phase 14)
 - Composite cache key (date:pitchers) prevents returning non-pitcher data for tomorrow requests (Phase 14)
 - Pitcher fields always present in schedule dicts (None when not hydrated) for consistent dict shape (Phase 14)
+- Noon-anchored date arithmetic (T12:00:00) prevents timezone off-by-one in US timezones (Phase 14)
+- refetchInterval callback reads view_mode from query.state.data for dynamic polling control (Phase 14)
 
 ### Roadmap Decisions
 
@@ -95,6 +98,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-31T17:32:33Z
-Stopped at: Completed 14-01-PLAN.md
-Resume file: .planning/phases/14-date-navigation/14-02-PLAN.md
+Last session: 2026-03-31T17:38:00Z
+Stopped at: Completed 14-02-PLAN.md
+Resume file: .planning/phases/14-date-navigation/14-03-PLAN.md
