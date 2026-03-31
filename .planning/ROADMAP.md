@@ -127,10 +127,12 @@ Plans:
   3. On each pipeline run, the system fetches only games from the last known `game_logs` date forward — never the full season
   4. The feature builder (`FeatureBuilder`) reads rolling team win/loss features from `game_logs` instead of calling `fetch_schedule(season)` directly
   5. Completed games in `game_logs` are never overwritten or re-fetched (immutability guarantee enforced by INSERT ... ON CONFLICT DO NOTHING)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 16-01: TBD
+- [ ] 16-01-PLAN.md — Test stubs (Wave 0) + migration_002.sql DDL + db.py CRUD functions (batch_insert_game_logs, sync_game_logs)
+- [ ] 16-02-PLAN.md — Seed script (seed_game_logs.py) + wire sync_game_logs into run_pipeline.py startup
+- [ ] 16-03-PLAN.md — FeatureBuilder pool parameter + _load_from_game_logs + LiveFeatureBuilder/runner wiring
 
 ### Phase 17: Final Outcomes & Nightly Reconciliation
 **Goal**: Users see prediction results on completed game cards, and a nightly safety net ensures no Final game is missed
@@ -180,6 +182,6 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17
 | 13. Schema Migration & Game Visibility | 4/4 | Complete   | 2026-03-31 | - |
 | 14. Date Navigation | 3/3 | Complete   | 2026-03-31 | - |
 | 15. Live Score Polling | 4/4 | Complete   | 2026-03-31 | 2026-03-31 |
-| 16. Historical Game Cache | v2.2 | 0/? | Not started | - |
+| 16. Historical Game Cache | v2.2 | 0/3 | Not started | - |
 | 17. Final Outcomes & Nightly Reconciliation | v2.2 | 0/? | Not started | - |
 | 18. History Route | v2.2 | 0/? | Not started | - |
