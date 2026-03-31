@@ -93,6 +93,8 @@ Progress: [████████░░] 79% (milestone v2.2: 11 of 14 plans)
 - Phase 15 approved with no live games at VPS review time; MLB API rejection during pipeline is a pre-existing separate issue (Phase 15)
 - Phase 16 (Historical Game Cache) inserted before Final Outcomes; old Phase 16→17, old Phase 17→18; milestone now Phases 13-18 (Phase 16 decision 2026-03-31)
 - game_logs table is the source of truth for rolling team features; FeatureBuilder must read from DB, never call fetch_schedule(season) at prediction time (Phase 16 intent)
+- game_logs.game_id is VARCHAR; predictions.game_id is INTEGER — Phase 17 joins across these tables must cast: game_logs.game_id::INTEGER or predictions.game_id::TEXT (Phase 16 carry-forward)
+- seed_game_logs.py 2026 fetch returns a partial season (only completed games) — ON CONFLICT DO NOTHING and Final filter make this safe and idempotent (Phase 16 carry-forward)
 
 ### Roadmap Decisions
 
