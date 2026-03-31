@@ -29,13 +29,13 @@
 
 ### Live Scores (LIVE)
 
-- [ ] **LIVE-01**: In-progress game cards display current score and inning on the card face
+- [x] **LIVE-01**: In-progress game cards display current score and inning on the card face
 - [ ] **LIVE-02**: Dashboard polls live game data every 90 seconds only while in-progress games are present and the selected date is today
 - [ ] **LIVE-03**: User can expand an in-progress game card to view detailed live game state
-- [ ] **LIVE-04**: Expanded in-progress card shows a bases diamond with runners highlighted
-- [ ] **LIVE-05**: Expanded in-progress card shows current pitch count (balls / strikes / outs)
-- [ ] **LIVE-06**: Expanded in-progress card shows current batter name and key stats
-- [ ] **LIVE-07**: Expanded in-progress card shows on-deck batter name
+- [x] **LIVE-04**: Expanded in-progress card shows a bases diamond with runners highlighted
+- [x] **LIVE-05**: Expanded in-progress card shows current pitch count (balls / strikes / outs)
+- [x] **LIVE-06**: Expanded in-progress card shows current batter name and key stats
+- [x] **LIVE-07**: Expanded in-progress card shows on-deck batter name
 - [ ] **LIVE-08**: When the live poller detects a game transition to Final, it immediately writes `actual_winner` and `prediction_correct` to that game's prediction row in Postgres
 
 ### Final Outcomes (FINL)
@@ -88,13 +88,13 @@
 | DATE-06 | Phase 14 | Complete |
 | DATE-07 | Phase 14 | Complete |
 | DATE-08 | Phase 14 | Complete |
-| LIVE-01 | Phase 15 | Pending |
+| LIVE-01 | Phase 15 | Complete |
 | LIVE-02 | Phase 15 | Pending |
 | LIVE-03 | Phase 15 | Pending |
-| LIVE-04 | Phase 15 | Pending |
-| LIVE-05 | Phase 15 | Pending |
-| LIVE-06 | Phase 15 | Pending |
-| LIVE-07 | Phase 15 | Pending |
+| LIVE-04 | Phase 15 | Complete |
+| LIVE-05 | Phase 15 | Complete |
+| LIVE-06 | Phase 15 | Complete |
+| LIVE-07 | Phase 15 | Complete |
 | LIVE-08 | Phase 15 | Pending |
 | FINL-01 | Phase 16 | Pending |
 | FINL-02 | Phase 16 | Pending |

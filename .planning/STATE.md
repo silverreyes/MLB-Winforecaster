@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Game Lifecycle, Live Scores & Historical Accuracy
 status: executing
-stopped_at: Phase 15 context gathered
-last_updated: "2026-03-31T19:59:27.723Z"
-last_activity: 2026-03-31 -- Completed Phase 14 (all 3 plans, human-verified on VPS)
+stopped_at: Completed 15-01-PLAN.md
+last_updated: "2026-03-31T22:17:17Z"
+last_activity: 2026-03-31 -- Completed Plan 15-01 (LiveScoreData model, linescore cache, parse function, test scaffolds)
 progress:
   total_phases: 6
   completed_phases: 2
-  total_plans: 10
-  completed_plans: 7
+  total_plans: 14
+  completed_plans: 8
 ---
 
 ---
@@ -40,19 +40,19 @@ See: .planning/PROJECT.md (updated 2026-03-30)
 
 ## Current Position
 
-Phase: 14 of 17 (Date Navigation) — COMPLETE
-Plan: 3 of 3 in phase 14 — all complete
-Status: Phase complete — ready for Phase 15
-Last activity: 2026-03-31 -- Completed Phase 14 (all 3 plans, human-verified on VPS)
+Phase: 15 of 17 (Live Score Polling) — IN PROGRESS
+Plan: 1 of 4 in phase 15 — complete
+Status: Plan 15-01 complete, ready for 15-02
+Last activity: 2026-03-31 -- Completed Plan 15-01 (LiveScoreData model, linescore cache, parse function, test scaffolds)
 
-Progress: [██████████] 100% (milestone v2.2 phase 14 of 17)
+Progress: [██████░░░░] 57% (milestone v2.2: 8 of 14 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6 (v2.2)
-- Average duration: 3min
-- Total execution time: 20min
+- Total plans completed: 8 (v2.2)
+- Average duration: 4min
+- Total execution time: 37min
 
 **By Phase:**
 
@@ -65,9 +65,10 @@ Progress: [██████████] 100% (milestone v2.2 phase 14 of 17)
 | Phase 14 P01 | 5min | 1 task | 4 files |
 | Phase 14 P02 | 3min | 2 tasks | 5 files |
 | Phase 14 P03 | 10min | 2 tasks | 7 files |
+| Phase 15 P01 | 4min | 2 tasks | 4 files |
 
 **Recent Trend:**
-- Last 5 plans: 5min, 4min, 3min, 5min, 3min
+- Last 5 plans: 3min, 5min, 3min, 10min, 4min
 - Trend: stable
 
 *Updated after each plan completion*
@@ -93,6 +94,9 @@ Progress: [██████████] 100% (milestone v2.2 phase 14 of 17)
 - Pitcher fields always present in schedule dicts (None when not hydrated) for consistent dict shape (Phase 14)
 - Noon-anchored date arithmetic (T12:00:00) prevents timezone off-by-one in US timezones (Phase 14)
 - refetchInterval callback reads view_mode from query.state.data for dynamic polling control (Phase 14)
+- Linescore cache uses same dict+Lock+TTL pattern as schedule cache, bounded to 20 entries (Phase 15)
+- statsapi.get('game') fields parameter reduces ~500KB response to ~5-10KB (Phase 15)
+- inningHalf 'Middle'/'End' default to 'top' for display consistency (Phase 15)
 
 ### Roadmap Decisions
 
@@ -114,6 +118,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-31T19:59:27.720Z
-Stopped at: Phase 15 context gathered
-Resume file: .planning/phases/15-live-score-polling/15-CONTEXT.md
+Last session: 2026-03-31T22:17:17Z
+Stopped at: Completed 15-01-PLAN.md
+Resume file: .planning/phases/15-live-score-polling/15-02-PLAN.md
