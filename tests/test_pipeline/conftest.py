@@ -45,6 +45,7 @@ def clean_tables(pg_pool):
     test_live_features.py) that don't touch the database.
     """
     with pg_pool.connection() as conn:
+        conn.execute("DROP TABLE IF EXISTS game_logs CASCADE")
         conn.execute("DROP TABLE IF EXISTS pipeline_runs CASCADE")
         conn.execute("DROP TABLE IF EXISTS predictions CASCADE")
         conn.execute("DROP TABLE IF EXISTS games CASCADE")
