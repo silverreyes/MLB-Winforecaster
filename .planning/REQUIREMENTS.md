@@ -29,14 +29,14 @@
 
 ### Live Scores (LIVE)
 
-- [ ] **LIVE-01**: In-progress game cards display current score and inning on the card face
-- [ ] **LIVE-02**: Dashboard polls live game data every 90 seconds only while in-progress games are present and the selected date is today
-- [ ] **LIVE-03**: User can expand an in-progress game card to view detailed live game state
-- [ ] **LIVE-04**: Expanded in-progress card shows a bases diamond with runners highlighted
-- [ ] **LIVE-05**: Expanded in-progress card shows current pitch count (balls / strikes / outs)
-- [ ] **LIVE-06**: Expanded in-progress card shows current batter name and key stats
-- [ ] **LIVE-07**: Expanded in-progress card shows on-deck batter name
-- [ ] **LIVE-08**: When the live poller detects a game transition to Final, it immediately writes `actual_winner` and `prediction_correct` to that game's prediction row in Postgres
+- [x] **LIVE-01**: In-progress game cards display current score and inning on the card face
+- [x] **LIVE-02**: Dashboard polls live game data every 90 seconds only while in-progress games are present and the selected date is today
+- [x] **LIVE-03**: User can expand an in-progress game card to view detailed live game state
+- [x] **LIVE-04**: Expanded in-progress card shows a bases diamond with runners highlighted
+- [x] **LIVE-05**: Expanded in-progress card shows current pitch count (balls / strikes / outs)
+- [x] **LIVE-06**: Expanded in-progress card shows current batter name and key stats
+- [x] **LIVE-07**: Expanded in-progress card shows on-deck batter name
+- [x] **LIVE-08**: When the live poller detects a game transition to Final, it immediately writes `actual_winner` and `prediction_correct` to that game's prediction row in Postgres
 
 ### Final Outcomes (FINL)
 
@@ -54,11 +54,11 @@
 
 ### Historical Game Cache (CACHE)
 
-- [ ] **CACHE-01**: A `game_logs` table exists in Postgres with columns for game_id, date, teams, scores, winner, and stats required by the feature builder
-- [ ] **CACHE-02**: A one-time seed job backfills all completed 2025 and 2026 games from the MLB Stats API into `game_logs`
-- [ ] **CACHE-03**: On each pipeline run, the system fetches only games from the last known `game_logs` date forward — never the full season
-- [ ] **CACHE-04**: The feature builder reads rolling team win/loss features from `game_logs` instead of calling `fetch_schedule(season)` directly
-- [ ] **CACHE-05**: Completed games in `game_logs` are never overwritten or re-fetched (immutability enforced by INSERT ... ON CONFLICT DO NOTHING)
+- [x] **CACHE-01**: A `game_logs` table exists in Postgres with columns for game_id, date, teams, scores, winner, and stats required by the feature builder
+- [x] **CACHE-02**: A one-time seed job backfills all completed 2025 and 2026 games from the MLB Stats API into `game_logs`
+- [x] **CACHE-03**: On each pipeline run, the system fetches only games from the last known `game_logs` date forward — never the full season
+- [x] **CACHE-04**: The feature builder reads rolling team win/loss features from `game_logs` instead of calling `fetch_schedule(season)` directly
+- [x] **CACHE-05**: Completed games in `game_logs` are never overwritten or re-fetched (immutability enforced by INSERT ... ON CONFLICT DO NOTHING)
 
 ### Post-Phase-14 Bug Fixes (BUG)
 
@@ -105,19 +105,19 @@
 | BUG-A | Phase 14.5 | Complete |
 | BUG-B | Phase 14.5 | Complete |
 | RETRY | Phase 14.5 | Complete |
-| LIVE-01 | Phase 15 | Pending |
-| LIVE-02 | Phase 15 | Pending |
-| LIVE-03 | Phase 15 | Pending |
-| LIVE-04 | Phase 15 | Pending |
-| LIVE-05 | Phase 15 | Pending |
-| LIVE-06 | Phase 15 | Pending |
-| LIVE-07 | Phase 15 | Pending |
-| LIVE-08 | Phase 15 | Pending |
-| CACHE-01 | Phase 16 | Pending |
-| CACHE-02 | Phase 16 | Pending |
-| CACHE-03 | Phase 16 | Pending |
-| CACHE-04 | Phase 16 | Pending |
-| CACHE-05 | Phase 16 | Pending |
+| LIVE-01 | Phase 15 | Complete |
+| LIVE-02 | Phase 15 | Complete |
+| LIVE-03 | Phase 15 | Complete |
+| LIVE-04 | Phase 15 | Complete |
+| LIVE-05 | Phase 15 | Complete |
+| LIVE-06 | Phase 15 | Complete |
+| LIVE-07 | Phase 15 | Complete |
+| LIVE-08 | Phase 15 | Complete |
+| CACHE-01 | Phase 16 | Complete |
+| CACHE-02 | Phase 16 | Complete |
+| CACHE-03 | Phase 16 | Complete |
+| CACHE-04 | Phase 16 | Complete |
+| CACHE-05 | Phase 16 | Complete |
 | FINL-01 | Phase 17 | Complete |
 | FINL-02 | Phase 17 | Complete |
 | FINL-03 | Phase 17 | Complete |
