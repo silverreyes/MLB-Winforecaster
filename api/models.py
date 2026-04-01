@@ -116,3 +116,39 @@ class GamesDateResponse(BaseModel):
     games: list[GameResponse]
     generated_at: datetime
     view_mode: Literal['live', 'historical', 'tomorrow', 'future']
+
+
+# ---------------------------------------------------------------------------
+# History endpoint models (Phase 18)
+# ---------------------------------------------------------------------------
+
+
+class HistoryRow(BaseModel):
+    """Single game row for the /history endpoint."""
+
+    game_date: date
+    home_team: str
+    away_team: str
+    home_score: int | None = None
+    away_score: int | None = None
+    lr_prob: float | None = None
+    rf_prob: float | None = None
+    xgb_prob: float | None = None
+    prediction_correct: bool
+
+
+class ModelAccuracy(BaseModel):
+    """Per-model accuracy stats for a date range."""
+
+    correct: int
+    total: int
+    pct: float
+
+
+class HistoryResponse(BaseModel):
+    """Response shape for GET /history."""
+
+    games: list[HistoryRow]
+    accuracy: dict[str, ModelAccuracy]
+    start_date: date
+    end_date: date

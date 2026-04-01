@@ -494,3 +494,58 @@ def sync_game_logs(pool: ConnectionPool) -> int:
     inserted = batch_insert_game_logs(pool, final_games)
     logger.info("sync_game_logs: %d new games inserted (%d total fetched)", inserted, len(final_games))
     return inserted
+
+
+# ---------------------------------------------------------------------------
+# History helpers (Phase 18: history route)
+# ---------------------------------------------------------------------------
+
+
+def get_history(pool: ConnectionPool, start_date: str, end_date: str) -> list[dict]:
+    """Fetch completed predictions with outcomes for a date range.
+
+    Returns one row per game, preferring post_lineup over pre_lineup.
+    Only includes games where prediction_correct IS NOT NULL.
+    Joins game_logs for final scores (game_id::INTEGER cast for VARCHAR join).
+
+    Args:
+        pool: Database connection pool.
+        start_date: Start date (YYYY-MM-DD, inclusive).
+        end_date: End date (YYYY-MM-DD, inclusive).
+
+    Returns:
+        List of dicts with keys: game_date, home_team, away_team,
+        home_score, away_score, lr_prob, rf_prob, xgb_prob, prediction_correct.
+    """
+    sql = """
+        WITH ranked AS (
+            SELECT p.game_date, p.home_team, p.away_team,
+                   p.lr_prob, p.rf_prob, p.xgb_prob,
+                   p.prediction_correct, p.game_id,
+                   ROW_NUMBER() OVER (
+                       PARTITION BY p.game_id
+                       ORDER BY CASE p.prediction_version
+                           WHEN 'post_lineup' THEN 1
+                           WHEN 'confirmation' THEN 2
+                           WHEN 'pre_lineup' THEN 3
+                       END
+                   ) AS rn
+            FROM predictions p
+            WHERE p.game_date BETWEEN %(start)s AND %(end)s
+              AND p.prediction_correct IS NOT NULL
+              AND p.is_latest = TRUE
+              AND p.game_id IS NOT NULL
+        )
+        SELECT r.game_date, r.home_team, r.away_team,
+               r.lr_prob, r.rf_prob, r.xgb_prob,
+               r.prediction_correct,
+               gl.home_score, gl.away_score
+        FROM ranked r
+        LEFT JOIN game_logs gl ON gl.game_id::INTEGER = r.game_id
+        WHERE r.rn = 1
+        ORDER BY r.game_date DESC, r.home_team
+    """
+    with pool.connection() as conn:
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(sql, {"start": start_date, "end": end_date})
+            return cur.fetchall()
