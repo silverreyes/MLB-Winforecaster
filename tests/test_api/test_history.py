@@ -307,10 +307,10 @@ class TestHistoryRoute:
         assert data["start_date"] == "2026-03-20"
         assert data["end_date"] == "2026-03-30"
         assert data["games"][0]["ensemble_prob"] == 0.5767
-        # BUY_YES win at kalshi=0.48 → profit = 1 - 0.48 = 0.52
+        # BUY_YES win at kalshi=0.48 → profit = (1 - 0.48) / 0.48 = 0.52 / 0.48 ≈ 1.083
         assert data["pnl"]["wins"] == 1
         assert data["pnl"]["losses"] == 0
-        assert abs(data["pnl"]["total"] - 0.52) < 0.001
+        assert abs(data["pnl"]["total"] - round(0.52 / 0.48, 2)) < 0.001
 
     @patch("api.routes.history.get_history")
     def test_route_empty_history(self, mock_get_history, client):
@@ -336,14 +336,15 @@ class TestComputePnl:
     """Tests for _compute_pnl() in api/routes/history.py."""
 
     def test_buy_yes_win(self):
-        """BUY_YES win: profit = 1 - kalshi_yes_price."""
+        """BUY_YES win: profit = (1 - kalshi_yes_price) / kalshi_yes_price."""
         from api.routes.history import _compute_pnl
 
         rows = [{"edge_signal": "BUY_YES", "kalshi_yes_price": 0.40, "prediction_correct": True}]
         result = _compute_pnl(rows)
         assert result.wins == 1
         assert result.losses == 0
-        assert abs(result.total - 0.60) < 0.001
+        # (1 - 0.40) / 0.40 = 1.50
+        assert abs(result.total - 1.50) < 0.001
 
     def test_buy_yes_loss(self):
         """BUY_YES loss: profit = -1."""
@@ -356,14 +357,15 @@ class TestComputePnl:
         assert result.total == -1.0
 
     def test_buy_no_win(self):
-        """BUY_NO win: profit = kalshi_yes_price (selling the YES side)."""
+        """BUY_NO win: profit = kalshi_yes_price / (1 - kalshi_yes_price)."""
         from api.routes.history import _compute_pnl
 
         rows = [{"edge_signal": "BUY_NO", "kalshi_yes_price": 0.65, "prediction_correct": True}]
         result = _compute_pnl(rows)
         assert result.wins == 1
         assert result.losses == 0
-        assert abs(result.total - 0.65) < 0.001
+        # 0.65 / (1 - 0.65) = 0.65 / 0.35 ≈ 1.857, rounds to 1.86
+        assert abs(result.total - round(0.65 / 0.35, 2)) < 0.001
 
     def test_buy_no_loss(self):
         """BUY_NO loss: profit = -1."""
@@ -406,17 +408,18 @@ class TestComputePnl:
         from api.routes.history import _compute_pnl
 
         rows = [
-            {"edge_signal": "BUY_YES", "kalshi_yes_price": 0.40, "prediction_correct": True},   # +0.60
+            {"edge_signal": "BUY_YES", "kalshi_yes_price": 0.40, "prediction_correct": True},   # (1-0.40)/0.40 = +1.50
             {"edge_signal": "BUY_YES", "kalshi_yes_price": 0.45, "prediction_correct": False},  # -1.00
-            {"edge_signal": "BUY_NO",  "kalshi_yes_price": 0.70, "prediction_correct": True},   # +0.70
+            {"edge_signal": "BUY_NO",  "kalshi_yes_price": 0.70, "prediction_correct": True},   # 0.70/0.30 ≈ +2.333
             {"edge_signal": "BUY_NO",  "kalshi_yes_price": 0.60, "prediction_correct": False},  # -1.00
             {"edge_signal": "NO_EDGE", "kalshi_yes_price": 0.50, "prediction_correct": True},   # skip
         ]
         result = _compute_pnl(rows)
         assert result.wins == 2
         assert result.losses == 2
-        # 0.60 - 1.00 + 0.70 - 1.00 = -0.70
-        assert abs(result.total - (-0.70)) < 0.001
+        # 1.50 - 1.00 + 2.333 - 1.00 = 1.833
+        expected = (0.60 / 0.40) + (-1.0) + (0.70 / 0.30) + (-1.0)
+        assert abs(result.total - round(expected, 2)) < 0.001
 
     def test_empty_rows(self):
         """Empty input returns zero P&L."""

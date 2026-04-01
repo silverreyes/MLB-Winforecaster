@@ -74,13 +74,14 @@ def _compute_accuracy(rows: list[dict]) -> dict[str, ModelAccuracy]:
 def _compute_pnl(rows: list[dict]) -> PnLSummary:
     """Compute Kalshi buy-signal P&L across a set of history rows.
 
+    Assumes exactly 1 unit risked on every bet regardless of price.
+
     Only rows with edge_signal IN ('BUY_YES', 'BUY_NO'), a non-null
     kalshi_yes_price, and a non-null prediction_correct are included.
 
-    BUY_YES win:  profit = 1 - kalshi_yes_price
-    BUY_YES loss: profit = -1
-    BUY_NO  win:  profit = kalshi_yes_price
-    BUY_NO  loss: profit = -1
+    BUY_YES win:  profit = (1 - kalshi_yes_price) / kalshi_yes_price
+    BUY_NO  win:  profit = kalshi_yes_price / (1 - kalshi_yes_price)
+    Any loss:     profit = -1
     """
     total = 0.0
     wins = 0
@@ -93,7 +94,7 @@ def _compute_pnl(rows: list[dict]) -> PnLSummary:
             continue
         if pc:
             wins += 1
-            profit = (1.0 - kalshi) if signal == "BUY_YES" else kalshi
+            profit = ((1.0 - kalshi) / kalshi) if signal == "BUY_YES" else (kalshi / (1.0 - kalshi))
         else:
             losses += 1
             profit = -1.0

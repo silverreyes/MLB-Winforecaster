@@ -149,11 +149,11 @@ class ModelAccuracy(BaseModel):
 class PnLSummary(BaseModel):
     """Kalshi buy-signal P&L for a date range.
 
-    Assumes 1 unit risked per bet.
-    BUY_YES win: profit = 1 - kalshi_yes_price
-    BUY_YES loss: profit = -1
-    BUY_NO  win: profit = kalshi_yes_price
-    BUY_NO  loss: profit = -1
+    Exactly 1 unit is risked on every bet regardless of price or direction.
+
+    BUY_YES win: profit = (1 - kalshi_yes_price) / kalshi_yes_price
+    BUY_NO  win: profit = kalshi_yes_price / (1 - kalshi_yes_price)
+    Any loss:    profit = -1
     """
 
     total: float   # running P&L in units, rounded to 2dp
