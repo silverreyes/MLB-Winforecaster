@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Game Lifecycle, Live Scores & Historical Accuracy
 status: executing
-stopped_at: Completed 20-01-PLAN.md -- Ensemble column in history table
-last_updated: "2026-04-01T14:03:46.943Z"
+stopped_at: Completed 21-01-PLAN.md -- Nyquist compliance for 6 v2.2 phases
+last_updated: "2026-04-01T14:44:40.604Z"
 last_activity: 2026-04-01 -- Added ensemble_prob to SQL, model, route, TS type, and UI column
 progress:
   total_phases: 10
-  completed_phases: 9
-  total_plans: 25
-  completed_plans: 25
+  completed_phases: 10
+  total_plans: 26
+  completed_plans: 26
 ---
 
 ---
@@ -159,16 +159,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-30)
 
 **Core value:** Produce well-calibrated win probability estimates that can be rigorously compared against Kalshi market prices, surfacing where models agree, disagree, and where edges may exist.
-**Current focus:** Phase 20 - Ensemble Column in History Table
+**Current focus:** Phase 21 - Nyquist Compliance
 
 ## Current Position
 
-Phase: 20 of 21 (Ensemble Column in History Table)
-Plan: 1 of 1 in phase 20 (complete)
-Status: Completed 20-01 -- Ensemble% column added to history table end-to-end
-Last activity: 2026-04-01 -- Added ensemble_prob to SQL, model, route, TS type, and UI column
+Phase: 21 of 21 (Nyquist Compliance)
+Plan: 1 of 1 in phase 21 (complete)
+Status: Completed 21-01 -- Nyquist compliance for 6 v2.2 phases
+Last activity: 2026-04-01 -- Updated/created 6 VALIDATION.md files to nyquist_compliant: true
 
-Progress: [██████████] 100% (milestone v2.2: 25 of 25 plans)
+Progress: [██████████] 100% (milestone v2.2: 26 of 26 plans)
 
 ## Performance Metrics
 
@@ -209,6 +209,7 @@ Progress: [██████████] 100% (milestone v2.2: 25 of 25 plans)
 - Trend: stable
 
 *Updated after each plan completion*
+| Phase 21 P01 | 7min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -279,6 +280,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-01T14:00:10.013Z
-Stopped at: Completed 20-01-PLAN.md -- Ensemble column in history table
+Last session: 2026-04-01T14:44:40.598Z
+Stopped at: Completed 21-01-PLAN.md -- Nyquist compliance for 6 v2.2 phases
 Resume file: None
