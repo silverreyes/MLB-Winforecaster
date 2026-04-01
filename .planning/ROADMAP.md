@@ -47,7 +47,7 @@
 - [x] **Phase 15: Live Score Polling** - In-progress game scores, inning display, expanded card with bases/pitcher/batter, auto-Final outcome writes (completed 2026-03-31)
 - [x] **Phase 16: Historical Game Cache** - game_logs table seeded from 2025+2026 completed games; incremental fetch replaces full-season refetch; feature builder reads from DB instead of API (completed 2026-04-01)
 - [x] **Phase 17: Final Outcomes & Nightly Reconciliation** - Completed game cards with score/prediction/outcome marker; safety-net reconciler for missed Finals (completed 2026-04-01)
-- [ ] **Phase 18: History Route** - Date range picker, predictions vs actuals table, rolling accuracy by model
+- [x] **Phase 18: History Route** - Date range picker, predictions vs actuals table, rolling accuracy by model (completed 2026-04-01)
 
 ## Phase Details
 
@@ -186,4 +186,4 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17
 | 15. Live Score Polling | 4/4 | Complete   | 2026-03-31 | 2026-03-31 |
 | 16. Historical Game Cache | 3/3 | Complete   | 2026-04-01 | - |
 | 17. Final Outcomes & Nightly Reconciliation | 2/2 | Complete   | 2026-04-01 | - |
-| 18. History Route | 1/2 | In Progress|  | - |
+| 18. History Route | 2/2 | Complete   | 2026-04-01 | - |

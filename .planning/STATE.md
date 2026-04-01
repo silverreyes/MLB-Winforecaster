@@ -3,14 +3,29 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Game Lifecycle, Live Scores & Historical Accuracy
 status: executing
+stopped_at: Completed 18-02-PLAN.md -- Phase 18 complete
+last_updated: "2026-04-01T06:23:04.554Z"
+last_activity: 2026-04-01 -- Completed 18-02 history page frontend
+progress:
+  total_phases: 7
+  completed_phases: 6
+  total_plans: 21
+  completed_plans: 18
+---
+
+---
+gsd_state_version: 1.0
+milestone: v2.2
+milestone_name: Game Lifecycle, Live Scores & Historical Accuracy
+status: executing
 stopped_at: Completed 18-01-PLAN.md
-last_updated: "2026-04-01T06:15:56.435Z"
+last_updated: "2026-04-01T06:22:04.379Z"
 last_activity: 2026-04-01 -- Completed 18-01 history API endpoint
 progress:
   total_phases: 7
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 21
-  completed_plans: 17
+  completed_plans: 18
 ---
 
 ---
@@ -67,23 +82,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-30)
 
 **Core value:** Produce well-calibrated win probability estimates that can be rigorously compared against Kalshi market prices, surfacing where models agree, disagree, and where edges may exist.
-**Current focus:** Phase 17 - Final Outcomes and Nightly Reconciliation
+**Current focus:** Phase 18 - History Route (complete)
 
 ## Current Position
 
 Phase: 18 of 18 (History Route)
-Plan: 1 of 2 in phase 18
-Status: Executing phase 18 -- plan 01 complete
-Last activity: 2026-04-01 -- Completed 18-01 history API endpoint
+Plan: 2 of 2 in phase 18 (complete)
+Status: Phase 18 complete -- all v2.2 plans done
+Last activity: 2026-04-01 -- Completed 18-02 history page frontend
 
-Progress: [█████████░] 94% (milestone v2.2: 16 of 17 plans)
+Progress: [█████████░] 86% (milestone v2.2: 18 of 21 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 16 (v2.2)
+- Total plans completed: 18 (v2.2)
 - Average duration: 4min
-- Total execution time: ~68min
+- Total execution time: ~77min
 
 **By Phase:**
 
@@ -106,9 +121,10 @@ Progress: [█████████░] 94% (milestone v2.2: 16 of 17 plans)
 | Phase 17 P01 | 5min | 2 tasks | 3 files |
 | Phase 17 P02 | 4min | 2 tasks | 6 files |
 | Phase 18 P01 | 6min | 2 tasks | 5 files |
+| Phase 18 P02 | 3min | 2 tasks | 9 files |
 
 **Recent Trend:**
-- Last 5 plans: 2min, 6min, 5min, 4min, 6min
+- Last 5 plans: 6min, 5min, 4min, 6min, 3min
 - Trend: stable
 
 *Updated after each plan completion*
@@ -157,6 +173,8 @@ Progress: [█████████░] 94% (milestone v2.2: 16 of 17 plans)
 - game_id::INTEGER cast in _fetch_final_scores SQL for VARCHAR game_logs to INTEGER predictions join (Phase 17)
 - Per-model accuracy in /history uses ensemble+prediction_correct to derive actual outcome, then evaluates each model individually (Phase 18)
 - Route tests use conftest.py client fixture with mocked lifespan for proper TestClient setup (Phase 18)
+- Hash-based routing via useState + hashchange listener, no React Router dependency (Phase 18)
+- Native date inputs for history date range picker, consistent with DateNavigator pattern (Phase 18)
 
 ### Roadmap Decisions
 
@@ -178,6 +196,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-01T06:15:56.431Z
-Stopped at: Completed 18-01-PLAN.md
+Last session: 2026-04-01T06:23:02.343Z
+Stopped at: Completed 18-02-PLAN.md -- Phase 18 complete
 Resume file: None
