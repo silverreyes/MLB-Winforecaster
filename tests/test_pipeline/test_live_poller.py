@@ -58,6 +58,19 @@ class TestWriteGameOutcome:
         count = write_game_outcome(mock_pool, 747009, 'BOS', 'NYY', 5, 3)
         assert count == 0
 
+    def test_sql_gates_prediction_correct_on_buy_signal(self):
+        """SQL CASE gates prediction_correct on edge_signal IN ('BUY_YES', 'BUY_NO').
+
+        Rows with edge_signal='NO_EDGE' must receive NULL, not a boolean.
+        The gate uses NOT IN + OR IS NULL to handle both NO_EDGE and any
+        unexpected NULLs safely.
+        """
+        mock_pool, mock_conn, mock_cur = self._make_mock_pool(rowcount=1)
+        write_game_outcome(mock_pool, 747009, 'BOS', 'NYY', 5, 3)
+        sql_arg = mock_conn.execute.call_args[0][0]
+        assert "edge_signal NOT IN ('BUY_YES', 'BUY_NO')" in sql_arg
+        assert 'OR edge_signal IS NULL' in sql_arg
+
 
 class TestLivePollerJob:
     """LIVE-08: Live poller job behavior."""
