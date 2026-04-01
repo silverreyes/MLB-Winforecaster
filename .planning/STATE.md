@@ -4,7 +4,7 @@ milestone: v2.2
 milestone_name: Game Lifecycle, Live Scores & Historical Accuracy
 status: executing
 stopped_at: Completed 20-01-PLAN.md -- Ensemble column in history table
-last_updated: "2026-04-01T14:00:10.017Z"
+last_updated: "2026-04-01T14:03:46.943Z"
 last_activity: 2026-04-01 -- Added ensemble_prob to SQL, model, route, TS type, and UI column
 progress:
   total_phases: 10
