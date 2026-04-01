@@ -99,6 +99,7 @@ def get_history_route(
             lr_prob=r.get("lr_prob"),
             rf_prob=r.get("rf_prob"),
             xgb_prob=r.get("xgb_prob"),
+            ensemble_prob=r.get("ensemble_prob"),
             prediction_correct=r["prediction_correct"],
         )
         for r in rows

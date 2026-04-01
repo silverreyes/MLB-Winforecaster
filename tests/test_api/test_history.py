@@ -83,6 +83,7 @@ class TestGetHistory:
             "lr_prob": 0.6,
             "rf_prob": 0.55,
             "xgb_prob": 0.58,
+            "ensemble_prob": 0.5767,
             "prediction_correct": True,
         }
         pool = self._mock_pool([row])
@@ -116,6 +117,18 @@ class TestGetHistory:
         sql = mock_cur.execute.call_args[0][0]
         assert "gl.game_id::INTEGER" in sql
 
+    def test_sql_computes_ensemble_prob(self):
+        """get_history SQL computes ensemble_prob as average of 3 model probs."""
+        from src.pipeline.db import get_history
+
+        pool = self._mock_pool([])
+        get_history(pool, "2026-03-20", "2026-03-30")
+
+        mock_conn = pool.connection().__enter__()
+        mock_cur = mock_conn.cursor().__enter__()
+        sql = mock_cur.execute.call_args[0][0]
+        assert "AS ensemble_prob" in sql
+
 
 # ---------------------------------------------------------------------------
 # Pydantic model tests
@@ -137,12 +150,14 @@ class TestHistoryModels:
             lr_prob=0.6,
             rf_prob=0.55,
             xgb_prob=0.58,
+            ensemble_prob=0.5767,
             prediction_correct=True,
         )
         assert row.game_date == date(2026, 3, 25)
         assert row.home_team == "NYY"
         assert row.prediction_correct is True
         assert row.home_score == 5
+        assert row.ensemble_prob == 0.5767
 
     def test_history_response_contains_games_and_accuracy(self):
         """HistoryResponse model contains games list and accuracy dict."""
@@ -271,6 +286,7 @@ class TestHistoryRoute:
                 "lr_prob": 0.6,
                 "rf_prob": 0.55,
                 "xgb_prob": 0.58,
+                "ensemble_prob": 0.5767,
                 "prediction_correct": True,
             },
         ]
@@ -284,6 +300,7 @@ class TestHistoryRoute:
         assert data["games"][0]["home_team"] == "NYY"
         assert data["start_date"] == "2026-03-20"
         assert data["end_date"] == "2026-03-30"
+        assert data["games"][0]["ensemble_prob"] == 0.5767
 
     @patch("api.routes.history.get_history")
     def test_route_empty_history(self, mock_get_history, client):

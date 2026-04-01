@@ -134,6 +134,7 @@ class HistoryRow(BaseModel):
     lr_prob: float | None = None
     rf_prob: float | None = None
     xgb_prob: float | None = None
+    ensemble_prob: float | None = None
     prediction_correct: bool
 
 

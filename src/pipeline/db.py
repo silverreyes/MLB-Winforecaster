@@ -515,12 +515,17 @@ def get_history(pool: ConnectionPool, start_date: str, end_date: str) -> list[di
 
     Returns:
         List of dicts with keys: game_date, home_team, away_team,
-        home_score, away_score, lr_prob, rf_prob, xgb_prob, prediction_correct.
+        home_score, away_score, lr_prob, rf_prob, xgb_prob, ensemble_prob,
+        prediction_correct.
     """
     sql = """
         WITH ranked AS (
             SELECT p.game_date, p.home_team, p.away_team,
                    p.lr_prob, p.rf_prob, p.xgb_prob,
+                   CASE WHEN p.lr_prob IS NOT NULL AND p.rf_prob IS NOT NULL AND p.xgb_prob IS NOT NULL
+                        THEN ROUND(((p.lr_prob + p.rf_prob + p.xgb_prob) / 3.0)::numeric, 4)
+                        ELSE NULL
+                   END AS ensemble_prob,
                    p.prediction_correct, p.game_id,
                    ROW_NUMBER() OVER (
                        PARTITION BY p.game_id
@@ -538,6 +543,7 @@ def get_history(pool: ConnectionPool, start_date: str, end_date: str) -> list[di
         )
         SELECT r.game_date, r.home_team, r.away_team,
                r.lr_prob, r.rf_prob, r.xgb_prob,
+               r.ensemble_prob,
                r.prediction_correct,
                gl.home_score, gl.away_score
         FROM ranked r
