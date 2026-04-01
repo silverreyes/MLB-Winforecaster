@@ -1,0 +1,180 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-md) var(--space-md) var(--space-2xl);
+}
+
+/* Page header */
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-md) 0;
+}
+.pageTitle {
+  font-family: var(--font-ui);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+.backLink {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  color: var(--color-accent);
+  text-decoration: none;
+}
+.backLink:hover {
+  text-decoration: underline;
+}
+
+/* Accuracy summary */
+.accuracyStrip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  margin-bottom: var(--space-md);
+  flex-wrap: wrap;
+}
+.accuracyItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+.accuracyLabel {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+.accuracyValue {
+  font-family: var(--font-data);
+  font-size: 13px;
+  color: var(--color-accent);
+  font-variant-numeric: tabular-nums;
+}
+.accuracyDetail {
+  font-family: var(--font-data);
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+.divider {
+  color: var(--color-border);
+  font-size: 13px;
+  user-select: none;
+}
+
+/* Date range picker */
+.dateRow {
+  display: flex;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+  flex-wrap: wrap;
+}
+.dateLabel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+.dateInput {
+  font-family: var(--font-data);
+  font-size: 14px;
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  color: var(--color-text-primary);
+  color-scheme: dark;
+}
+
+/* Table */
+.tableWrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-data);
+  font-size: 13px;
+}
+.th, .thNum, .thCenter {
+  text-align: left;
+  padding: var(--space-sm) var(--space-sm);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+.thNum {
+  text-align: right;
+}
+.thCenter {
+  text-align: center;
+  width: 40px;
+}
+.row {
+  border-bottom: 1px solid var(--color-border);
+}
+.row:hover {
+  background: rgba(245, 158, 11, 0.04);
+}
+.td, .tdNum, .tdCenter {
+  padding: var(--space-sm);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+.tdNum {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.tdCenter {
+  text-align: center;
+}
+
+/* Outcome markers */
+.correct {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+.incorrect {
+  color: var(--color-text-secondary);
+}
+
+/* Empty / loading / error states */
+.loading, .error {
+  text-align: center;
+  padding: var(--space-2xl);
+  color: var(--color-text-secondary);
+  font-family: var(--font-ui);
+  font-size: 14px;
+}
+.empty {
+  text-align: center;
+  padding: var(--space-2xl) var(--space-md);
+}
+.emptyHeading {
+  font-family: var(--font-ui);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-sm);
+}
+.emptyBody {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin: 0;
+}

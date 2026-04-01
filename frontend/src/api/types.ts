@@ -93,3 +93,30 @@ export interface GamesDateResponse {
   generated_at: string;
   view_mode: ViewMode;
 }
+
+// Phase 18: /history response types
+
+export interface HistoryRow {
+  game_date: string;
+  home_team: string;
+  away_team: string;
+  home_score: number | null;
+  away_score: number | null;
+  lr_prob: number | null;
+  rf_prob: number | null;
+  xgb_prob: number | null;
+  prediction_correct: boolean;
+}
+
+export interface ModelAccuracy {
+  correct: number;
+  total: number;
+  pct: number;
+}
+
+export interface HistoryResponse {
+  games: HistoryRow[];
+  accuracy: Record<string, ModelAccuracy>;
+  start_date: string;
+  end_date: string;
+}
