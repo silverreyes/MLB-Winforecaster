@@ -18,14 +18,14 @@
 
 ### Date Navigation (DATE)
 
-- [ ] **DATE-01**: User can step to the previous day via a left arrow control
-- [ ] **DATE-02**: User can step to the next day via a right arrow control
-- [ ] **DATE-03**: User can pick a specific date via a date input control
-- [ ] **DATE-04**: Dashboard loads today's date by default
-- [ ] **DATE-05**: Past dates display stored predictions from the database
-- [ ] **DATE-06**: Today's date displays live pipeline predictions with live polling active
-- [ ] **DATE-07**: For tomorrow's date, games with both SPs confirmed display a prediction flagged as PRELIMINARY; games with an unconfirmed SP show schedule entry only (no prediction)
-- [ ] **DATE-08**: Dates beyond tomorrow display scheduled matchups only with a "Predictions available on game day" message
+- [x] **DATE-01**: User can step to the previous day via a left arrow control
+- [x] **DATE-02**: User can step to the next day via a right arrow control
+- [x] **DATE-03**: User can pick a specific date via a date input control
+- [x] **DATE-04**: Dashboard loads today's date by default
+- [x] **DATE-05**: Past dates display stored predictions from the database
+- [x] **DATE-06**: Today's date displays live pipeline predictions with live polling active
+- [x] **DATE-07**: For tomorrow's date, games with both SPs confirmed display a prediction flagged as PRELIMINARY; games with an unconfirmed SP show schedule entry only (no prediction)
+- [x] **DATE-08**: Dates beyond tomorrow display scheduled matchups only with a "Predictions available on game day" message
 
 ### Live Scores (LIVE)
 
@@ -62,9 +62,9 @@
 
 ### Post-Phase-14 Bug Fixes (BUG)
 
-- [ ] **BUG-A**: Header "Last updated" shows the pipeline run time, not page load time (pipelineTimestamp wired to Header)
-- [ ] **BUG-B**: Live clock and "Next update" display in the user's browser timezone (useEasternClock uses local TZ abbreviation)
-- [ ] **RETRY**: On 503 or timeout from MLB Stats API, pipeline jobs retry once after 15 minutes (run_pipeline_with_retry wraps all 3 cron jobs)
+- [x] **BUG-A**: Header "Last updated" shows the pipeline run time, not page load time (pipelineTimestamp wired to Header)
+- [x] **BUG-B**: Live clock and "Next update" display in the user's browser timezone (useEasternClock uses local TZ abbreviation)
+- [x] **RETRY**: On 503 or timeout from MLB Stats API, pipeline jobs retry once after 15 minutes (run_pipeline_with_retry wraps all 3 cron jobs)
 
 ## Future Requirements
 
@@ -94,17 +94,17 @@
 | VIBL-02 | Phase 13 | Complete |
 | SCHM-01 | Phase 13 | Complete |
 | SCHM-02 | Phase 13 | Complete |
-| DATE-01 | Phase 14 | Pending |
-| DATE-02 | Phase 14 | Pending |
-| DATE-03 | Phase 14 | Pending |
-| DATE-04 | Phase 14 | Pending |
-| DATE-05 | Phase 14 | Pending |
-| DATE-06 | Phase 14 | Pending |
-| DATE-07 | Phase 14 | Pending |
-| DATE-08 | Phase 14 | Pending |
-| BUG-A | Phase 14.5 | Pending |
-| BUG-B | Phase 14.5 | Pending |
-| RETRY | Phase 14.5 | Pending |
+| DATE-01 | Phase 14 | Complete |
+| DATE-02 | Phase 14 | Complete |
+| DATE-03 | Phase 14 | Complete |
+| DATE-04 | Phase 14 | Complete |
+| DATE-05 | Phase 14 | Complete |
+| DATE-06 | Phase 14 | Complete |
+| DATE-07 | Phase 14 | Complete |
+| DATE-08 | Phase 14 | Complete |
+| BUG-A | Phase 14.5 | Complete |
+| BUG-B | Phase 14.5 | Complete |
+| RETRY | Phase 14.5 | Complete |
 | LIVE-01 | Phase 15 | Pending |
 | LIVE-02 | Phase 15 | Pending |
 | LIVE-03 | Phase 15 | Pending |
