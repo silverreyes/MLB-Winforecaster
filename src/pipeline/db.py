@@ -173,14 +173,15 @@ def write_game_outcome(pool: ConnectionPool, game_id: int, home_team: str,
     Targets ALL prediction rows matching game_id (not just is_latest=TRUE)
     per STATE.md carry-forward decision.
 
-    prediction_correct is only set for rows with an active buy signal
-    (edge_signal IN ('BUY_YES', 'BUY_NO')). Rows with edge_signal = 'NO_EDGE'
-    or edge_signal IS NULL receive prediction_correct = NULL, not a boolean.
+    prediction_correct is gated on edge_signal direction:
+      BUY_YES = bet on home team to win → correct if home_team won
+      BUY_NO  = bet on away team to win → correct if away_team won
+      NO_EDGE / NULL → prediction_correct = NULL (no marker shown)
 
-    Correctness logic: ensemble >= 0.5 means model predicted home win (aligns
-    with BUY_YES); ensemble < 0.5 means model predicted away win (aligns with
-    BUY_NO). prediction_correct = TRUE when the actual winner matches that
-    direction.
+    Bet direction is read directly from edge_signal — the ensemble is NOT
+    re-evaluated at reconciliation time, since edge_signal captures direction
+    at prediction time and can differ from ensemble >= 0.5 (e.g. BUY_NO with
+    ensemble=0.58, kalshi=0.70 is a valid away-team bet).
 
     Returns number of rows updated. Skips rows already reconciled
     (WHERE actual_winner IS NULL).
@@ -192,10 +193,9 @@ def write_game_outcome(pool: ConnectionPool, game_id: int, home_team: str,
         SET actual_winner = %(actual_winner)s,
             prediction_correct = (
                 CASE
-                    WHEN edge_signal NOT IN ('BUY_YES', 'BUY_NO') OR edge_signal IS NULL THEN NULL
-                    WHEN (lr_prob + rf_prob + xgb_prob) / 3.0 >= 0.5
-                        THEN %(actual_winner)s = home_team
-                    ELSE %(actual_winner)s = away_team
+                    WHEN edge_signal = 'BUY_YES' THEN %(actual_winner)s = home_team
+                    WHEN edge_signal = 'BUY_NO'  THEN %(actual_winner)s = away_team
+                    ELSE NULL
                 END
             ),
             reconciled_at = %(reconciled_at)s

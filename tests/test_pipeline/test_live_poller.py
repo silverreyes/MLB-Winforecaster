@@ -58,18 +58,41 @@ class TestWriteGameOutcome:
         count = write_game_outcome(mock_pool, 747009, 'BOS', 'NYY', 5, 3)
         assert count == 0
 
-    def test_sql_gates_prediction_correct_on_buy_signal(self):
-        """SQL CASE gates prediction_correct on edge_signal IN ('BUY_YES', 'BUY_NO').
+    def test_sql_routes_buy_yes_to_home_team(self):
+        """SQL CASE routes BUY_YES to home_team correctness check.
 
-        Rows with edge_signal='NO_EDGE' must receive NULL, not a boolean.
-        The gate uses NOT IN + OR IS NULL to handle both NO_EDGE and any
-        unexpected NULLs safely.
+        BUY_YES = bet home team wins; correct iff home_team won.
+        Bet direction is read from edge_signal, not re-derived from ensemble.
         """
         mock_pool, mock_conn, mock_cur = self._make_mock_pool(rowcount=1)
         write_game_outcome(mock_pool, 747009, 'BOS', 'NYY', 5, 3)
         sql_arg = mock_conn.execute.call_args[0][0]
-        assert "edge_signal NOT IN ('BUY_YES', 'BUY_NO')" in sql_arg
-        assert 'OR edge_signal IS NULL' in sql_arg
+        assert "edge_signal = 'BUY_YES'" in sql_arg
+        assert 'home_team' in sql_arg
+
+    def test_sql_routes_buy_no_to_away_team(self):
+        """SQL CASE routes BUY_NO to away_team correctness check.
+
+        BUY_NO = bet away team wins; correct iff away_team won.
+        A BUY_NO can have ensemble > 0.5 (e.g. ensemble=0.58, kalshi=0.70),
+        so routing on ensemble threshold would give the wrong answer.
+        """
+        mock_pool, mock_conn, mock_cur = self._make_mock_pool(rowcount=1)
+        write_game_outcome(mock_pool, 747009, 'BOS', 'NYY', 5, 3)
+        sql_arg = mock_conn.execute.call_args[0][0]
+        assert "edge_signal = 'BUY_NO'" in sql_arg
+        assert 'away_team' in sql_arg
+
+    def test_sql_no_ensemble_threshold_in_case(self):
+        """SQL CASE does not use ensemble >= 0.5 as the bet direction discriminator.
+
+        Using the ensemble threshold was the root cause of BUY_NO rows being
+        marked correct when the home team won.
+        """
+        mock_pool, mock_conn, mock_cur = self._make_mock_pool(rowcount=1)
+        write_game_outcome(mock_pool, 747009, 'BOS', 'NYY', 5, 3)
+        sql_arg = mock_conn.execute.call_args[0][0]
+        assert 'lr_prob + rf_prob + xgb_prob' not in sql_arg
 
 
 class TestLivePollerJob:
