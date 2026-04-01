@@ -156,10 +156,11 @@ Plans:
   1. A `/history` route is accessible from the main dashboard via navigation
   2. User can select a date range and see a table of past predictions vs actual outcomes within that range
   3. History page displays rolling model accuracy (percentage correct) over the selected date range, broken down by model
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 18-01: TBD
+- [ ] 18-01-PLAN.md — Backend: get_history DB query, HistoryRow/HistoryResponse Pydantic models, GET /history route, tests
+- [ ] 18-02-PLAN.md — Frontend: HistoryPage component, useHistory hook, hash routing in App.tsx, AccuracyStrip/Header nav links
 
 ## Progress
 
@@ -185,4 +186,4 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17
 | 15. Live Score Polling | 4/4 | Complete   | 2026-03-31 | 2026-03-31 |
 | 16. Historical Game Cache | 3/3 | Complete   | 2026-04-01 | - |
 | 17. Final Outcomes & Nightly Reconciliation | 2/2 | Complete   | 2026-04-01 | - |
-| 18. History Route | v2.2 | 0/? | Not started | - |
+| 18. History Route | v2.2 | 0/2 | Planned | - |
