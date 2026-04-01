@@ -292,8 +292,8 @@ def get_games_for_date(request: Request, date: str):
     # Compute view mode (live/historical/tomorrow/future)
     view_mode = compute_view_mode(date)
 
-    # Fetch schedule (cached, 75s TTL); include pitchers for tomorrow
-    include_pitchers = view_mode == "tomorrow"
+    # Fetch schedule (cached, 75s TTL); include pitchers for today and tomorrow
+    include_pitchers = view_mode in ("live", "tomorrow")
     schedule = get_schedule_cached(date, include_pitchers=include_pitchers)
 
     # Fetch predictions from DB

@@ -278,6 +278,26 @@ class TestDateNavigation:
         data = response.json()
         assert data["view_mode"] == "live"
 
+    @patch("api.routes.games.compute_view_mode", return_value="live")
+    @patch("api.routes.games.get_schedule_cached")
+    @patch("api.routes.games._fetch_predictions_for_date")
+    def test_include_pitchers_true_for_live(self, mock_preds, mock_schedule, mock_vm, client):
+        """get_schedule_cached called with include_pitchers=True for live (today) view."""
+        mock_schedule.return_value = []
+        mock_preds.return_value = []
+        client.get("/api/v1/games/2025-07-15")
+        mock_schedule.assert_called_once_with("2025-07-15", include_pitchers=True)
+
+    @patch("api.routes.games.compute_view_mode", return_value="tomorrow")
+    @patch("api.routes.games.get_schedule_cached")
+    @patch("api.routes.games._fetch_predictions_for_date")
+    def test_include_pitchers_true_for_tomorrow(self, mock_preds, mock_schedule, mock_vm, client):
+        """get_schedule_cached called with include_pitchers=True for tomorrow view."""
+        mock_schedule.return_value = []
+        mock_preds.return_value = []
+        client.get("/api/v1/games/2025-07-16")
+        mock_schedule.assert_called_once_with("2025-07-16", include_pitchers=True)
+
     @patch("api.routes.games.compute_view_mode", return_value="future")
     @patch("api.routes.games.get_schedule_cached")
     @patch("api.routes.games._fetch_predictions_for_date")
