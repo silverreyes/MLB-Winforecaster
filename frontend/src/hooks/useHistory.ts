@@ -13,5 +13,6 @@ export function useHistory(startDate: string, endDate: string) {
     ...query,
     games: query.data?.games ?? [],
     accuracy: query.data?.accuracy ?? {},
+    pnl: query.data?.pnl ?? null,
   };
 }

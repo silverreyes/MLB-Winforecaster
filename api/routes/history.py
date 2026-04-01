@@ -10,7 +10,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Query, Request
 
-from api.models import HistoryResponse, HistoryRow, ModelAccuracy
+from api.models import HistoryResponse, HistoryRow, ModelAccuracy, PnLSummary
 from src.pipeline.db import get_history
 
 router = APIRouter(tags=["history"])
@@ -71,6 +71,36 @@ def _compute_accuracy(rows: list[dict]) -> dict[str, ModelAccuracy]:
     return result
 
 
+def _compute_pnl(rows: list[dict]) -> PnLSummary:
+    """Compute Kalshi buy-signal P&L across a set of history rows.
+
+    Only rows with edge_signal IN ('BUY_YES', 'BUY_NO'), a non-null
+    kalshi_yes_price, and a non-null prediction_correct are included.
+
+    BUY_YES win:  profit = 1 - kalshi_yes_price
+    BUY_YES loss: profit = -1
+    BUY_NO  win:  profit = kalshi_yes_price
+    BUY_NO  loss: profit = -1
+    """
+    total = 0.0
+    wins = 0
+    losses = 0
+    for row in rows:
+        signal = row.get("edge_signal")
+        kalshi = row.get("kalshi_yes_price")
+        pc = row.get("prediction_correct")
+        if signal not in ("BUY_YES", "BUY_NO") or kalshi is None or pc is None:
+            continue
+        if pc:
+            wins += 1
+            profit = (1.0 - kalshi) if signal == "BUY_YES" else kalshi
+        else:
+            losses += 1
+            profit = -1.0
+        total += profit
+    return PnLSummary(total=round(total, 2), wins=wins, losses=losses)
+
+
 @router.get("/history", response_model=HistoryResponse)
 def get_history_route(
     request: Request,
@@ -112,10 +142,12 @@ def get_history_route(
     ]
 
     accuracy = _compute_accuracy(rows)
+    pnl = _compute_pnl(rows)
 
     return HistoryResponse(
         games=games,
         accuracy=accuracy,
+        pnl=pnl,
         start_date=start,
         end_date=end,
     )

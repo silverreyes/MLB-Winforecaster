@@ -36,7 +36,7 @@ function formatDisplayDate(dateStr: string): string {
 export function HistoryPage() {
   const [startDate, setStartDate] = useState(defaultStart);
   const [endDate, setEndDate] = useState(defaultEnd);
-  const { games, accuracy, isLoading, isError } = useHistory(startDate, endDate);
+  const { games, accuracy, pnl, isLoading, isError } = useHistory(startDate, endDate);
 
   const handleStartChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setStartDate(e.target.value);
@@ -74,6 +74,16 @@ export function HistoryPage() {
             </span>
           );
         })}
+        {pnl !== null && (
+          <span className={styles.accuracyItem}>
+            <span className={styles.divider}>|</span>
+            <span className={styles.accuracyLabel}>P&amp;L:</span>
+            <span className={styles.accuracyValue}>
+              {pnl.total >= 0 ? '+' : ''}{pnl.total.toFixed(1)}u
+            </span>
+            <span className={styles.accuracyDetail}>({pnl.wins}-{pnl.losses})</span>
+          </span>
+        )}
       </div>
 
       {/* Date range picker */}

@@ -160,8 +160,8 @@ class TestHistoryModels:
         assert row.ensemble_prob == 0.5767
 
     def test_history_response_contains_games_and_accuracy(self):
-        """HistoryResponse model contains games list and accuracy dict."""
-        from api.models import HistoryResponse, HistoryRow, ModelAccuracy
+        """HistoryResponse model contains games list, accuracy dict, and pnl."""
+        from api.models import HistoryResponse, HistoryRow, ModelAccuracy, PnLSummary
 
         row = HistoryRow(
             game_date=date(2026, 3, 25),
@@ -177,6 +177,7 @@ class TestHistoryModels:
         resp = HistoryResponse(
             games=[row],
             accuracy=accuracy,
+            pnl=PnLSummary(total=1.5, wins=2, losses=1),
             start_date=date(2026, 3, 20),
             end_date=date(2026, 3, 30),
         )
@@ -184,6 +185,8 @@ class TestHistoryModels:
         assert "lr" in resp.accuracy
         assert resp.accuracy["lr"].pct == 66.7
         assert resp.start_date == date(2026, 3, 20)
+        assert resp.pnl.total == 1.5
+        assert resp.pnl.wins == 2
 
 
 # ---------------------------------------------------------------------------
@@ -275,7 +278,7 @@ class TestHistoryRoute:
 
     @patch("api.routes.history.get_history")
     def test_route_returns_valid_response(self, mock_get_history, client):
-        """Route returns HistoryResponse with games and accuracy when given valid dates."""
+        """Route returns HistoryResponse with games, accuracy, and pnl."""
         mock_get_history.return_value = [
             {
                 "game_date": date(2026, 3, 25),
@@ -288,6 +291,8 @@ class TestHistoryRoute:
                 "xgb_prob": 0.58,
                 "ensemble_prob": 0.5767,
                 "prediction_correct": True,
+                "edge_signal": "BUY_YES",
+                "kalshi_yes_price": 0.48,
             },
         ]
 
@@ -296,15 +301,20 @@ class TestHistoryRoute:
         data = resp.json()
         assert "games" in data
         assert "accuracy" in data
+        assert "pnl" in data
         assert len(data["games"]) == 1
         assert data["games"][0]["home_team"] == "NYY"
         assert data["start_date"] == "2026-03-20"
         assert data["end_date"] == "2026-03-30"
         assert data["games"][0]["ensemble_prob"] == 0.5767
+        # BUY_YES win at kalshi=0.48 → profit = 1 - 0.48 = 0.52
+        assert data["pnl"]["wins"] == 1
+        assert data["pnl"]["losses"] == 0
+        assert abs(data["pnl"]["total"] - 0.52) < 0.001
 
     @patch("api.routes.history.get_history")
     def test_route_empty_history(self, mock_get_history, client):
-        """Route returns empty games list and zero-accuracy for date range with no data."""
+        """Route returns empty games list, zero accuracy, and zero P&L for empty range."""
         mock_get_history.return_value = []
 
         resp = client.get("/api/v1/history?start=2026-03-20&end=2026-03-30")
@@ -313,3 +323,106 @@ class TestHistoryRoute:
         assert data["games"] == []
         for model_key in ("lr", "rf", "xgb", "ensemble"):
             assert data["accuracy"][model_key]["total"] == 0
+        assert data["pnl"]["total"] == 0.0
+        assert data["pnl"]["wins"] == 0
+        assert data["pnl"]["losses"] == 0
+
+
+# ---------------------------------------------------------------------------
+# P&L computation tests
+# ---------------------------------------------------------------------------
+
+class TestComputePnl:
+    """Tests for _compute_pnl() in api/routes/history.py."""
+
+    def test_buy_yes_win(self):
+        """BUY_YES win: profit = 1 - kalshi_yes_price."""
+        from api.routes.history import _compute_pnl
+
+        rows = [{"edge_signal": "BUY_YES", "kalshi_yes_price": 0.40, "prediction_correct": True}]
+        result = _compute_pnl(rows)
+        assert result.wins == 1
+        assert result.losses == 0
+        assert abs(result.total - 0.60) < 0.001
+
+    def test_buy_yes_loss(self):
+        """BUY_YES loss: profit = -1."""
+        from api.routes.history import _compute_pnl
+
+        rows = [{"edge_signal": "BUY_YES", "kalshi_yes_price": 0.40, "prediction_correct": False}]
+        result = _compute_pnl(rows)
+        assert result.wins == 0
+        assert result.losses == 1
+        assert result.total == -1.0
+
+    def test_buy_no_win(self):
+        """BUY_NO win: profit = kalshi_yes_price (selling the YES side)."""
+        from api.routes.history import _compute_pnl
+
+        rows = [{"edge_signal": "BUY_NO", "kalshi_yes_price": 0.65, "prediction_correct": True}]
+        result = _compute_pnl(rows)
+        assert result.wins == 1
+        assert result.losses == 0
+        assert abs(result.total - 0.65) < 0.001
+
+    def test_buy_no_loss(self):
+        """BUY_NO loss: profit = -1."""
+        from api.routes.history import _compute_pnl
+
+        rows = [{"edge_signal": "BUY_NO", "kalshi_yes_price": 0.65, "prediction_correct": False}]
+        result = _compute_pnl(rows)
+        assert result.wins == 0
+        assert result.losses == 1
+        assert result.total == -1.0
+
+    def test_no_edge_skipped(self):
+        """NO_EDGE rows are excluded from P&L."""
+        from api.routes.history import _compute_pnl
+
+        rows = [{"edge_signal": "NO_EDGE", "kalshi_yes_price": 0.50, "prediction_correct": True}]
+        result = _compute_pnl(rows)
+        assert result.wins == 0
+        assert result.losses == 0
+        assert result.total == 0.0
+
+    def test_null_kalshi_price_skipped(self):
+        """Rows with null kalshi_yes_price are excluded even if signal exists."""
+        from api.routes.history import _compute_pnl
+
+        rows = [{"edge_signal": "BUY_YES", "kalshi_yes_price": None, "prediction_correct": True}]
+        result = _compute_pnl(rows)
+        assert result.total == 0.0
+
+    def test_null_prediction_correct_skipped(self):
+        """Rows with null prediction_correct are excluded."""
+        from api.routes.history import _compute_pnl
+
+        rows = [{"edge_signal": "BUY_YES", "kalshi_yes_price": 0.45, "prediction_correct": None}]
+        result = _compute_pnl(rows)
+        assert result.total == 0.0
+
+    def test_mixed_set(self):
+        """Mixed BUY_YES/BUY_NO wins and losses accumulate correctly."""
+        from api.routes.history import _compute_pnl
+
+        rows = [
+            {"edge_signal": "BUY_YES", "kalshi_yes_price": 0.40, "prediction_correct": True},   # +0.60
+            {"edge_signal": "BUY_YES", "kalshi_yes_price": 0.45, "prediction_correct": False},  # -1.00
+            {"edge_signal": "BUY_NO",  "kalshi_yes_price": 0.70, "prediction_correct": True},   # +0.70
+            {"edge_signal": "BUY_NO",  "kalshi_yes_price": 0.60, "prediction_correct": False},  # -1.00
+            {"edge_signal": "NO_EDGE", "kalshi_yes_price": 0.50, "prediction_correct": True},   # skip
+        ]
+        result = _compute_pnl(rows)
+        assert result.wins == 2
+        assert result.losses == 2
+        # 0.60 - 1.00 + 0.70 - 1.00 = -0.70
+        assert abs(result.total - (-0.70)) < 0.001
+
+    def test_empty_rows(self):
+        """Empty input returns zero P&L."""
+        from api.routes.history import _compute_pnl
+
+        result = _compute_pnl([])
+        assert result.total == 0.0
+        assert result.wins == 0
+        assert result.losses == 0

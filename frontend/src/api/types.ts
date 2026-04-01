@@ -115,9 +115,16 @@ export interface ModelAccuracy {
   pct: number;
 }
 
+export interface PnLSummary {
+  total: number;
+  wins: number;
+  losses: number;
+}
+
 export interface HistoryResponse {
   games: HistoryRow[];
   accuracy: Record<string, ModelAccuracy>;
+  pnl: PnLSummary;
   start_date: string;
   end_date: string;
 }

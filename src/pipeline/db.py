@@ -522,7 +522,7 @@ def get_history(pool: ConnectionPool, start_date: str, end_date: str) -> list[di
     Returns:
         List of dicts with keys: game_date, home_team, away_team,
         home_score, away_score, lr_prob, rf_prob, xgb_prob, ensemble_prob,
-        prediction_correct.
+        prediction_correct, edge_signal, kalshi_yes_price.
     """
     sql = """
         WITH ranked AS (
@@ -533,6 +533,7 @@ def get_history(pool: ConnectionPool, start_date: str, end_date: str) -> list[di
                         ELSE NULL
                    END AS ensemble_prob,
                    p.prediction_correct, p.game_id,
+                   p.edge_signal, p.kalshi_yes_price,
                    ROW_NUMBER() OVER (
                        PARTITION BY p.game_id
                        ORDER BY CASE p.prediction_version
@@ -551,6 +552,7 @@ def get_history(pool: ConnectionPool, start_date: str, end_date: str) -> list[di
                r.lr_prob, r.rf_prob, r.xgb_prob,
                r.ensemble_prob,
                r.prediction_correct,
+               r.edge_signal, r.kalshi_yes_price,
                gl.home_score, gl.away_score
         FROM ranked r
         LEFT JOIN game_logs gl ON gl.game_id::INTEGER = r.game_id

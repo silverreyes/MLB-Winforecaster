@@ -146,10 +146,26 @@ class ModelAccuracy(BaseModel):
     pct: float
 
 
+class PnLSummary(BaseModel):
+    """Kalshi buy-signal P&L for a date range.
+
+    Assumes 1 unit risked per bet.
+    BUY_YES win: profit = 1 - kalshi_yes_price
+    BUY_YES loss: profit = -1
+    BUY_NO  win: profit = kalshi_yes_price
+    BUY_NO  loss: profit = -1
+    """
+
+    total: float   # running P&L in units, rounded to 2dp
+    wins: int
+    losses: int
+
+
 class HistoryResponse(BaseModel):
     """Response shape for GET /history."""
 
     games: list[HistoryRow]
     accuracy: dict[str, ModelAccuracy]
+    pnl: PnLSummary
     start_date: date
     end_date: date
