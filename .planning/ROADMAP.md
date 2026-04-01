@@ -162,8 +162,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 18-01-PLAN.md � Backend: get_history DB query, HistoryRow/HistoryResponse Pydantic models, GET /history route, tests
-- [ ] 18-02-PLAN.md � Frontend: HistoryPage component, useHistory hook, hash routing in App.tsx, AccuracyStrip/Header nav links
+- [ ] 18-01-PLAN.md — Backend: get_history DB query, HistoryRow/HistoryResponse Pydantic models, GET /history route, tests
+- [ ] 18-02-PLAN.md — Frontend: HistoryPage component, useHistory hook, hash routing in App.tsx, AccuracyStrip/Header nav links
 
 ### Phase 19: Verification & Documentation Closure
 **Goal**: Close all documentation and verification debt from phases 14, 14.5, 15, and 16 so the milestone audit can pass
@@ -177,10 +177,12 @@ Plans:
   4. VERIFICATION.md exists for Phase 16 confirming CACHE-01..05 satisfied in code
   5. CACHE-01..05 and BUG-A/B/RETRY are present in REQUIREMENTS.md traceability table
   6. FINL-01..04 assigned to Phase 17 and HIST-01..04 assigned to Phase 18 in traceability table
-**Plans**: 1 plan
+**Plans**: 3 plans
 
 Plans:
-- [ ] 19-01-PLAN.md — Documentation closure: VERIFICATION.md ×4, Phase 14.5 SUMMARY ×3, REQUIREMENTS.md traceability fixes
+- [ ] 19-01-PLAN.md — Phase 14 + 14.5 VERIFICATION.md (DATE-01..08, BUG-A/B/RETRY)
+- [ ] 19-02-PLAN.md — Phase 15 + 16 VERIFICATION.md (LIVE-01..08, CACHE-01..05)
+- [ ] 19-03-PLAN.md — Phase 14.5 SUMMARYs, REQUIREMENTS.md traceability, ROADMAP updates
 
 ### Phase 20: Ensemble Column in History Table
 **Goal**: History table exposes ensemble win probability alongside per-model columns, closing the HIST-03 partial gap
@@ -233,6 +235,6 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17
 | 16. Historical Game Cache | 3/3 | Complete   | 2026-04-01 | - |
 | 17. Final Outcomes & Nightly Reconciliation | 2/2 | Complete   | 2026-04-01 | - |
 | 18. History Route | 2/2 | Complete    | 2026-04-01 | - |
-| 19. Verification & Documentation Closure | v2.2 | 0/1 | Pending | - |
+| 19. Verification & Documentation Closure | v2.2 | 0/3 | Pending | - |
 | 20. Ensemble Column in History Table | v2.2 | 0/1 | Pending | - |
 | 21. Nyquist Compliance | v2.2 | 0/1 | Pending | - |
