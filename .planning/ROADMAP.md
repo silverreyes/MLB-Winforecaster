@@ -45,7 +45,7 @@
 - [x] **Phase 14: Date Navigation** - Arrow/calendar date controls with today default, past predictions, and future schedule-only mode (completed 2026-03-31)
 - [ ] **Phase 14.5: Post-Phase-14 Bug Fixes** - Header timestamp (BUG-A), browser timezone clock (BUG-B), MLB API retry logic (RETRY)
 - [x] **Phase 15: Live Score Polling** - In-progress game scores, inning display, expanded card with bases/pitcher/batter, auto-Final outcome writes (completed 2026-03-31)
-- [x] **Phase 16: Historical Game Cache** - game_logs table seeded from 2025+2026 completed games; incremental fetch replaces full-season refetch; feature builder reads from DB instead of API (completed 2026-04-01)
+- [x] **Phase 16: Historical Game Cache** - game_logs table seeded from 2025+2026 completed games; incremental fetch replaces full-season refetch; feature builder reads from DB instead of API (completed 2026-04-01)
 - [ ] **Phase 17: Final Outcomes & Nightly Reconciliation** - Completed game cards with score/prediction/outcome marker; safety-net reconciler for missed Finals
 - [ ] **Phase 18: History Route** - Date range picker, predictions vs actuals table, rolling accuracy by model
 
@@ -142,10 +142,11 @@ Plans:
   1. Completed game cards display the final score, the model's win probability prediction, and a correctness marker (check or X) showing whether the model called it right
   2. A nightly reconciliation job stamps `actual_winner` and `prediction_correct` for any Final games not already written by the live poller (covering postponements, late West Coast games, and poller downtime)
   3. The reconciliation job is idempotent -- running it multiple times produces the same result with no duplicate writes
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 17-01: TBD
+- [ ] 17-01-PLAN.md — Backend reconciliation: reconcile_outcomes() in db.py + nightly CronTrigger in scheduler.py + unit tests
+- [ ] 17-02-PLAN.md — API model extensions + game_logs score enrichment + frontend GameCard outcome row (final score, probability, check/X marker)
 
 ### Phase 18: History Route
 **Goal**: Users can review their prediction track record over any date range with accuracy metrics per model
@@ -183,5 +184,5 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17
 | 14. Date Navigation | 3/3 | Complete   | 2026-03-31 | - |
 | 15. Live Score Polling | 4/4 | Complete   | 2026-03-31 | 2026-03-31 |
 | 16. Historical Game Cache | 3/3 | Complete   | 2026-04-01 | - |
-| 17. Final Outcomes & Nightly Reconciliation | v2.2 | 0/? | Not started | - |
+| 17. Final Outcomes & Nightly Reconciliation | v2.2 | 0/2 | Not started | - |
 | 18. History Route | v2.2 | 0/? | Not started | - |
