@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Game Lifecycle, Live Scores & Historical Accuracy
 status: executing
-stopped_at: Completed 16-03-PLAN.md
-last_updated: "2026-04-01T01:07:16.000Z"
-last_activity: 2026-03-31 -- Completed Plan 16-03 (FeatureBuilder game_logs modification)
+stopped_at: Completed 17-01-PLAN.md
+last_updated: "2026-04-01T02:44:00.000Z"
+last_activity: 2026-03-31 -- Completed Plan 17-01 (Nightly reconciliation safety net)
 progress:
   total_phases: 7
   completed_phases: 3
   total_plans: 17
-  completed_plans: 14
-  percent: 82
+  completed_plans: 15
+  percent: 88
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-30)
 
 **Core value:** Produce well-calibrated win probability estimates that can be rigorously compared against Kalshi market prices, surfacing where models agree, disagree, and where edges may exist.
-**Current focus:** Phase 16 - Historical Game Cache
+**Current focus:** Phase 17 - Final Outcomes and Nightly Reconciliation
 
 ## Current Position
 
-Phase: 16 of 18 (Historical Game Cache) -- COMPLETE
-Plan: 3 of 3 in phase 16 -- complete
-Status: Phase 16 complete, ready for Phase 17 (Final Outcomes Reconciliation)
-Last activity: 2026-03-31 -- Completed Plan 16-03 (FeatureBuilder game_logs modification)
+Phase: 17 of 18 (Final Outcomes and Nightly Reconciliation)
+Plan: 1 of 2 in phase 17 -- complete
+Status: Plan 17-01 complete, ready for Plan 17-02
+Last activity: 2026-03-31 -- Completed Plan 17-01 (Nightly reconciliation safety net)
 
-Progress: [████████░░] 82% (milestone v2.2: 14 of 17 plans)
+Progress: [█████████░] 88% (milestone v2.2: 15 of 17 plans)
 
 ## Performance Metrics
 
@@ -57,9 +57,10 @@ Progress: [████████░░] 82% (milestone v2.2: 14 of 17 plans)
 | Phase 16 P01 | 5min | 2 tasks | 4 files |
 | Phase 16 P02 | 2min | 2 tasks | 2 files |
 | Phase 16 P03 | 6min | 2 tasks | 5 files |
+| Phase 17 P01 | 5min | 2 tasks | 3 files |
 
 **Recent Trend:**
-- Last 5 plans: 3min, ~2min, 5min, 2min, 6min
+- Last 5 plans: ~2min, 5min, 2min, 6min, 5min
 - Trend: stable
 
 *Updated after each plan completion*
@@ -103,6 +104,7 @@ Progress: [████████░░] 82% (milestone v2.2: 14 of 17 plans)
 - FeatureBuilder pool=None default preserves backward compat for notebooks/backtest; pool!=None uses game_logs DB path (Phase 16)
 - Pool wiring chain: runner.py -> LiveFeatureBuilder(pool=pool) -> FeatureBuilder(pool=pool) (Phase 16)
 - _load_from_game_logs adds computed columns (status='Final', is_shortened_season, season_games) post-query to match fetch_schedule output exactly (Phase 16)
+- reconcile_outcomes delegates to write_game_outcome per single-source-of-truth guarantee; nightly job at 6 AM ET with 1-hour misfire grace (Phase 17)
 
 ### Roadmap Decisions
 
@@ -124,6 +126,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-01T01:07:16Z
-Stopped at: Completed 16-03-PLAN.md
+Last session: 2026-04-01T02:44:00Z
+Stopped at: Completed 17-01-PLAN.md
 Resume file: None

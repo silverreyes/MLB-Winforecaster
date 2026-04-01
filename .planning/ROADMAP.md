@@ -184,5 +184,5 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17
 | 14. Date Navigation | 3/3 | Complete   | 2026-03-31 | - |
 | 15. Live Score Polling | 4/4 | Complete   | 2026-03-31 | 2026-03-31 |
 | 16. Historical Game Cache | 3/3 | Complete   | 2026-04-01 | - |
-| 17. Final Outcomes & Nightly Reconciliation | v2.2 | 0/2 | Not started | - |
+| 17. Final Outcomes & Nightly Reconciliation | 1/2 | In Progress|  | - |
 | 18. History Route | v2.2 | 0/? | Not started | - |
