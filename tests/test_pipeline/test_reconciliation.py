@@ -1,6 +1,7 @@
 """Tests for nightly reconciliation logic.
 
-Covers: FINL-04 (reconcile_outcomes, idempotency, type casting, edge cases).
+Covers: FINL-04 (reconcile_outcomes, idempotency, type casting, edge cases,
+                  scheduler registration).
 """
 from unittest.mock import MagicMock, patch, call
 
@@ -122,3 +123,45 @@ class TestReconcileOutcomes:
 
         mock_write.assert_not_called()
         assert count == 0
+
+
+class TestNightlyReconciliationJob:
+    """FINL-04: Nightly job scheduler integration."""
+
+    def test_job_registered_in_scheduler(self):
+        """Verify nightly_reconciliation job is registered with CronTrigger."""
+        with patch('src.pipeline.scheduler.run_pipeline'):
+            from src.pipeline.scheduler import create_scheduler
+            scheduler = create_scheduler(MagicMock(), MagicMock())
+            job = scheduler.get_job('nightly_reconciliation')
+            assert job is not None
+
+    def test_job_misfire_grace_time(self):
+        """Verify misfire_grace_time is 3600 (1 hour)."""
+        with patch('src.pipeline.scheduler.run_pipeline'):
+            from src.pipeline.scheduler import create_scheduler
+            scheduler = create_scheduler(MagicMock(), MagicMock())
+            job = scheduler.get_job('nightly_reconciliation')
+            assert job.misfire_grace_time == 3600
+
+    @patch('src.pipeline.scheduler.reconcile_outcomes')
+    def test_job_calls_reconcile_yesterday(self, mock_reconcile):
+        """Job calls reconcile_outcomes with yesterday's date."""
+        from src.pipeline.scheduler import nightly_reconciliation_job
+        mock_reconcile.return_value = 0
+        mock_pool = MagicMock()
+        nightly_reconciliation_job(mock_pool)
+        mock_reconcile.assert_called_once()
+        # Verify the date arg is a string in YYYY-MM-DD format
+        call_args = mock_reconcile.call_args[0]
+        assert call_args[0] == mock_pool
+        date_arg = call_args[1]
+        assert len(date_arg) == 10  # YYYY-MM-DD
+
+    @patch('src.pipeline.scheduler.reconcile_outcomes')
+    def test_job_handles_exception_gracefully(self, mock_reconcile):
+        """Job logs error but does not crash on exception."""
+        from src.pipeline.scheduler import nightly_reconciliation_job
+        mock_reconcile.side_effect = Exception("DB connection lost")
+        # Should NOT raise
+        nightly_reconciliation_job(MagicMock())

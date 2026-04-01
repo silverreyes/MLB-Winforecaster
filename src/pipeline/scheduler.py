@@ -21,7 +21,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 
 from src.data.mlb_schedule import get_schedule_cached
 from src.data.team_mappings import normalize_team
-from src.pipeline.db import write_game_outcome
+from src.pipeline.db import reconcile_outcomes, write_game_outcome
 from src.pipeline.runner import run_pipeline
 
 logger = logging.getLogger(__name__)
@@ -136,6 +136,27 @@ def live_poller_job(pool) -> None:
             logger.error("Live poller: DB write failed for game %s: %s", game_id, exc)
 
 
+def nightly_reconciliation_job(pool) -> None:
+    """Reconcile outcomes for yesterday's Final games not caught by live poller.
+
+    Runs at 6:00 AM ET daily. Reconciles yesterday's date because:
+    - All West Coast games are guaranteed Final by 6 AM ET
+    - The live poller handles today's games in real-time
+
+    Error handling: logs and continues on failure (does not crash scheduler).
+    """
+    from datetime import date, timedelta
+    yesterday = (date.today() - timedelta(days=1)).isoformat()
+    try:
+        count = reconcile_outcomes(pool, yesterday)
+        if count > 0:
+            logger.info("Nightly reconciliation: %d prediction rows updated for %s", count, yesterday)
+        else:
+            logger.debug("Nightly reconciliation: no unreconciled games for %s", yesterday)
+    except Exception as exc:
+        logger.error("Nightly reconciliation failed for %s: %s", yesterday, exc)
+
+
 def create_scheduler(artifacts: dict, pool) -> BlockingScheduler:
     """Create and configure the APScheduler with 3 daily pipeline jobs.
 
@@ -185,7 +206,16 @@ def create_scheduler(artifacts: dict, pool) -> BlockingScheduler:
         misfire_grace_time=30,
     )
 
-    logger.info("Scheduler configured: pre_lineup@10am, post_lineup@1pm, confirmation@5pm ET, live_poller@90s")
+    scheduler.add_job(
+        nightly_reconciliation_job,
+        CronTrigger(hour=6, minute=0, timezone="US/Eastern"),
+        args=[pool],
+        id="nightly_reconciliation",
+        name="Nightly outcome reconciliation (6am ET)",
+        misfire_grace_time=3600,
+    )
+
+    logger.info("Scheduler configured: pre_lineup@10am, post_lineup@1pm, confirmation@5pm ET, live_poller@90s, nightly_reconciliation@6am")
     return scheduler
 
 
