@@ -61,6 +61,21 @@ def _is_pitcher_confirmed(name: str | None) -> bool:
     return bool(stripped) and stripped.upper() != 'TBD'
 
 
+def _apply_live_pitchers(games: list[GameResponse], schedule: list[dict]) -> None:
+    """Populate probable pitcher names on today's game cards.
+
+    Mutates GameResponse objects in-place. Sets home/away_probable_pitcher
+    for any confirmed SP; does NOT set prediction_label (no PRELIMINARY for live).
+    """
+    schedule_lookup = {g['game_id']: g for g in schedule}
+    for game_resp in games:
+        sched = schedule_lookup.get(game_resp.game_id, {})
+        home_sp = sched.get('home_probable_pitcher')
+        away_sp = sched.get('away_probable_pitcher')
+        game_resp.home_probable_pitcher = home_sp if _is_pitcher_confirmed(home_sp) else None
+        game_resp.away_probable_pitcher = away_sp if _is_pitcher_confirmed(away_sp) else None
+
+
 def _apply_tomorrow_labels(games: list[GameResponse], schedule: list[dict]) -> None:
     """Apply PRELIMINARY prediction labels to tomorrow's games with both SPs confirmed.
 
@@ -305,8 +320,10 @@ def get_games_for_date(request: Request, date: str):
     # Merge (pass view_mode and final_scores)
     games = build_games_response(schedule, predictions, view_mode=view_mode, final_scores=final_scores)
 
-    # Apply PRELIMINARY labels for tomorrow's games with confirmed SPs
-    if view_mode == "tomorrow":
+    # Apply pitcher names / PRELIMINARY labels
+    if view_mode == "live":
+        _apply_live_pitchers(games, schedule)
+    elif view_mode == "tomorrow":
         _apply_tomorrow_labels(games, schedule)
 
     return GamesDateResponse(

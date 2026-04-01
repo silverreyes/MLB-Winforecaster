@@ -14,6 +14,7 @@ from api.routes.games import (
     compute_view_mode,
     _is_pitcher_confirmed,
     _apply_tomorrow_labels,
+    _apply_live_pitchers,
 )
 from src.data.mlb_schedule import map_game_status
 
@@ -387,3 +388,43 @@ class TestTomorrowPreliminary:
         }]
         _apply_tomorrow_labels([game], schedule)
         assert game.prediction_label is None
+
+
+class TestApplyLivePitchers:
+    """Tests for _apply_live_pitchers -- pitcher name population for live (today) view."""
+
+    def _make_game(self, game_id=718520):
+        return GameResponse(game_id=game_id, home_team="NYY", away_team="BOS",
+                            game_time=None, game_status="PRE_GAME")
+
+    def test_both_confirmed_populates_names_no_label(self):
+        """Both SPs confirmed -> names set, prediction_label stays None (no PRELIMINARY)."""
+        game = self._make_game()
+        schedule = [{"game_id": 718520,
+                     "home_probable_pitcher": "Gerrit Cole",
+                     "away_probable_pitcher": "Chris Sale"}]
+        _apply_live_pitchers([game], schedule)
+        assert game.home_probable_pitcher == "Gerrit Cole"
+        assert game.away_probable_pitcher == "Chris Sale"
+        assert game.prediction_label is None
+
+    def test_one_tbd_populates_confirmed_only(self):
+        """One TBD SP -> confirmed name set, TBD side is None."""
+        game = self._make_game()
+        schedule = [{"game_id": 718520,
+                     "home_probable_pitcher": "Gerrit Cole",
+                     "away_probable_pitcher": "TBD"}]
+        _apply_live_pitchers([game], schedule)
+        assert game.home_probable_pitcher == "Gerrit Cole"
+        assert game.away_probable_pitcher is None
+        assert game.prediction_label is None
+
+    def test_both_tbd_sets_none(self):
+        """Both SPs TBD -> both pitcher fields None."""
+        game = self._make_game()
+        schedule = [{"game_id": 718520,
+                     "home_probable_pitcher": "TBD",
+                     "away_probable_pitcher": "TBD"}]
+        _apply_live_pitchers([game], schedule)
+        assert game.home_probable_pitcher is None
+        assert game.away_probable_pitcher is None
