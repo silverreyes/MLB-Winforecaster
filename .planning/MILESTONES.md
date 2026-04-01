@@ -1,5 +1,14 @@
 # Milestones
 
+## v2.2 Game Lifecycle, Live Scores & Historical Accuracy (Shipped: 2026-04-01)
+
+**Phases completed:** 10 phases, 26 plans, 2 tasks
+
+**Key accomplishments:**
+- (none recorded)
+
+---
+
 ## v2.1 Dashboard UX / Contextual Clarity (Shipped: 2026-03-31)
 
 **Phases completed:** 3 phases (10–12) · 3 plans

@@ -152,6 +152,60 @@ Living document. One section per milestone, updated on completion.
 
 ---
 
+## Milestone: v2.2 — Game Lifecycle, Live Scores & Historical Accuracy
+
+**Shipped:** 2026-04-01
+**Phases:** 10 (13–21) | **Plans:** 26 | **Timeline:** 3 days | **Commits:** 128
+
+### What Was Built
+
+- Phase 13: game_id + outcome columns migration; all games visible with status badges (VIBL/SCHM requirements)
+- Phase 14: DateNavigator with 5 view modes (past/today/tomorrow-PRELIMINARY/future/historical); compute_view_mode server-side ET logic
+- Phase 14.5: Three production bug fixes — pipeline timestamp wired to Header, live clock in browser TZ, MLB API retry-once on 503/timeout
+- Phase 15: Full live score system — 90s dual-gate polling, ScoreRow, LiveDetail with BasesDiamond + pitch count + batter stats, write_game_outcome on Final
+- Phase 16: game_logs Postgres table; seed_game_logs.py one-time backfill; incremental sync from MAX(game_date); FeatureBuilder DB dispatch
+- Phase 17: Completed game cards with final score + outcome marker; nightly reconciliation job at 6am ET
+- Phase 18 + 20: /api/v1/history endpoint with ROW_NUMBER post_lineup preference, ensemble_prob CTE, HistoryPage with hash routing and rolling accuracy strip
+
+### What Worked
+
+- **Decimal phase for bug fixes (14.5)**: Three unrelated production bugs identified post-Phase-14 verification handled cleanly as a decimal phase. The pattern keeps main phase numbering intact without polluting the milestone scope with repair work.
+- **game_logs as the integration spine**: Phases 16, 17, and 18 all depend on the game_logs table. Getting Phase 16 right (immutability, incremental sync, DB dispatch) meant the downstream phases just worked.
+- **Phase 19 as a dedicated documentation closure phase**: Rather than leaving VERIFICATION.md gaps as tech debt, a dedicated closure phase fixed all orphaned requirements, traceability errors, and missing verification files before milestone audit. The audit ran clean on first pass (for the phases that had been properly closed).
+- **Nyquist compliance as a named phase (21)**: Making Nyquist compliance an explicit phase with plan and VALIDATION.md artifacts for 6 phases produced systematic, verifiable documentation — not ad hoc one-offs.
+- **Milestone audit gate**: v2.2 audit correctly flagged the HIST-03 gap (ensemble_prob missing from HistoryRow before Phase 20 fixed it). Without the audit, that gap would have reached the completion ceremony incomplete.
+
+### What Was Inefficient
+
+- **Phase 19 existence**: The need for a 3-plan "verification closure" phase indicates that phases 14, 14.5, 15, and 16 should have had VERIFICATION.md created during execute-phase, not deferred. The closure phase added 3 plans and a full execution cycle. Root cause: VERIFICATION.md was not created atomically with plan execution for earlier phases in this milestone.
+- **Initial v2.2 audit had 8 orphaned requirements**: CACHE-01..05 and BUG-A/B/RETRY were implemented but not in REQUIREMENTS.md when the first audit ran. Adding requirements after implementation (instead of before planning) is backwards — the requirements should have been defined in the discuss-phase step.
+- **Two broken pytest commands in VALIDATION.md (Phase 16 row 16-02-01, Phase 17 row 17-01-02)**: The gsd-nyquist-auditor agent wrote test commands referencing wrong class names. Caught by gsd-verifier in Phase 21. A post-write command validation step in the Nyquist auditor would prevent this.
+- **21 phases for a milestone originally scoped at 6**: The v2.2 milestone started as Phases 13-18, grew to include 14.5 (bugs), then 19 (closure), 20 (ensemble gap), and 21 (Nyquist). This wasn't bad scope creep — each insertion was justified — but it highlights that gap closure phases should be planned into the original roadmap estimate.
+
+### Patterns Established
+
+- `decimal-phase-for-bugs`: Post-phase bug fixes go into Phase X.5, not as sub-plans of the parent phase or as postponed work. Clean semantics, doesn't break linear numbering.
+- `write-outcome-on-all-rows`: write_game_outcome stamps all prediction rows for a game_id (not just is_latest) — intentional carry-forward for history. get_history deduplicates via ROW_NUMBER.
+- `ROW_NUMBER-post_lineup-preference`: For any query returning one prediction per game, use ROW_NUMBER OVER (PARTITION BY game_id, game_date ORDER BY CASE prediction_version WHEN 'post_lineup'...) to select the best available prediction.
+- `incremental-sync-with-buffer`: game_logs sync fetches from (MAX(game_date) - 1) to catch late score updates without re-fetching the full season.
+- `hash-routing-for-two-views`: When the app has exactly two views and no deep linking requirement, hash routing with window.location.hash + hashchange is simpler and more correct than React Router.
+- `verification-closure-phase`: If multiple phases are missing VERIFICATION.md, batch the gap closure into a named verification phase rather than fixup commits. Creates a clean audit trail.
+
+### Key Lessons
+
+1. **Create VERIFICATION.md during execute-phase, not after**: Deferring verification documentation creates a compounding debt. The Phase 19 existence is proof — 4 phases needed retroactive verification closure. The execute-phase workflow already creates VERIFICATION.md atomically; use it.
+2. **Add requirements before planning, not after implementation**: CACHE and BUG requirements were implemented before being added to REQUIREMENTS.md. The right flow is: discuss-phase → requirements → plan → execute. If requirements are discovered during execution, add them immediately to REQUIREMENTS.md with the phase they belong to.
+3. **Test commands in VALIDATION.md should be verified at write time**: The gsd-nyquist-auditor should run the commands it writes (or at minimum check that the class/method names exist in the target file) before saving them to VALIDATION.md.
+4. **game_logs.game_id type mismatch is a long-term maintenance risk**: VARCHAR vs INTEGER with a `::INTEGER` cast works today (MLB gamePks are always numeric) but is a time bomb if the schema ever diverges. Fix in a future migration.
+
+### Cost Observations
+
+- **Model mix:** opus for execution agents, sonnet for plan-checker/verifier/integration-checker — appropriate tiering
+- **Sessions:** ~5 sessions across 3 days
+- **Notable:** Phases 19 + 20 + 21 (closure/compliance) added 5 plans that wouldn't have been needed with tighter process discipline during phases 14–16. That's ~19% overhead for documentation debt.
+
+---
+
 ## Cross-Milestone Trends
 
 | Milestone | Days | Commits | Plans | Tests | Key Risk |
@@ -159,3 +213,4 @@ Living document. One section per milestone, updated on completion.
 | v1.0 MVP | 2 | 81 | 10 | 120 | External API reliability (BRef, Kalshi) |
 | v2.0 Live Platform | 3 | ~99 | 16 | — | Production cold-start OOM; Opening Day NaN features |
 | v2.1 Dashboard UX | 1 | 22 | 3 | — | Post-verify code changes breaking spec compliance |
+| v2.2 Game Lifecycle | 3 | 128 | 26 | 114 | Documentation debt (5 closure phases); VALIDATION.md stale test commands |

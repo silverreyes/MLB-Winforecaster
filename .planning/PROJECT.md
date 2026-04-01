@@ -7,6 +7,7 @@ A live MLB win probability forecasting platform that predicts game outcomes day-
 **Shipped v1.0** (2026-03-29): full Jupyter pipeline from raw ingestion to fee-adjusted edge identification.
 **Shipped v2.0** (2026-03-30): live prediction dashboard, SP-enhanced models, daily automated pipeline.
 **Shipped v2.1** (2026-03-31): game time display, live ET header clock, explanatory content and tooltips.
+**Shipped v2.2** (2026-04-01): full game lifecycle (visibility, live scores, Final outcomes), date navigation, game_logs cache, history page with ensemble accuracy.
 
 ## Core Value
 
@@ -14,7 +15,7 @@ Produce well-calibrated win probability estimates that can be rigorously compare
 
 ## Requirements
 
-### Validated (v1.0–v2.1)
+### Validated (v1.0–v2.2)
 
 - ✓ Fetch game schedules and starting pitcher assignments from MLB Stats API — v1.0
 - ✓ Ingest historical team batting statistics (wOBA, OPS, OBP, SLG) via pybaseball/FanGraphs — v1.0
@@ -55,28 +56,18 @@ Produce well-calibrated win probability estimates that can be rigorously compare
 - ✓ Dashboard header: today's date, live drift-corrected ET clock (every second), next pipeline run time — v2.1
 - ✓ Collapsible "About the Models" section: LR/RF/XGBoost plain-English, calibration, PRE/POST-LINEUP, Kalshi mechanics + 7% fee disclosure — v2.1
 - ✓ Reusable Tooltip component (CSS-only, keyboard accessible); EdgeBadge (?) icons explaining Buy Yes/No contract mechanics — v2.1
+- ✓ All games visible throughout the day regardless of status (PRE-GAME/LIVE/FINAL/POSTPONED badges) — v2.2
+- ✓ predictions.game_id + actual_winner + prediction_correct + reconciled_at columns via idempotent migration — v2.2
+- ✓ Date navigation (arrows + calendar picker); today/past/tomorrow-PRELIMINARY/future-schedule-only modes — v2.2
+- ✓ Header timestamp wired to pipeline DB time (BUG-A); live clock in browser timezone (BUG-B); MLB API retry on 503/timeout (RETRY) — v2.2
+- ✓ Live score polling (90s, LIVE-only gate): ScoreRow with score/inning; expanded LiveDetail with BasesDiamond, pitch count, batter stats — v2.2
+- ✓ Live poller auto-stamps actual_winner + prediction_correct on Final; nightly reconciliation safety net at 6am ET — v2.2
+- ✓ game_logs Postgres table: seeded from 2025+2026 MLB API; incremental sync; FeatureBuilder reads from DB not API — v2.2
+- ✓ History route (/api/v1/history): date range picker, predictions-vs-actuals table, ensemble% column, rolling accuracy by model (LR/RF/XGB/ENS) — v2.2
 
-## Current Milestone: v2.2 Game Lifecycle, Live Scores & Historical Accuracy
+### Active (v3.0)
 
-**Goal:** Complete the game lifecycle loop — keep all scheduled games visible all day, add date navigation, show live scores for in-progress games, surface prediction outcomes, and provide a history page with rolling accuracy.
-
-**Target features:**
-- Fix game visibility (games disappearing once in-progress or final)
-- Date navigation (arrows + calendar picker; today/tomorrow predictions; future = schedule only)
-- Live score display (90s polling, bases diamond, pitcher/batter data, auto-Final stamping to Postgres)
-- Final game outcome display (score + prediction correctness on completed cards)
-- History page (date range, predictions vs actuals table, rolling accuracy)
-
-### Active (v2.2)
-
-- [ ] All games scheduled for selected date remain visible throughout the day (pre-game, in-progress, final)
-- [ ] Date navigation control (arrows + calendar picker) with today/tomorrow predictions and future-date schedule-only mode
-- [ ] Live score polling for in-progress games (90s interval; score + inning on card; expanded view with bases/pitch/batter)
-- [ ] Live poller writes actual_winner and prediction_correct to Postgres when game goes Final
-- [ ] Completed game cards show final score, model prediction, and prediction outcome marker
-- [ ] Nightly reconciliation job for games missed by live poller
-- [ ] Additive Postgres columns: actual_winner, prediction_correct, reconciled_at on predictions table
-- [ ] History route with date range picker, predictions vs actuals table, rolling accuracy by model
+*(Next milestone to be defined — see /gsd:new-milestone)*
 
 ### Out of Scope
 
@@ -98,19 +89,21 @@ Produce well-calibrated win probability estimates that can be rigorously compare
 
 ## Context
 
-**Current state (v2.1 — shipped 2026-03-31):**
-- ~5,322 Python LOC across `src/` (data loaders, feature builder, models, pipeline, API) + ~1,150 TypeScript/CSS (added game time, clock hook, AboutModels, Tooltip, EdgeBadge updates)
-- 6 model artifacts: LR/RF/XGB × TEAM_ONLY/SP_ENHANCED, all joblib with IsotonicRegression calibrators
-- Live dashboard at mlbforecaster.silverreyes.net — deployed Opening Day 2026
-- Three-run daily pipeline (10am/1pm/5pm ET) automated via APScheduler in Docker worker
-- 60 requirements shipped across 12 phases (v1.0: 18, v2.0: 27, v2.1: 15)
+**Current state (v2.2 — shipped 2026-04-01):**
+- ~9,430 LOC total (Python + TypeScript/CSS) across `src/`, `api/`, `frontend/src/`
+- New in v2.2: `game_logs` table (5 CACHE requirements), `write_game_outcome` + `reconcile_outcomes` (FINL-04), `get_history` SQL with ROW_NUMBER post_lineup preference and ensemble_prob CTE, HistoryPage with hash routing, LiveDetail component with BasesDiamond, DateNavigator with 5 view modes
+- 96 requirements shipped across 21 phases (v1.0: 18, v2.0: 27, v2.1: 15, v2.2: 36)
+- Live dashboard at mlbforecaster.silverreyes.net — full game lifecycle loop complete
+- All 7 v2.2 feature phases Nyquist-compliant (VALIDATION.md with nyquist_compliant: true)
 
 **Tech stack:** Python 3.11 · pandas 2.2.x (pinned) · pyarrow · pybaseball · statsapi · scikit-learn · XGBoost · FastAPI · psycopg3 · psycopg_pool · APScheduler · React 19 · Vite · TypeScript · TanStack Query · Docker · Nginx · Postgres 16
 
 **Known tech debt:**
-- LiveFeatureBuilder calls FeatureBuilder private methods (_add_sp_features, _add_offense_features, etc.) — accepted coupling for v2; refactor to stable adapter if FeatureBuilder internals change
-- Early-season NaN features (xwoba_diff, sp_recent_era/fip diffs) imputed to 0.0 in live predictions until game log data accumulates (~1 week into season)
+- LiveFeatureBuilder calls FeatureBuilder private methods — accepted coupling; refactor to stable adapter if internals change
+- Early-season NaN features (xwoba_diff, sp_recent_era/fip diffs) imputed to 0.0 until game log data accumulates (~1 week)
 - Kalshi comparison limited to 2025 season (data available from 2025-04-16); grows with each season
+- `game_logs.game_id` is VARCHAR; `predictions.game_id` is INTEGER — cast `::INTEGER` in 3 places (safe, MLB gamePks always numeric)
+- `/api/v1/accuracy` route orphaned — AccuracyStrip uses hardcoded Brier scores; route exists but unused
 
 ## Constraints
 
@@ -157,6 +150,16 @@ Produce well-calibrated win probability estimates that can be rigorously compare
 | Native `<details>`/`<summary>` for AboutModels collapsible (zero JS) | No state management needed for a single static expand/collapse; chevron via CSS transform | ✓ Good — simplest correct solution |
 | CSS-only Tooltip (hover + focus-visible, no library) | Only two static tooltips needed; a library would be overkill | ✓ Good — 68 lines CSS, fully accessible |
 | Shortened tooltip text with pricing clause preserved | Original overflow fix removed "you pay" clause; restored as spec requirement in audit | ✓ Good — audit caught regression before milestone close |
+| All games visible via stub cards for games without predictions | Decoupling visibility from prediction existence; `get_schedule_cached` returns all games → API merges with predictions | ✓ Good — game lifecycle works regardless of prediction state |
+| game_logs VARCHAR game_id; predictions INTEGER game_id | MLB Stats API returns string gamePks; predictions schema uses integer | — Pending — cast `::INTEGER` safe in practice but schema alignment deferred |
+| write_game_outcome stamps ALL prediction rows for game_id | Intentional carry-forward: historical pre-lineup rows also get outcome | ✓ Good — get_history deduplicates via ROW_NUMBER post_lineup preference |
+| game_logs incremental sync: fetch from (MAX(game_date) - 1) | Buffer one day to catch late score updates; never full-season re-fetch | ✓ Good — CACHE-03 satisfied, API load minimal |
+| FeatureBuilder reads game_logs when pool is not None | Dispatch at `_load_schedule` time: DB path if pool provided, API path otherwise | ✓ Good — backward-compatible, tests pass both paths |
+| ROW_NUMBER with CASE for post_lineup preference in get_history | post_lineup > confirmation > pre_lineup within game+date group | ✓ Good — returns best available prediction per game |
+| Ensemble accuracy derived from prediction_correct directly | prediction_correct IS the ensemble outcome (ensemble ≥ 0.5 → home win) | ✓ Good — no double-computation; ENS accuracy = overall accuracy |
+| ensemble_prob computed in SQL CTE (not Python) | DB as single source of truth for derived values | ✓ Good — consistent across all consumers |
+| Hash-based routing (no React Router) | Only 2 views; hash routing with useState + hashchange is sufficient | ✓ Good — zero library overhead |
+| Nightly reconciliation at 6am ET (not real-time catchup) | Live poller covers real-time; reconciler is safety net only | ✓ Good — FINL-04 satisfied without complexity |
 
 ---
-*Last updated: 2026-03-30 — after v2.2 milestone started (Game Lifecycle, Live Scores & Historical Accuracy)*
+*Last updated: 2026-04-01 — after v2.2 milestone shipped (Game Lifecycle, Live Scores & Historical Accuracy)*
