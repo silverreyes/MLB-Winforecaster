@@ -3,14 +3,29 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Game Lifecycle, Live Scores & Historical Accuracy
 status: executing
+stopped_at: Completed 20-01-PLAN.md -- Ensemble column in history table
+last_updated: "2026-04-01T14:00:10.017Z"
+last_activity: 2026-04-01 -- Added ensemble_prob to SQL, model, route, TS type, and UI column
+progress:
+  total_phases: 10
+  completed_phases: 9
+  total_plans: 25
+  completed_plans: 25
+---
+
+---
+gsd_state_version: 1.0
+milestone: v2.2
+milestone_name: Game Lifecycle, Live Scores & Historical Accuracy
+status: executing
 stopped_at: Completed 19-03-PLAN.md -- Phase 14.5 SUMMARYs, ROADMAP updates
-last_updated: "2026-04-01T13:41:54.963Z"
+last_updated: "2026-04-01T13:59:27.682Z"
 last_activity: 2026-04-01 -- Created Phase 14.5 SUMMARYs, updated ROADMAP Phase 14.5 complete
 progress:
   total_phases: 10
-  completed_phases: 8
-  total_plans: 24
-  completed_plans: 24
+  completed_phases: 9
+  total_plans: 25
+  completed_plans: 25
 ---
 
 ---
@@ -144,23 +159,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-30)
 
 **Core value:** Produce well-calibrated win probability estimates that can be rigorously compared against Kalshi market prices, surfacing where models agree, disagree, and where edges may exist.
-**Current focus:** Phase 19 - Verification Documentation Closure
+**Current focus:** Phase 20 - Ensemble Column in History Table
 
 ## Current Position
 
-Phase: 19 of 21 (Verification Documentation Closure)
-Plan: 3 of 3 in phase 19 (complete)
-Status: Completed 19-03 -- Phase 14.5 SUMMARYs, REQUIREMENTS.md traceability, ROADMAP updates
-Last activity: 2026-04-01 -- Created Phase 14.5 SUMMARYs, updated ROADMAP Phase 14.5 complete
+Phase: 20 of 21 (Ensemble Column in History Table)
+Plan: 1 of 1 in phase 20 (complete)
+Status: Completed 20-01 -- Ensemble% column added to history table end-to-end
+Last activity: 2026-04-01 -- Added ensemble_prob to SQL, model, route, TS type, and UI column
 
-Progress: [█████████░] 88% (milestone v2.2: 21 of 24 plans)
+Progress: [██████████] 100% (milestone v2.2: 25 of 25 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 21 (v2.2)
+- Total plans completed: 22 (v2.2)
 - Average duration: 4min
-- Total execution time: ~81min
+- Total execution time: ~85min
 
 **By Phase:**
 
@@ -187,9 +202,10 @@ Progress: [█████████░] 88% (milestone v2.2: 21 of 24 plans)
 | Phase 19 P01 | 4min | 2 tasks | 2 files |
 | Phase 19 P02 | 5min | 2 tasks | 2 files |
 | Phase 19 P03 | 3min | 2 tasks | 4 files |
+| Phase 20 P01 | 4min | 2 tasks | 6 files |
 
 **Recent Trend:**
-- Last 5 plans: 3min, 4min, 4min, 5min, 3min
+- Last 5 plans: 4min, 4min, 5min, 3min, 4min
 - Trend: stable
 
 *Updated after each plan completion*
@@ -239,6 +255,8 @@ Progress: [█████████░] 88% (milestone v2.2: 21 of 24 plans)
 - Per-model accuracy in /history uses ensemble+prediction_correct to derive actual outcome, then evaluates each model individually (Phase 18)
 - Route tests use conftest.py client fixture with mocked lifespan for proper TestClient setup (Phase 18)
 - Hash-based routing via useState + hashchange listener, no React Router dependency (Phase 18)
+- Ensemble computed in SQL CTE via CASE/ROUND, not Python app layer -- DB as single source of truth (Phase 20)
+- Ensemble accuracy uses prediction_correct directly since it already represents ensemble outcome (Phase 20)
 - Native date inputs for history date range picker, consistent with DateNavigator pattern (Phase 18)
 
 ### Roadmap Decisions
@@ -261,6 +279,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-01T13:36:43.206Z
-Stopped at: Completed 19-03-PLAN.md -- Phase 14.5 SUMMARYs, ROADMAP updates
+Last session: 2026-04-01T14:00:10.013Z
+Stopped at: Completed 20-01-PLAN.md -- Ensemble column in history table
 Resume file: None

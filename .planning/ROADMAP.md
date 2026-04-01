@@ -49,7 +49,7 @@
 - [x] **Phase 17: Final Outcomes & Nightly Reconciliation** - Completed game cards with score/prediction/outcome marker; safety-net reconciler for missed Finals (completed 2026-04-01)
 - [x] **Phase 18: History Route** - Date range picker, predictions vs actuals table, rolling accuracy by model (completed 2026-04-01)
 - [x] **Phase 19: Verification & Documentation Closure** - Create missing VERIFICATION.md for phases 14, 14.5, 15, 16; add orphaned requirements (CACHE, BUG) to REQUIREMENTS.md; fix traceability assignments (completed 2026-04-01)
-- [ ] **Phase 20: Ensemble Column in History Table** - Add ensemble_prob to HistoryRow model, get_history() SQL, and HistoryPage table to close HIST-03
+- [x] **Phase 20: Ensemble Column in History Table** - Add ensemble_prob to HistoryRow model, get_history() SQL, and HistoryPage table to close HIST-03 (completed 2026-04-01)
 - [ ] **Phase 21: Nyquist Compliance** - Run validate-phase for all 6 non-compliant v2.2 phases (13, 14.5, 15, 16, 17, 18)
 
 ## Phase Details
@@ -237,5 +237,5 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17
 | 17. Final Outcomes & Nightly Reconciliation | 2/2 | Complete   | 2026-04-01 | - |
 | 18. History Route | 2/2 | Complete    | 2026-04-01 | - |
 | 19. Verification & Documentation Closure | 3/3 | Complete    | 2026-04-01 | - |
-| 20. Ensemble Column in History Table | v2.2 | 0/1 | Pending | - |
+| 20. Ensemble Column in History Table | 1/1 | Complete   | 2026-04-01 | - |
 | 21. Nyquist Compliance | v2.2 | 0/1 | Pending | - |

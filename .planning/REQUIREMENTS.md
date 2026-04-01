@@ -49,7 +49,7 @@
 
 - [x] **HIST-01**: A `/history` route is accessible from the main dashboard
 - [x] **HIST-02**: User can select a date range on the history page via a date range picker
-- [ ] **HIST-03**: History page shows a table of past predictions vs actual outcomes within the selected range (including ensemble probability column)
+- [x] **HIST-03**: History page shows a table of past predictions vs actual outcomes within the selected range (including ensemble probability column)
 - [x] **HIST-04**: History page shows rolling model accuracy (percentage correct) over the selected date range
 
 ### Historical Game Cache (CACHE)
@@ -124,7 +124,7 @@
 | FINL-04 | Phase 17 | Complete |
 | HIST-01 | Phase 18 | Complete |
 | HIST-02 | Phase 18 | Complete |
-| HIST-03 | Phase 20 | Pending |
+| HIST-03 | Phase 20 | Complete |
 | HIST-04 | Phase 18 | Complete |
 
 **Coverage:**
