@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Game Lifecycle, Live Scores & Historical Accuracy
 status: executing
-stopped_at: Completed 15-04-PLAN.md
-last_updated: "2026-03-31T23:10:00Z"
-last_activity: 2026-03-31 -- Completed Plan 15-04 (full verification + human VPS checkpoint — Phase 15 approved, no live games at review time)
+stopped_at: Completed 16-01-PLAN.md
+last_updated: "2026-04-01T00:05:52.614Z"
+last_activity: 2026-03-31 -- Completed Plan 16-01 (game_logs DDL, batch insert, sync functions, test scaffold)
 progress:
   total_phases: 7
   completed_phases: 3
-  total_plans: 14
-  completed_plans: 11
-  percent: 73
+  total_plans: 17
+  completed_plans: 12
+  percent: 71
 ---
 
 # Project State
@@ -25,19 +25,19 @@ See: .planning/PROJECT.md (updated 2026-03-30)
 
 ## Current Position
 
-Phase: 15 of 18 (Live Score Polling) — COMPLETE
-Plan: 4 of 4 in phase 15 — complete
-Status: Phase 15 complete, ready for Phase 16 (Historical Game Cache)
-Last activity: 2026-03-31 -- Completed Plan 15-04 (full verification + human VPS checkpoint — Phase 15 approved, no live games at review time)
+Phase: 16 of 18 (Historical Game Cache)
+Plan: 1 of 3 in phase 16 — complete
+Status: Plan 16-01 complete, ready for Plan 16-02 (seed script)
+Last activity: 2026-03-31 -- Completed Plan 16-01 (game_logs DDL, batch insert, sync functions, test scaffold)
 
-Progress: [████████░░] 79% (milestone v2.2: 11 of 14 plans)
+Progress: [███████░░░] 71% (milestone v2.2: 12 of 17 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 11 (v2.2)
+- Total plans completed: 12 (v2.2)
 - Average duration: 4min
-- Total execution time: ~46min
+- Total execution time: ~51min
 
 **By Phase:**
 
@@ -54,9 +54,10 @@ Progress: [████████░░] 79% (milestone v2.2: 11 of 14 plans)
 | Phase 15 P02 | 4min | 2 tasks | 4 files |
 | Phase 15 P03 | 3min | 2 tasks | 7 files |
 | Phase 15 P04 | ~2min | 2 tasks | 0 files |
+| Phase 16 P01 | 5min | 2 tasks | 4 files |
 
 **Recent Trend:**
-- Last 5 plans: 10min, 4min, 4min, 3min, ~2min
+- Last 5 plans: 4min, 4min, 3min, ~2min, 5min
 - Trend: stable
 
 *Updated after each plan completion*
@@ -95,6 +96,8 @@ Progress: [████████░░] 79% (milestone v2.2: 11 of 14 plans)
 - game_logs table is the source of truth for rolling team features; FeatureBuilder must read from DB, never call fetch_schedule(season) at prediction time (Phase 16 intent)
 - game_logs.game_id is VARCHAR; predictions.game_id is INTEGER — Phase 17 joins across these tables must cast: game_logs.game_id::INTEGER or predictions.game_id::TEXT (Phase 16 carry-forward)
 - seed_game_logs.py 2026 fetch returns a partial season (only completed games) — ON CONFLICT DO NOTHING and Final filter make this safe and idempotent (Phase 16 carry-forward)
+- Module-level imports for date_cls, timedelta, statsapi in db.py enable clean test patching via patch("src.pipeline.db.date_cls") (Phase 16)
+- sync_game_logs overlaps by 1 day from MAX(game_date) to catch late West Coast games that weren't Final at last sync (Phase 16)
 
 ### Roadmap Decisions
 
@@ -116,6 +119,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-31T23:10:00Z
-Stopped at: Completed 15-04-PLAN.md
-Resume file: .planning/phases/16-historical-game-cache/16-01-PLAN.md (to be created)
+Last session: 2026-04-01T00:05:52.610Z
+Stopped at: Completed 16-01-PLAN.md
+Resume file: None

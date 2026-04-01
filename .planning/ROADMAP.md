@@ -182,6 +182,6 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17
 | 13. Schema Migration & Game Visibility | 4/4 | Complete   | 2026-03-31 | - |
 | 14. Date Navigation | 3/3 | Complete   | 2026-03-31 | - |
 | 15. Live Score Polling | 4/4 | Complete   | 2026-03-31 | 2026-03-31 |
-| 16. Historical Game Cache | v2.2 | 0/3 | Not started | - |
+| 16. Historical Game Cache | 1/3 | In Progress|  | - |
 | 17. Final Outcomes & Nightly Reconciliation | v2.2 | 0/? | Not started | - |
 | 18. History Route | v2.2 | 0/? | Not started | - |
