@@ -18,6 +18,8 @@ export interface PredictionResponse {
   edge_magnitude: number | null;
   created_at: string;
   game_time: string | null;
+  actual_winner: string | null;
+  prediction_correct: boolean | null;
 }
 
 export interface TodayResponse {
@@ -80,6 +82,10 @@ export interface GameResponse {
   home_probable_pitcher: string | null;
   away_probable_pitcher: string | null;
   live_score: LiveScoreData | null;
+  home_final_score: number | null;
+  away_final_score: number | null;
+  actual_winner: string | null;
+  prediction_correct: boolean | null;
 }
 
 export interface GamesDateResponse {

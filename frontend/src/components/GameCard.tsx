@@ -135,6 +135,23 @@ export function GameCard({ game, viewMode }: GameCardProps) {
         </>
       )}
 
+      {/* Final score + outcome row -- FINAL games only */}
+      {game_status === 'FINAL' && game.home_final_score !== null && (
+        <div className={styles.finalRow}>
+          <div className={styles.finalScoreText}>
+            <span className={styles.scoreTeams}>
+              {away_team} {game.away_final_score} - {home_team} {game.home_final_score}
+            </span>
+            <span className={styles.finalLabel}>Final</span>
+          </div>
+          {game.prediction_correct !== null && (
+            <span className={game.prediction_correct ? styles.outcomeCorrect : styles.outcomeIncorrect}>
+              {game.prediction_correct ? '\u2713' : '\u2717'}
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Prediction body -- absent for stub cards and future mode */}
       {hasPrediction && viewMode !== 'future' && (
         <div className={styles.predictionBody}>

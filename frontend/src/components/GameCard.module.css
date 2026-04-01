@@ -140,3 +140,41 @@
 .expandChevronOpen {
   transform: rotate(180deg);
 }
+
+.finalRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(34, 197, 94, 0.06);
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.finalScoreText {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+  flex: 1;
+}
+
+.finalLabel {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.outcomeCorrect {
+  font-size: 18px;
+  font-weight: 700;
+  color: #22c55e;
+}
+
+.outcomeIncorrect {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ef4444;
+}
