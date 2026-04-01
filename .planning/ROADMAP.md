@@ -180,9 +180,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 19-01-PLAN.md — Phase 14 + 14.5 VERIFICATION.md (DATE-01..08, BUG-A/B/RETRY)
-- [ ] 19-02-PLAN.md — Phase 15 + 16 VERIFICATION.md (LIVE-01..08, CACHE-01..05)
-- [ ] 19-03-PLAN.md — Phase 14.5 SUMMARYs, REQUIREMENTS.md traceability, ROADMAP updates
+- [x] 19-01-PLAN.md — Phase 14 + 14.5 VERIFICATION.md (DATE-01..08, BUG-A/B/RETRY)
+- [x] 19-02-PLAN.md — Phase 15 + 16 VERIFICATION.md (LIVE-01..08, CACHE-01..05)
+- [x] 19-03-PLAN.md — Phase 14.5 SUMMARYs, REQUIREMENTS.md traceability, ROADMAP updates
 
 ### Phase 20: Ensemble Column in History Table
 **Goal**: History table exposes ensemble win probability alongside per-model columns, closing the HIST-03 partial gap
