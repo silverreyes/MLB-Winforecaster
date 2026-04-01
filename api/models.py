@@ -32,6 +32,8 @@ class PredictionResponse(BaseModel):
     edge_magnitude: float | None
     created_at: datetime
     game_time: datetime | None = None
+    actual_winner: str | None = None
+    prediction_correct: bool | None = None
 
 
 class TodayResponse(BaseModel):
@@ -102,6 +104,10 @@ class GameResponse(BaseModel):
     home_probable_pitcher: str | None = None
     away_probable_pitcher: str | None = None
     live_score: LiveScoreData | None = None
+    home_final_score: int | None = None
+    away_final_score: int | None = None
+    actual_winner: str | None = None
+    prediction_correct: bool | None = None
 
 
 class GamesDateResponse(BaseModel):

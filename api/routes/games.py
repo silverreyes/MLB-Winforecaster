@@ -129,6 +129,8 @@ def _build_prediction_response(row: dict) -> PredictionResponse:
         edge_magnitude=edge_magnitude,
         created_at=row["created_at"],
         game_time=None,  # game_time comes from schedule, not DB
+        actual_winner=row.get("actual_winner"),
+        prediction_correct=row.get("prediction_correct"),
     )
 
 
@@ -164,10 +166,30 @@ def _fetch_predictions_for_date(pool, date_str: str) -> list[dict]:
             return cur.fetchall()
 
 
+def _fetch_final_scores(pool, date_str: str) -> dict[int, dict]:
+    """Query game_logs for final scores on a given date.
+
+    Returns dict keyed by game_id (INTEGER) with home_score, away_score.
+    Casts game_logs.game_id (VARCHAR) to INTEGER for consumer compatibility.
+    """
+    sql = """
+        SELECT game_id::INTEGER AS game_id_int,
+               home_score, away_score, home_team, away_team
+        FROM game_logs
+        WHERE game_date = %(date)s
+    """
+    with pool.connection() as conn:
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(sql, {"date": date_str})
+            rows = cur.fetchall()
+    return {row["game_id_int"]: row for row in rows}
+
+
 def build_games_response(
     schedule: list[dict],
     predictions: list[dict],
     view_mode: str = "historical",
+    final_scores: dict[int, dict] | None = None,
 ) -> list[GameResponse]:
     """Merge schedule games with prediction rows.
 
@@ -222,6 +244,20 @@ def build_games_response(
             prediction=prediction_group,
         )
 
+        # Enrich FINAL games with final score data from game_logs
+        if game_status == 'FINAL' and final_scores:
+            score_data = final_scores.get(game_id)
+            if score_data:
+                game_resp.home_final_score = score_data["home_score"]
+                game_resp.away_final_score = score_data["away_score"]
+
+        # Also populate top-level outcome fields from prediction
+        if prediction_group:
+            primary_pred = prediction_group.post_lineup or prediction_group.pre_lineup
+            if primary_pred:
+                game_resp.actual_winner = primary_pred.actual_winner
+                game_resp.prediction_correct = primary_pred.prediction_correct
+
         # Enrich LIVE games with live score data (only in live view mode)
         if game_status == 'LIVE' and view_mode == 'live':
             raw = get_linescore_cached(game_id)
@@ -263,8 +299,11 @@ def get_games_for_date(request: Request, date: str):
     # Fetch predictions from DB
     predictions = _fetch_predictions_for_date(pool, date)
 
-    # Merge (pass view_mode so LIVE games get linescore enrichment)
-    games = build_games_response(schedule, predictions, view_mode=view_mode)
+    # Fetch final scores from game_logs for FINAL game enrichment
+    final_scores = _fetch_final_scores(pool, date)
+
+    # Merge (pass view_mode and final_scores)
+    games = build_games_response(schedule, predictions, view_mode=view_mode, final_scores=final_scores)
 
     # Apply PRELIMINARY labels for tomorrow's games with confirmed SPs
     if view_mode == "tomorrow":
