@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Game Lifecycle, Live Scores & Historical Accuracy
 status: executing
-stopped_at: Completed 17-01-PLAN.md
-last_updated: "2026-04-01T02:44:00.000Z"
-last_activity: 2026-03-31 -- Completed Plan 17-01 (Nightly reconciliation safety net)
+stopped_at: Completed 17-02-PLAN.md
+last_updated: "2026-04-01T02:50:00.000Z"
+last_activity: 2026-03-31 -- Completed Plan 17-02 (FINAL game outcome display)
 progress:
   total_phases: 7
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 17
-  completed_plans: 15
-  percent: 88
+  completed_plans: 16
+  percent: 94
 ---
 
 # Project State
@@ -26,18 +26,18 @@ See: .planning/PROJECT.md (updated 2026-03-30)
 ## Current Position
 
 Phase: 17 of 18 (Final Outcomes and Nightly Reconciliation)
-Plan: 1 of 2 in phase 17 -- complete
-Status: Plan 17-01 complete, ready for Plan 17-02
-Last activity: 2026-03-31 -- Completed Plan 17-01 (Nightly reconciliation safety net)
+Plan: 2 of 2 in phase 17 -- complete
+Status: Phase 17 complete, ready for Phase 18
+Last activity: 2026-03-31 -- Completed Plan 17-02 (FINAL game outcome display)
 
-Progress: [█████████░] 88% (milestone v2.2: 15 of 17 plans)
+Progress: [█████████░] 94% (milestone v2.2: 16 of 17 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 14 (v2.2)
+- Total plans completed: 16 (v2.2)
 - Average duration: 4min
-- Total execution time: ~59min
+- Total execution time: ~68min
 
 **By Phase:**
 
@@ -58,9 +58,10 @@ Progress: [█████████░] 88% (milestone v2.2: 15 of 17 plans)
 | Phase 16 P02 | 2min | 2 tasks | 2 files |
 | Phase 16 P03 | 6min | 2 tasks | 5 files |
 | Phase 17 P01 | 5min | 2 tasks | 3 files |
+| Phase 17 P02 | 4min | 2 tasks | 6 files |
 
 **Recent Trend:**
-- Last 5 plans: ~2min, 5min, 2min, 6min, 5min
+- Last 5 plans: 5min, 2min, 6min, 5min, 4min
 - Trend: stable
 
 *Updated after each plan completion*
@@ -105,6 +106,8 @@ Progress: [█████████░] 88% (milestone v2.2: 15 of 17 plans)
 - Pool wiring chain: runner.py -> LiveFeatureBuilder(pool=pool) -> FeatureBuilder(pool=pool) (Phase 16)
 - _load_from_game_logs adds computed columns (status='Final', is_shortened_season, season_games) post-query to match fetch_schedule output exactly (Phase 16)
 - reconcile_outcomes delegates to write_game_outcome per single-source-of-truth guarantee; nightly job at 6 AM ET with 1-hour misfire grace (Phase 17)
+- Top-level actual_winner and prediction_correct on GameResponse sourced from primary prediction (post_lineup or pre_lineup) for frontend convenience (Phase 17)
+- game_id::INTEGER cast in _fetch_final_scores SQL for VARCHAR game_logs to INTEGER predictions join (Phase 17)
 
 ### Roadmap Decisions
 
@@ -126,6 +129,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-01T02:44:00Z
-Stopped at: Completed 17-01-PLAN.md
+Last session: 2026-04-01T02:50:00Z
+Stopped at: Completed 17-02-PLAN.md
 Resume file: None

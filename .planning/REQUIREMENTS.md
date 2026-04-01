@@ -40,9 +40,9 @@
 
 ### Final Outcomes (FINL)
 
-- [ ] **FINL-01**: Completed game cards display the final score
-- [ ] **FINL-02**: Completed game cards display the model's win probability prediction
-- [ ] **FINL-03**: Completed game cards display an outcome marker indicating whether the model called it correctly
+- [x] **FINL-01**: Completed game cards display the final score
+- [x] **FINL-02**: Completed game cards display the model's win probability prediction
+- [x] **FINL-03**: Completed game cards display an outcome marker indicating whether the model called it correctly
 - [x] **FINL-04**: A nightly reconciliation job stamps any Final games not yet written by the live poller (handles postponements and poller downtime)
 
 ### History (HIST)
@@ -96,9 +96,9 @@
 | LIVE-06 | Phase 15 | Complete |
 | LIVE-07 | Phase 15 | Complete |
 | LIVE-08 | Phase 15 | Complete |
-| FINL-01 | Phase 16 | Pending |
-| FINL-02 | Phase 16 | Pending |
-| FINL-03 | Phase 16 | Pending |
+| FINL-01 | Phase 16 | Complete |
+| FINL-02 | Phase 16 | Complete |
+| FINL-03 | Phase 16 | Complete |
 | FINL-04 | Phase 16 | Complete |
 | HIST-01 | Phase 17 | Pending |
 | HIST-02 | Phase 17 | Pending |
