@@ -332,3 +332,75 @@ def test_pipeline_run_error_logging(
     mock_update_run.assert_called_once()
     update_args = mock_update_run.call_args
     assert update_args[0][2] == "failed"  # status
+
+
+# ---------------------------------------------------------------------------
+# Game status gate tests
+# ---------------------------------------------------------------------------
+
+
+class TestGameStatusGate:
+    """Pipeline must not write new prediction rows for in-progress or finished games."""
+
+    def _run_with_status(self, status, mock_insert_pred, mock_pool, mock_artifacts):
+        """Helper: run pre_lineup pipeline with a game of the given status."""
+        fb = MagicMock()
+        fb.get_today_games.return_value = [
+            {**_make_game(), "status": status}
+        ]
+        fb.build_features_for_game.return_value = {"feat1": 0.5}
+        fb.sp_confirmed.return_value = True
+        run_pipeline("pre_lineup", mock_artifacts, mock_pool, fb)
+
+    @patch("src.pipeline.runner.fetch_kalshi_live_prices", return_value={})
+    @patch("src.pipeline.runner.predict_game", return_value=_make_probs())
+    @patch("src.pipeline.runner.insert_prediction")
+    @patch("src.pipeline.runner.insert_pipeline_run", return_value=1)
+    @patch("src.pipeline.runner.update_pipeline_run")
+    def test_in_progress_game_skipped(
+        self, mock_update, mock_insert_run, mock_insert_pred, mock_predict, mock_kalshi,
+        mock_pool, mock_artifacts,
+    ):
+        """Games with status 'In Progress' must not produce a prediction row."""
+        self._run_with_status("In Progress", mock_insert_pred, mock_pool, mock_artifacts)
+        mock_insert_pred.assert_not_called()
+
+    @patch("src.pipeline.runner.fetch_kalshi_live_prices", return_value={})
+    @patch("src.pipeline.runner.predict_game", return_value=_make_probs())
+    @patch("src.pipeline.runner.insert_prediction")
+    @patch("src.pipeline.runner.insert_pipeline_run", return_value=1)
+    @patch("src.pipeline.runner.update_pipeline_run")
+    def test_final_game_skipped(
+        self, mock_update, mock_insert_run, mock_insert_pred, mock_predict, mock_kalshi,
+        mock_pool, mock_artifacts,
+    ):
+        """Games with status 'Final' must not produce a prediction row."""
+        self._run_with_status("Final", mock_insert_pred, mock_pool, mock_artifacts)
+        mock_insert_pred.assert_not_called()
+
+    @patch("src.pipeline.runner.fetch_kalshi_live_prices", return_value={})
+    @patch("src.pipeline.runner.predict_game", return_value=_make_probs())
+    @patch("src.pipeline.runner.insert_prediction")
+    @patch("src.pipeline.runner.insert_pipeline_run", return_value=1)
+    @patch("src.pipeline.runner.update_pipeline_run")
+    def test_game_over_skipped(
+        self, mock_update, mock_insert_run, mock_insert_pred, mock_predict, mock_kalshi,
+        mock_pool, mock_artifacts,
+    ):
+        """Games with status 'Game Over' must not produce a prediction row."""
+        self._run_with_status("Game Over", mock_insert_pred, mock_pool, mock_artifacts)
+        mock_insert_pred.assert_not_called()
+
+    @pytest.mark.parametrize("status", ["Scheduled", "Pre-Game", "Preview", "Warmup", "", None])
+    @patch("src.pipeline.runner.fetch_kalshi_live_prices", return_value={})
+    @patch("src.pipeline.runner.predict_game", return_value=_make_probs())
+    @patch("src.pipeline.runner.insert_prediction")
+    @patch("src.pipeline.runner.insert_pipeline_run", return_value=1)
+    @patch("src.pipeline.runner.update_pipeline_run")
+    def test_pre_game_statuses_are_processed(
+        self, mock_update, mock_insert_run, mock_insert_pred, mock_predict, mock_kalshi,
+        mock_pool, mock_artifacts, status,
+    ):
+        """All recognised pre-game statuses must pass the gate and produce a prediction row."""
+        self._run_with_status(status, mock_insert_pred, mock_pool, mock_artifacts)
+        mock_insert_pred.assert_called_once()

@@ -192,12 +192,14 @@ export function GameCard({ game, viewMode }: GameCardProps) {
         </div>
       )}
 
-      {/* Kalshi section -- absent for stub cards and future mode */}
+      {/* Kalshi section -- absent for stub cards and future mode.
+          Edge badge suppressed for LIVE/FINAL: pre-game betting window is
+          closed and any stored Kalshi price may reflect in-game state. */}
       {hasPrediction && primary && viewMode !== 'future' && (
         <KalshiSection
           price={primary.kalshi_yes_price}
-          edgeSignal={primary.edge_signal}
-          edgeMagnitude={primary.edge_magnitude}
+          edgeSignal={game_status === 'PRE_GAME' ? primary.edge_signal : null}
+          edgeMagnitude={game_status === 'PRE_GAME' ? primary.edge_magnitude : null}
         />
       )}
     </div>

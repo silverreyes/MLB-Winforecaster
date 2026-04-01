@@ -127,9 +127,27 @@ def _process_game(
     kalshi_prices: dict[str, float],
     today_str: str,
 ):
-    """Process a single game for the given pipeline version."""
+    """Process a single game for the given pipeline version.
+
+    Skips games that are already in progress or completed. Kalshi edge signals
+    are only meaningful pre-game; once a game starts the market reflects live
+    state and the signal is no longer actionable.
+    """
     home_team = game["home_team"]
     away_team = game["away_team"]
+
+    # Gate: skip any game that has already started or finished.
+    # MLB Stats API status values for pre-game: Preview, Pre-Game, Scheduled,
+    # Warmup, "", None.  Anything else (In Progress, Final, Game Over, etc.)
+    # means the window for pre-game Kalshi betting has closed.
+    PRE_GAME_STATUSES = {"Preview", "Pre-Game", "Scheduled", "Warmup", "", None}
+    game_status = game.get("status")
+    if game_status not in PRE_GAME_STATUSES:
+        logger.info(
+            f"Skipping {home_team} vs {away_team}: game already started (status={game_status!r})"
+        )
+        return
+
     kalshi_key = _build_kalshi_key(today_str, home_team, away_team)
     kalshi_price = kalshi_prices.get(kalshi_key)
 
