@@ -73,7 +73,7 @@ def run_pipeline(
     try:
         # Initialize feature builder
         if feature_builder is None:
-            feature_builder = LiveFeatureBuilder()
+            feature_builder = LiveFeatureBuilder(pool=pool)
         feature_builder.initialize()
 
         # Fetch today's games

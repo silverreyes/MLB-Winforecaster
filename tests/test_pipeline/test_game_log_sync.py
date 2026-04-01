@@ -156,9 +156,58 @@ class TestSyncGameLogs:
 
 
 class TestFeatureBuilderReadsGameLogs:
-    """CACHE-04: FeatureBuilder with pool reads from game_logs (stub for Plan 03)."""
+    """CACHE-04: FeatureBuilder with pool reads from game_logs, not fetch_schedule."""
 
-    @pytest.mark.skip(reason="Implemented in Plan 03")
     def test_feature_builder_reads_game_logs(self, pg_pool, clean_tables):
-        """FeatureBuilder with pool reads from game_logs instead of calling fetch_schedule."""
-        pass
+        """CACHE-04: FeatureBuilder with pool reads from game_logs, not fetch_schedule."""
+        from src.pipeline.db import batch_insert_game_logs
+        from src.features.feature_builder import FeatureBuilder
+        from unittest.mock import patch
+
+        # Insert sample games into game_logs
+        games = [
+            {
+                "game_id": "100001",
+                "game_date": "2026-04-01",
+                "home_team": "NYY",
+                "away_team": "BOS",
+                "home_score": 5,
+                "away_score": 3,
+                "winning_team": "NYY",
+                "losing_team": "BOS",
+                "home_probable_pitcher": "Gerrit Cole",
+                "away_probable_pitcher": "Brayan Bello",
+                "season": 2026,
+            },
+            {
+                "game_id": "100002",
+                "game_date": "2026-04-02",
+                "home_team": "LAD",
+                "away_team": "SFG",
+                "home_score": 4,
+                "away_score": 2,
+                "winning_team": "LAD",
+                "losing_team": "SFG",
+                "home_probable_pitcher": "Clayton Kershaw",
+                "away_probable_pitcher": "Logan Webb",
+                "season": 2026,
+            },
+        ]
+        batch_insert_game_logs(pg_pool, games)
+
+        # Create FeatureBuilder with pool -- should NOT call fetch_schedule
+        fb = FeatureBuilder(seasons=[2026], as_of_date="2026-04-15", pool=pg_pool)
+
+        with patch("src.features.feature_builder.fetch_schedule") as mock_fetch:
+            df = fb._load_schedule()
+            mock_fetch.assert_not_called()  # Must NOT call API
+
+        # Verify DataFrame has expected columns and data
+        assert len(df) == 2
+        assert "game_id" in df.columns
+        assert "home_team" in df.columns
+        assert "is_shortened_season" in df.columns
+        assert "season_games" in df.columns
+        assert "status" in df.columns
+        assert df["status"].iloc[0] == "Final"
+        assert set(df["home_team"]) == {"NYY", "LAD"}

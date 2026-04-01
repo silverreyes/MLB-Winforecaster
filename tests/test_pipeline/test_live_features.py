@@ -154,6 +154,7 @@ def test_live_feature_builder_season_and_date(mock_date, mock_fb_cls):
     assert builder.season == 2025
     assert builder.today_str == "2025-07-15"
     mock_fb_cls.assert_called_once_with(
-        seasons=[2025],
+        seasons=[2024, 2025],
         as_of_date="2025-07-15",
+        pool=None,
     )

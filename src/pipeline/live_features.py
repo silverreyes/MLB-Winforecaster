@@ -38,7 +38,7 @@ class LiveFeatureBuilder:
     This ensures feature values are computed identically to backtest.
     """
 
-    def __init__(self):
+    def __init__(self, pool=None):
         today = date.today()
         self.today_str = today.strftime("%Y-%m-%d")
         self.season = today.year
@@ -49,6 +49,7 @@ class LiveFeatureBuilder:
         self._builder = FeatureBuilder(
             seasons=[self.season - 1, self.season],
             as_of_date=self.today_str,
+            pool=pool,
         )
         self._feature_matrix = None
         self._initialized = False
