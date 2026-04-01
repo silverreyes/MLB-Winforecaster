@@ -48,6 +48,9 @@
 - [x] **Phase 16: Historical Game Cache** - game_logs table seeded from 2025+2026 completed games; incremental fetch replaces full-season refetch; feature builder reads from DB instead of API (completed 2026-04-01)
 - [x] **Phase 17: Final Outcomes & Nightly Reconciliation** - Completed game cards with score/prediction/outcome marker; safety-net reconciler for missed Finals (completed 2026-04-01)
 - [x] **Phase 18: History Route** - Date range picker, predictions vs actuals table, rolling accuracy by model (completed 2026-04-01)
+- [ ] **Phase 19: Verification & Documentation Closure** - Create missing VERIFICATION.md for phases 14, 14.5, 15, 16; add orphaned requirements (CACHE, BUG) to REQUIREMENTS.md; fix traceability assignments
+- [ ] **Phase 20: Ensemble Column in History Table** - Add ensemble_prob to HistoryRow model, get_history() SQL, and HistoryPage table to close HIST-03
+- [ ] **Phase 21: Nyquist Compliance** - Run validate-phase for all 6 non-compliant v2.2 phases (13, 14.5, 15, 16, 17, 18)
 
 ## Phase Details
 
@@ -162,6 +165,49 @@ Plans:
 - [ ] 18-01-PLAN.md � Backend: get_history DB query, HistoryRow/HistoryResponse Pydantic models, GET /history route, tests
 - [ ] 18-02-PLAN.md � Frontend: HistoryPage component, useHistory hook, hash routing in App.tsx, AccuracyStrip/Header nav links
 
+### Phase 19: Verification & Documentation Closure
+**Goal**: Close all documentation and verification debt from phases 14, 14.5, 15, and 16 so the milestone audit can pass
+**Depends on**: Phase 18
+**Requirements**: DATE-01..08 (verification), LIVE-01..08 (verification), CACHE-01..05, BUG-A, BUG-B, RETRY
+**Gap Closure**: Closes gaps from v2.2 audit — 4 missing VERIFICATION.md files, REQUIREMENTS.md orphaned entries, and phase assignment errors
+**Success Criteria** (what must be TRUE):
+  1. VERIFICATION.md exists for Phase 14 confirming DATE-01..08 satisfied in code
+  2. Phase 14.5 has SUMMARY files for all 3 plans, VERIFICATION.md confirming BUG-A/B/RETRY satisfied, and ROADMAP marked complete
+  3. VERIFICATION.md exists for Phase 15 confirming LIVE-01..08 satisfied in code
+  4. VERIFICATION.md exists for Phase 16 confirming CACHE-01..05 satisfied in code
+  5. CACHE-01..05 and BUG-A/B/RETRY are present in REQUIREMENTS.md traceability table
+  6. FINL-01..04 assigned to Phase 17 and HIST-01..04 assigned to Phase 18 in traceability table
+**Plans**: 1 plan
+
+Plans:
+- [ ] 19-01-PLAN.md — Documentation closure: VERIFICATION.md ×4, Phase 14.5 SUMMARY ×3, REQUIREMENTS.md traceability fixes
+
+### Phase 20: Ensemble Column in History Table
+**Goal**: History table exposes ensemble win probability alongside per-model columns, closing the HIST-03 partial gap
+**Depends on**: Phase 18
+**Requirements**: HIST-03
+**Gap Closure**: Closes HIST-03 integration gap from v2.2 audit (ensemble_prob absent from HistoryRow and get_history() SQL)
+**Success Criteria** (what must be TRUE):
+  1. HistoryRow Pydantic model includes an `ensemble_prob` field (api/models.py)
+  2. get_history() SQL selects `ensemble_prob` from the predictions table (src/pipeline/db.py)
+  3. HistoryPage table renders an Ensemble% column consistent with the main dashboard display (frontend/src/components/HistoryPage.tsx)
+**Plans**: 1 plan
+
+Plans:
+- [ ] 20-01-PLAN.md — Add ensemble_prob to HistoryRow, get_history() SQL, and HistoryPage.tsx table
+
+### Phase 21: Nyquist Compliance
+**Goal**: All v2.2 phases achieve Nyquist-compliant VALIDATION.md artifacts
+**Depends on**: Phase 19, Phase 20
+**Requirements**: (Nyquist validation for phases 13, 14.5, 15, 16, 17, 18)
+**Gap Closure**: Closes Nyquist compliance debt identified in v2.2 audit for 6 phases with nyquist_compliant: false or missing VALIDATION.md
+**Success Criteria** (what must be TRUE):
+  1. Phases 13, 14.5, 15, 16, 17, and 18 each have VALIDATION.md with nyquist_compliant: true
+**Plans**: 1 plan
+
+Plans:
+- [ ] 21-01-PLAN.md — Nyquist validation runs for all 6 non-compliant v2.2 phases (13, 14.5, 15, 16, 17, 18)
+
 ## Progress
 
 **Execution Order:**
@@ -187,3 +233,6 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17
 | 16. Historical Game Cache | 3/3 | Complete   | 2026-04-01 | - |
 | 17. Final Outcomes & Nightly Reconciliation | 2/2 | Complete   | 2026-04-01 | - |
 | 18. History Route | 2/2 | Complete    | 2026-04-01 | - |
+| 19. Verification & Documentation Closure | v2.2 | 0/1 | Pending | - |
+| 20. Ensemble Column in History Table | v2.2 | 0/1 | Pending | - |
+| 21. Nyquist Compliance | v2.2 | 0/1 | Pending | - |

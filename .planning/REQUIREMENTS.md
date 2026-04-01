@@ -18,25 +18,25 @@
 
 ### Date Navigation (DATE)
 
-- [x] **DATE-01**: User can step to the previous day via a left arrow control
-- [x] **DATE-02**: User can step to the next day via a right arrow control
-- [x] **DATE-03**: User can pick a specific date via a date input control
-- [x] **DATE-04**: Dashboard loads today's date by default
-- [x] **DATE-05**: Past dates display stored predictions from the database
-- [x] **DATE-06**: Today's date displays live pipeline predictions with live polling active
-- [x] **DATE-07**: For tomorrow's date, games with both SPs confirmed display a prediction flagged as PRELIMINARY; games with an unconfirmed SP show schedule entry only (no prediction)
-- [x] **DATE-08**: Dates beyond tomorrow display scheduled matchups only with a "Predictions available on game day" message
+- [ ] **DATE-01**: User can step to the previous day via a left arrow control
+- [ ] **DATE-02**: User can step to the next day via a right arrow control
+- [ ] **DATE-03**: User can pick a specific date via a date input control
+- [ ] **DATE-04**: Dashboard loads today's date by default
+- [ ] **DATE-05**: Past dates display stored predictions from the database
+- [ ] **DATE-06**: Today's date displays live pipeline predictions with live polling active
+- [ ] **DATE-07**: For tomorrow's date, games with both SPs confirmed display a prediction flagged as PRELIMINARY; games with an unconfirmed SP show schedule entry only (no prediction)
+- [ ] **DATE-08**: Dates beyond tomorrow display scheduled matchups only with a "Predictions available on game day" message
 
 ### Live Scores (LIVE)
 
-- [x] **LIVE-01**: In-progress game cards display current score and inning on the card face
-- [x] **LIVE-02**: Dashboard polls live game data every 90 seconds only while in-progress games are present and the selected date is today
-- [x] **LIVE-03**: User can expand an in-progress game card to view detailed live game state
-- [x] **LIVE-04**: Expanded in-progress card shows a bases diamond with runners highlighted
-- [x] **LIVE-05**: Expanded in-progress card shows current pitch count (balls / strikes / outs)
-- [x] **LIVE-06**: Expanded in-progress card shows current batter name and key stats
-- [x] **LIVE-07**: Expanded in-progress card shows on-deck batter name
-- [x] **LIVE-08**: When the live poller detects a game transition to Final, it immediately writes `actual_winner` and `prediction_correct` to that game's prediction row in Postgres
+- [ ] **LIVE-01**: In-progress game cards display current score and inning on the card face
+- [ ] **LIVE-02**: Dashboard polls live game data every 90 seconds only while in-progress games are present and the selected date is today
+- [ ] **LIVE-03**: User can expand an in-progress game card to view detailed live game state
+- [ ] **LIVE-04**: Expanded in-progress card shows a bases diamond with runners highlighted
+- [ ] **LIVE-05**: Expanded in-progress card shows current pitch count (balls / strikes / outs)
+- [ ] **LIVE-06**: Expanded in-progress card shows current batter name and key stats
+- [ ] **LIVE-07**: Expanded in-progress card shows on-deck batter name
+- [ ] **LIVE-08**: When the live poller detects a game transition to Final, it immediately writes `actual_winner` and `prediction_correct` to that game's prediction row in Postgres
 
 ### Final Outcomes (FINL)
 
@@ -49,8 +49,22 @@
 
 - [x] **HIST-01**: A `/history` route is accessible from the main dashboard
 - [x] **HIST-02**: User can select a date range on the history page via a date range picker
-- [x] **HIST-03**: History page shows a table of past predictions vs actual outcomes within the selected range
+- [ ] **HIST-03**: History page shows a table of past predictions vs actual outcomes within the selected range (including ensemble probability column)
 - [x] **HIST-04**: History page shows rolling model accuracy (percentage correct) over the selected date range
+
+### Historical Game Cache (CACHE)
+
+- [ ] **CACHE-01**: A `game_logs` table exists in Postgres with columns for game_id, date, teams, scores, winner, and stats required by the feature builder
+- [ ] **CACHE-02**: A one-time seed job backfills all completed 2025 and 2026 games from the MLB Stats API into `game_logs`
+- [ ] **CACHE-03**: On each pipeline run, the system fetches only games from the last known `game_logs` date forward — never the full season
+- [ ] **CACHE-04**: The feature builder reads rolling team win/loss features from `game_logs` instead of calling `fetch_schedule(season)` directly
+- [ ] **CACHE-05**: Completed games in `game_logs` are never overwritten or re-fetched (immutability enforced by INSERT ... ON CONFLICT DO NOTHING)
+
+### Post-Phase-14 Bug Fixes (BUG)
+
+- [ ] **BUG-A**: Header "Last updated" shows the pipeline run time, not page load time (pipelineTimestamp wired to Header)
+- [ ] **BUG-B**: Live clock and "Next update" display in the user's browser timezone (useEasternClock uses local TZ abbreviation)
+- [ ] **RETRY**: On 503 or timeout from MLB Stats API, pipeline jobs retry once after 15 minutes (run_pipeline_with_retry wraps all 3 cron jobs)
 
 ## Future Requirements
 
@@ -80,36 +94,44 @@
 | VIBL-02 | Phase 13 | Complete |
 | SCHM-01 | Phase 13 | Complete |
 | SCHM-02 | Phase 13 | Complete |
-| DATE-01 | Phase 14 | Complete |
-| DATE-02 | Phase 14 | Complete |
-| DATE-03 | Phase 14 | Complete |
-| DATE-04 | Phase 14 | Complete |
-| DATE-05 | Phase 14 | Complete |
-| DATE-06 | Phase 14 | Complete |
-| DATE-07 | Phase 14 | Complete |
-| DATE-08 | Phase 14 | Complete |
-| LIVE-01 | Phase 15 | Complete |
-| LIVE-02 | Phase 15 | Complete |
-| LIVE-03 | Phase 15 | Complete |
-| LIVE-04 | Phase 15 | Complete |
-| LIVE-05 | Phase 15 | Complete |
-| LIVE-06 | Phase 15 | Complete |
-| LIVE-07 | Phase 15 | Complete |
-| LIVE-08 | Phase 15 | Complete |
-| FINL-01 | Phase 16 | Complete |
-| FINL-02 | Phase 16 | Complete |
-| FINL-03 | Phase 16 | Complete |
-| FINL-04 | Phase 16 | Complete |
-| HIST-01 | Phase 17 | Complete |
-| HIST-02 | Phase 17 | Complete |
-| HIST-03 | Phase 17 | Complete |
-| HIST-04 | Phase 17 | Complete |
+| DATE-01 | Phase 14 | Pending |
+| DATE-02 | Phase 14 | Pending |
+| DATE-03 | Phase 14 | Pending |
+| DATE-04 | Phase 14 | Pending |
+| DATE-05 | Phase 14 | Pending |
+| DATE-06 | Phase 14 | Pending |
+| DATE-07 | Phase 14 | Pending |
+| DATE-08 | Phase 14 | Pending |
+| BUG-A | Phase 14.5 | Pending |
+| BUG-B | Phase 14.5 | Pending |
+| RETRY | Phase 14.5 | Pending |
+| LIVE-01 | Phase 15 | Pending |
+| LIVE-02 | Phase 15 | Pending |
+| LIVE-03 | Phase 15 | Pending |
+| LIVE-04 | Phase 15 | Pending |
+| LIVE-05 | Phase 15 | Pending |
+| LIVE-06 | Phase 15 | Pending |
+| LIVE-07 | Phase 15 | Pending |
+| LIVE-08 | Phase 15 | Pending |
+| CACHE-01 | Phase 16 | Pending |
+| CACHE-02 | Phase 16 | Pending |
+| CACHE-03 | Phase 16 | Pending |
+| CACHE-04 | Phase 16 | Pending |
+| CACHE-05 | Phase 16 | Pending |
+| FINL-01 | Phase 17 | Complete |
+| FINL-02 | Phase 17 | Complete |
+| FINL-03 | Phase 17 | Complete |
+| FINL-04 | Phase 17 | Complete |
+| HIST-01 | Phase 18 | Complete |
+| HIST-02 | Phase 18 | Complete |
+| HIST-03 | Phase 20 | Pending |
+| HIST-04 | Phase 18 | Complete |
 
 **Coverage:**
-- v2.2 requirements: 28 total
-- Mapped to phases: 28
+- v2.2 requirements: 36 total
+- Mapped to phases: 36
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-30*
-*Last updated: 2026-03-30 after roadmap creation*
+*Last updated: 2026-04-01 after v2.2 audit gap closure planning*
