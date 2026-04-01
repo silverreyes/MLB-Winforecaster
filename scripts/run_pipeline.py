@@ -18,7 +18,7 @@ import sys
 import time
 
 from src.pipeline.inference import load_all_artifacts
-from src.pipeline.db import get_pool, apply_schema, mark_stale_runs_failed
+from src.pipeline.db import get_pool, apply_schema, mark_stale_runs_failed, sync_game_logs
 from src.pipeline.scheduler import create_scheduler, start_scheduler
 from src.pipeline.runner import run_pipeline
 
@@ -49,6 +49,14 @@ def _run_once(version: str) -> None:
     if cleaned:
         logger.warning(f"Marked {cleaned} stale 'running' run(s) as failed (OOM/crash from previous session)")
 
+    # Sync game_logs: fetch newly completed games since last known date
+    try:
+        synced = sync_game_logs(pool)
+        if synced > 0:
+            logger.info(f"Synced {synced} new game(s) to game_logs")
+    except Exception as e:
+        logger.warning(f"game_logs sync failed (non-fatal): {e}")
+
     logger.info(f"Running single pipeline: {version}")
     run_pipeline(version, artifacts, pool)
     pool.close()
@@ -69,6 +77,14 @@ def _run_scheduler() -> None:
     cleaned = mark_stale_runs_failed(pool)
     if cleaned:
         logger.warning(f"Marked {cleaned} stale 'running' run(s) as failed (OOM/crash from previous session)")
+
+    # Sync game_logs: fetch newly completed games since last known date
+    try:
+        synced = sync_game_logs(pool)
+        if synced > 0:
+            logger.info(f"Synced {synced} new game(s) to game_logs")
+    except Exception as e:
+        logger.warning(f"game_logs sync failed (non-fatal): {e}")
 
     scheduler = create_scheduler(artifacts, pool)
     logger.info("Pipeline ready. Waiting for scheduled runs...")
