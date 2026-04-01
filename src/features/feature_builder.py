@@ -65,9 +65,10 @@ class FeatureBuilder:
             If set, only games before this date are included.
     """
 
-    def __init__(self, seasons: list[int], as_of_date: str | None = None):
+    def __init__(self, seasons: list[int], as_of_date: str | None = None, pool=None):
         self.seasons = seasons
         self.as_of_date = as_of_date  # YYYY-MM-DD cutoff for walk-forward
+        self._pool = pool  # None = legacy Parquet/API path (backward compat)
 
     def build(self) -> pd.DataFrame:
         """Build complete feature matrix. Returns one row per game.
@@ -103,8 +104,13 @@ class FeatureBuilder:
     def _load_schedule(self) -> pd.DataFrame:
         """Load and concatenate schedule data for all requested seasons.
 
+        When pool is provided, reads from game_logs Postgres table (live pipeline).
+        When pool is None, falls back to fetch_schedule() Parquet cache (notebooks/backtest).
         Applies as_of_date filter if set (walk-forward safety).
         """
+        if self._pool is not None:
+            return self._load_from_game_logs()
+
         logger.info("Loading schedule data...")
         frames = []
         for season in self.seasons:
@@ -120,6 +126,48 @@ class FeatureBuilder:
             df = df[df["game_date"] < cutoff].copy()
 
         logger.info(f"Schedule loaded: {len(df)} games across {len(self.seasons)} seasons")
+        return df
+
+    def _load_from_game_logs(self) -> pd.DataFrame:
+        """Load schedule data from game_logs Postgres table.
+
+        Returns a DataFrame with IDENTICAL columns to fetch_schedule() output
+        so all downstream methods work unchanged.
+        """
+        from psycopg.rows import dict_row
+
+        placeholders = ", ".join(["%s"] * len(self.seasons))
+        sql = f"""
+            SELECT game_id, game_date, home_team, away_team,
+                   home_score, away_score, winning_team, losing_team,
+                   home_probable_pitcher, away_probable_pitcher, season
+            FROM game_logs
+            WHERE season IN ({placeholders})
+            ORDER BY game_date
+        """
+        logger.info("Loading schedule from game_logs (DB path)...")
+        with self._pool.connection() as conn:
+            with conn.cursor(row_factory=dict_row) as cur:
+                cur.execute(sql, self.seasons)
+                rows = cur.fetchall()
+
+        df = pd.DataFrame(rows)
+        if df.empty:
+            logger.warning("game_logs returned 0 rows for seasons %s", self.seasons)
+            return df
+
+        df["game_date"] = pd.to_datetime(df["game_date"])
+
+        if self.as_of_date is not None:
+            cutoff = pd.to_datetime(self.as_of_date)
+            df = df[df["game_date"] < cutoff].copy()
+
+        # Add computed columns expected by downstream methods
+        df["is_shortened_season"] = df["season"] == 2020
+        df["season_games"] = df["season"].apply(lambda s: 60 if s == 2020 else 162)
+        df["status"] = "Final"  # game_logs only stores Final games
+
+        logger.info(f"Schedule loaded from game_logs: {len(df)} games across {len(self.seasons)} seasons")
         return df
 
     def _filter_tbd_starters(self, df: pd.DataFrame) -> pd.DataFrame:
