@@ -207,6 +207,56 @@ def write_game_outcome(pool: ConnectionPool, game_id: int, home_team: str,
     return count
 
 
+def reconcile_outcomes(pool: ConnectionPool, target_date: str) -> int:
+    """Reconcile unwritten outcomes for Final games on target_date.
+
+    Joins predictions (WHERE actual_winner IS NULL AND game_id IS NOT NULL)
+    against game_logs (which only contains Final games) to find unreconciled
+    game_ids, then calls write_game_outcome() for each.
+
+    CRITICAL: game_logs.game_id is VARCHAR, predictions.game_id is INTEGER.
+    The join casts game_logs.game_id::INTEGER for type compatibility.
+
+    Returns total prediction rows updated across all reconciled games.
+    """
+    sql = """
+        SELECT DISTINCT gl.game_id::INTEGER AS game_id_int,
+               gl.home_team, gl.away_team,
+               gl.home_score, gl.away_score
+        FROM game_logs gl
+        INNER JOIN predictions p
+            ON p.game_id = gl.game_id::INTEGER
+        WHERE gl.game_date = %(date)s
+          AND p.actual_winner IS NULL
+          AND p.game_id IS NOT NULL
+    """
+    with pool.connection() as conn:
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(sql, {"date": target_date})
+            rows = cur.fetchall()
+
+    total = 0
+    for row in rows:
+        count = write_game_outcome(
+            pool,
+            row["game_id_int"],
+            row["home_team"],
+            row["away_team"],
+            row["home_score"],
+            row["away_score"],
+        )
+        total += count
+        if count > 0:
+            logger.info(
+                "Reconciled game %s: %s %d - %s %d (%d rows)",
+                row["game_id_int"], row["away_team"], row["away_score"],
+                row["home_team"], row["home_score"], count,
+            )
+
+    logger.info("reconcile_outcomes(%s): %d total rows updated", target_date, total)
+    return total
+
+
 def get_post_lineup_prediction(
     pool: ConnectionPool,
     game_date: str,
