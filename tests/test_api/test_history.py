@@ -224,7 +224,7 @@ class TestAccuracyComputation:
         from api.routes.history import _compute_accuracy
 
         result = _compute_accuracy([])
-        for key in ("lr", "rf", "xgb"):
+        for key in ("lr", "rf", "xgb", "ensemble"):
             assert result[key].total == 0
             assert result[key].correct == 0
             assert result[key].pct == 0.0
@@ -311,5 +311,5 @@ class TestHistoryRoute:
         assert resp.status_code == 200
         data = resp.json()
         assert data["games"] == []
-        for model_key in ("lr", "rf", "xgb"):
+        for model_key in ("lr", "rf", "xgb", "ensemble"):
             assert data["accuracy"][model_key]["total"] == 0

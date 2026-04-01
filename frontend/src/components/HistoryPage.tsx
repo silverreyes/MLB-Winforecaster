@@ -60,9 +60,9 @@ export function HistoryPage() {
 
       {/* Accuracy summary */}
       <div className={styles.accuracyStrip}>
-        {['lr', 'rf', 'xgb'].map((model, i) => {
+        {['lr', 'rf', 'xgb', 'ensemble'].map((model, i) => {
           const acc = accuracy[model];
-          const label = model.toUpperCase();
+          const label = model === 'ensemble' ? 'ENS' : model.toUpperCase();
           const pct = acc ? `${acc.pct}%` : '\u2014';
           const detail = acc ? `(${acc.correct}/${acc.total})` : '';
           return (
@@ -123,6 +123,7 @@ export function HistoryPage() {
                 <th className={styles.thNum}>LR%</th>
                 <th className={styles.thNum}>RF%</th>
                 <th className={styles.thNum}>XGB%</th>
+                <th className={styles.thNum}>Ens%</th>
                 <th className={styles.thCenter}></th>
               </tr>
             </thead>
@@ -139,6 +140,7 @@ export function HistoryPage() {
                     <td className={styles.tdNum}>{formatProb(g.lr_prob)}</td>
                     <td className={styles.tdNum}>{formatProb(g.rf_prob)}</td>
                     <td className={styles.tdNum}>{formatProb(g.xgb_prob)}</td>
+                    <td className={styles.tdNum}>{formatProb(g.ensemble_prob)}</td>
                     <td className={styles.tdCenter}>
                       {g.prediction_correct ? (
                         <span className={styles.correct}>&#10003;</span>

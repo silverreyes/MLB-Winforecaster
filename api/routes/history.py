@@ -29,7 +29,8 @@ def _compute_accuracy(rows: list[dict]) -> dict[str, ModelAccuracy]:
     """
     models = {"lr": {"correct": 0, "total": 0},
               "rf": {"correct": 0, "total": 0},
-              "xgb": {"correct": 0, "total": 0}}
+              "xgb": {"correct": 0, "total": 0},
+              "ensemble": {"correct": 0, "total": 0}}
 
     for row in rows:
         lr = row.get("lr_prob")
@@ -54,6 +55,11 @@ def _compute_accuracy(rows: list[dict]) -> dict[str, ModelAccuracy]:
             models[key]["total"] += 1
             if model_correct:
                 models[key]["correct"] += 1
+
+        # Ensemble accuracy: prediction_correct IS the ensemble correctness
+        models["ensemble"]["total"] += 1
+        if pc:
+            models["ensemble"]["correct"] += 1
 
     result = {}
     for key, stats in models.items():

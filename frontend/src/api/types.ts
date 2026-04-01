@@ -105,6 +105,7 @@ export interface HistoryRow {
   lr_prob: number | null;
   rf_prob: number | null;
   xgb_prob: number | null;
+  ensemble_prob: number | null;
   prediction_correct: boolean;
 }
 
