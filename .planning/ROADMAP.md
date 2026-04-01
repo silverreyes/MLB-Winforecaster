@@ -43,7 +43,7 @@
 
 - [x] **Phase 13: Schema Migration & Game Visibility** - Add game_id and outcome columns to predictions table; make all games visible regardless of status (gap closure in progress) (completed 2026-03-31)
 - [x] **Phase 14: Date Navigation** - Arrow/calendar date controls with today default, past predictions, and future schedule-only mode (completed 2026-03-31)
-- [ ] **Phase 14.5: Post-Phase-14 Bug Fixes** - Header timestamp (BUG-A), browser timezone clock (BUG-B), MLB API retry logic (RETRY)
+- [x] **Phase 14.5: Post-Phase-14 Bug Fixes** - Header timestamp (BUG-A), browser timezone clock (BUG-B), MLB API retry logic (RETRY) (completed 2026-03-31)
 - [x] **Phase 15: Live Score Polling** - In-progress game scores, inning display, expanded card with bases/pitcher/batter, auto-Final outcome writes (completed 2026-03-31)
 - [x] **Phase 16: Historical Game Cache** - game_logs table seeded from 2025+2026 completed games; incremental fetch replaces full-season refetch; feature builder reads from DB instead of API (completed 2026-04-01)
 - [x] **Phase 17: Final Outcomes & Nightly Reconciliation** - Completed game cards with score/prediction/outcome marker; safety-net reconciler for missed Finals (completed 2026-04-01)
@@ -99,9 +99,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 14.5-01-PLAN.md — BUG-A: Wire pipeline timestamp to Header, isStale, hasNewPredictions in App.tsx
-- [ ] 14.5-02-PLAN.md — BUG-B: Browser-local timezone in useEasternClock (clock + next update display)
-- [ ] 14.5-03-PLAN.md — RETRY: run_pipeline_with_retry wrapper in scheduler.py with 8 unit tests
+- [x] 14.5-01-PLAN.md — BUG-A: Wire pipeline timestamp to Header, isStale, hasNewPredictions in App.tsx
+- [x] 14.5-02-PLAN.md — BUG-B: Browser-local timezone in useEasternClock (clock + next update display)
+- [x] 14.5-03-PLAN.md — RETRY: run_pipeline_with_retry wrapper in scheduler.py with 8 unit tests
 
 ### Phase 15: Live Score Polling
 **Goal**: Users see real-time game progress on in-progress cards and the system automatically records outcomes when games finish
@@ -231,6 +231,7 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17
 | 12. Explanatory Content and Tooltips | v2.1 | 1/1 | Complete | 2026-03-30 |
 | 13. Schema Migration & Game Visibility | 4/4 | Complete   | 2026-03-31 | - |
 | 14. Date Navigation | 3/3 | Complete   | 2026-03-31 | - |
+| 14.5. Post-Phase-14 Bug Fixes | 3/3 | Complete   | 2026-03-31 | - |
 | 15. Live Score Polling | 4/4 | Complete   | 2026-03-31 | 2026-03-31 |
 | 16. Historical Game Cache | 3/3 | Complete   | 2026-04-01 | - |
 | 17. Final Outcomes & Nightly Reconciliation | 2/2 | Complete   | 2026-04-01 | - |
