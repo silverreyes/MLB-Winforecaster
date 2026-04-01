@@ -129,6 +129,7 @@ No Recharts charts — those are deferred to v2.3+ (HIST-05/06). Accuracy displa
 
 - History accuracy percentages are **live pipeline stats** (correct predictions / total completed games in range), not backtest Brier scores. The existing AccuracyStrip's hardcoded Brier scores remain on the main page; the history page shows live accuracy from actual pipeline predictions.
 - The accuracy summary row appears even for small samples (1 game). No minimum sample size threshold.
+- **Accuracy denominator is `prediction_correct IS NOT NULL` rows only.** If a 14-day range has 14 games but only 8 have outcomes recorded, accuracy is calculated over those 8 — never over the full 14 with NULLs dragging the percentage down. The backend query filters `WHERE prediction_correct IS NOT NULL` before computing counts, and this same filter defines both the table rows AND the accuracy numerator/denominator.
 - LR%/RF%/XGB% columns show the model's probability the **home team wins** (consistent with existing PredictionResponse fields `lr_prob`, `rf_prob`, `xgb_prob`).
 - `prediction_correct` for history uses the same logic established in Phase 17: true when ensemble_prob > 0.5 AND home team won, OR ensemble_prob < 0.5 AND away team won.
 
