@@ -238,4 +238,4 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17
 | 18. History Route | 2/2 | Complete    | 2026-04-01 | - |
 | 19. Verification & Documentation Closure | 3/3 | Complete    | 2026-04-01 | - |
 | 20. Ensemble Column in History Table | 1/1 | Complete    | 2026-04-01 | - |
-| 21. Nyquist Compliance | 1/1 | Complete   | 2026-04-01 | - |
+| 21. Nyquist Compliance | 1/1 | Complete    | 2026-04-01 | - |

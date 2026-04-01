@@ -39,7 +39,7 @@ created: 2026-03-31
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
 | 17-01-01 | 01 | 1 | FINL-04 | unit | `python -m pytest tests/test_pipeline/test_reconciliation.py -x -q` | YES | green |
-| 17-01-02 | 01 | 1 | FINL-04 | unit | `python -m pytest tests/test_pipeline/test_reconciliation.py::TestIdempotency -x -q` | YES | green |
+| 17-01-02 | 01 | 1 | FINL-04 | unit | `python -m pytest tests/test_pipeline/test_reconciliation.py::TestReconcileOutcomes::test_idempotent_second_run -x -q` | YES | green |
 | 17-02-01 | 02 | 2 | FINL-01 | unit | `python -m pytest tests/test_api/test_games_final.py::TestFinalScoreDisplay -x -q` | YES | green |
 | 17-02-02 | 02 | 2 | FINL-02 | unit | `python -m pytest tests/test_api/test_games_final.py::TestFinalPredictionDisplay -x -q` | YES | green |
 | 17-02-03 | 02 | 2 | FINL-03 | unit | `python -m pytest tests/test_api/test_games_final.py::TestOutcomeMarker -x -q` | YES | green |

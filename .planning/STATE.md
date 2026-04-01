@@ -4,6 +4,21 @@ milestone: v2.2
 milestone_name: Game Lifecycle, Live Scores & Historical Accuracy
 status: executing
 stopped_at: Completed 21-01-PLAN.md -- Nyquist compliance for 6 v2.2 phases
+last_updated: "2026-04-01T14:54:48.655Z"
+last_activity: "2026-04-01 -- Updated/created 6 VALIDATION.md files to nyquist_compliant: true"
+progress:
+  total_phases: 10
+  completed_phases: 10
+  total_plans: 26
+  completed_plans: 26
+---
+
+---
+gsd_state_version: 1.0
+milestone: v2.2
+milestone_name: Game Lifecycle, Live Scores & Historical Accuracy
+status: executing
+stopped_at: Completed 21-01-PLAN.md -- Nyquist compliance for 6 v2.2 phases
 last_updated: "2026-04-01T14:44:40.604Z"
 last_activity: 2026-04-01 -- Added ensemble_prob to SQL, model, route, TS type, and UI column
 progress:

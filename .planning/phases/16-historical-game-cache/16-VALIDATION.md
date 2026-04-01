@@ -39,7 +39,7 @@ created: 2026-03-31
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
 | 16-01-01 | 01 | 1 | CACHE-01, CACHE-02, CACHE-03, CACHE-04, CACHE-05 | unit | `pytest tests/test_pipeline/test_game_log_sync.py -x` | YES | green |
-| 16-02-01 | 02 | 2 | CACHE-01 | unit | `pytest tests/test_pipeline/test_schema.py -x -k game_logs` | YES | green |
+| 16-02-01 | 02 | 2 | CACHE-01 | unit | `pytest tests/test_pipeline/test_game_log_sync.py -x -k TestMigrationCreatesGameLogsTable` | YES | green |
 | 16-02-02 | 02 | 2 | CACHE-02, CACHE-03, CACHE-05 | unit | `pytest tests/test_pipeline/test_game_log_sync.py -x -k "seed or sync or immutability"` | YES | green |
 | 16-03-01 | 03 | 3 | CACHE-04 | unit | `pytest tests/test_pipeline/test_game_log_sync.py -x -k feature_builder` | YES | green |
 
