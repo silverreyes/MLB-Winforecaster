@@ -3,11 +3,42 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Game Lifecycle, Live Scores & Historical Accuracy
 status: executing
+stopped_at: Completed 18-01-PLAN.md
+last_updated: "2026-04-01T06:15:56.435Z"
+last_activity: 2026-04-01 -- Completed 18-01 history API endpoint
+progress:
+  total_phases: 7
+  completed_phases: 5
+  total_plans: 21
+  completed_plans: 17
+---
+
+---
+gsd_state_version: 1.0
+milestone: v2.2
+milestone_name: Game Lifecycle, Live Scores & Historical Accuracy
+status: executing
+stopped_at: Phase 18 context gathered
+last_updated: "2026-04-01T06:14:58.133Z"
+last_activity: 2026-04-01 -- Completed 18-01 history API endpoint
+progress:
+  total_phases: 7
+  completed_phases: 5
+  total_plans: 21
+  completed_plans: 17
+  percent: 81
+---
+
+---
+gsd_state_version: 1.0
+milestone: v2.2
+milestone_name: Game Lifecycle, Live Scores & Historical Accuracy
+status: executing
 stopped_at: Phase 18 context gathered
 last_updated: "2026-04-01T05:20:02.811Z"
 last_activity: 2026-04-01 -- Phase 17 approved by user
 progress:
-  total_phases: 7
+  [████████░░] 81%
   completed_phases: 5
   total_plans: 19
   completed_plans: 16
@@ -41,9 +72,9 @@ See: .planning/PROJECT.md (updated 2026-03-30)
 ## Current Position
 
 Phase: 18 of 18 (History Route)
-Plan: 0 of 2 in phase 18 -- not started
-Status: Phase 17 approved; ready to begin Phase 18
-Last activity: 2026-04-01 -- Phase 17 approved by user
+Plan: 1 of 2 in phase 18
+Status: Executing phase 18 -- plan 01 complete
+Last activity: 2026-04-01 -- Completed 18-01 history API endpoint
 
 Progress: [█████████░] 94% (milestone v2.2: 16 of 17 plans)
 
@@ -74,9 +105,10 @@ Progress: [█████████░] 94% (milestone v2.2: 16 of 17 plans)
 | Phase 16 P03 | 6min | 2 tasks | 5 files |
 | Phase 17 P01 | 5min | 2 tasks | 3 files |
 | Phase 17 P02 | 4min | 2 tasks | 6 files |
+| Phase 18 P01 | 6min | 2 tasks | 5 files |
 
 **Recent Trend:**
-- Last 5 plans: 5min, 2min, 6min, 5min, 4min
+- Last 5 plans: 2min, 6min, 5min, 4min, 6min
 - Trend: stable
 
 *Updated after each plan completion*
@@ -123,6 +155,8 @@ Progress: [█████████░] 94% (milestone v2.2: 16 of 17 plans)
 - reconcile_outcomes delegates to write_game_outcome per single-source-of-truth guarantee; nightly job at 6 AM ET with 1-hour misfire grace (Phase 17)
 - Top-level actual_winner and prediction_correct on GameResponse sourced from primary prediction (post_lineup or pre_lineup) for frontend convenience (Phase 17)
 - game_id::INTEGER cast in _fetch_final_scores SQL for VARCHAR game_logs to INTEGER predictions join (Phase 17)
+- Per-model accuracy in /history uses ensemble+prediction_correct to derive actual outcome, then evaluates each model individually (Phase 18)
+- Route tests use conftest.py client fixture with mocked lifespan for proper TestClient setup (Phase 18)
 
 ### Roadmap Decisions
 
@@ -144,6 +178,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-01T05:20:02.807Z
-Stopped at: Phase 18 context gathered
-Resume file: .planning/phases/18-history-route/18-CONTEXT.md
+Last session: 2026-04-01T06:15:56.431Z
+Stopped at: Completed 18-01-PLAN.md
+Resume file: None

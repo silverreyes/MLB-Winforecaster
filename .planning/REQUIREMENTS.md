@@ -47,10 +47,10 @@
 
 ### History (HIST)
 
-- [ ] **HIST-01**: A `/history` route is accessible from the main dashboard
-- [ ] **HIST-02**: User can select a date range on the history page via a date range picker
-- [ ] **HIST-03**: History page shows a table of past predictions vs actual outcomes within the selected range
-- [ ] **HIST-04**: History page shows rolling model accuracy (percentage correct) over the selected date range
+- [x] **HIST-01**: A `/history` route is accessible from the main dashboard
+- [x] **HIST-02**: User can select a date range on the history page via a date range picker
+- [x] **HIST-03**: History page shows a table of past predictions vs actual outcomes within the selected range
+- [x] **HIST-04**: History page shows rolling model accuracy (percentage correct) over the selected date range
 
 ## Future Requirements
 
@@ -100,10 +100,10 @@
 | FINL-02 | Phase 16 | Complete |
 | FINL-03 | Phase 16 | Complete |
 | FINL-04 | Phase 16 | Complete |
-| HIST-01 | Phase 17 | Pending |
-| HIST-02 | Phase 17 | Pending |
-| HIST-03 | Phase 17 | Pending |
-| HIST-04 | Phase 17 | Pending |
+| HIST-01 | Phase 17 | Complete |
+| HIST-02 | Phase 17 | Complete |
+| HIST-03 | Phase 17 | Complete |
+| HIST-04 | Phase 17 | Complete |
 
 **Coverage:**
 - v2.2 requirements: 28 total

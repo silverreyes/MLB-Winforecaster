@@ -159,8 +159,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 18-01-PLAN.md — Backend: get_history DB query, HistoryRow/HistoryResponse Pydantic models, GET /history route, tests
-- [ ] 18-02-PLAN.md — Frontend: HistoryPage component, useHistory hook, hash routing in App.tsx, AccuracyStrip/Header nav links
+- [ ] 18-01-PLAN.md ï¿½ Backend: get_history DB query, HistoryRow/HistoryResponse Pydantic models, GET /history route, tests
+- [ ] 18-02-PLAN.md ï¿½ Frontend: HistoryPage component, useHistory hook, hash routing in App.tsx, AccuracyStrip/Header nav links
 
 ## Progress
 
@@ -186,4 +186,4 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17
 | 15. Live Score Polling | 4/4 | Complete   | 2026-03-31 | 2026-03-31 |
 | 16. Historical Game Cache | 3/3 | Complete   | 2026-04-01 | - |
 | 17. Final Outcomes & Nightly Reconciliation | 2/2 | Complete   | 2026-04-01 | - |
-| 18. History Route | v2.2 | 0/2 | Planned | - |
+| 18. History Route | 1/2 | In Progress|  | - |
