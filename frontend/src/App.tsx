@@ -11,6 +11,7 @@ import { GameCardGrid } from './components/GameCardGrid';
 import { SkeletonCard } from './components/SkeletonCard';
 import { EmptyState } from './components/EmptyState';
 import { ErrorState } from './components/ErrorState';
+import { HistoryPage } from './components/HistoryPage';
 import styles from './App.module.css';
 
 const STALE_THRESHOLD_MS = 3 * 60 * 60 * 1000; // 3 hours
@@ -60,6 +61,17 @@ function App() {
     refetch();
   };
 
+  // Hash-based routing
+  const [currentHash, setCurrentHash] = useState(window.location.hash || '#/');
+
+  useEffect(() => {
+    const onHashChange = () => setCurrentHash(window.location.hash || '#/');
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
+
+  const isHistoryPage = currentHash === '#/history';
+
   return (
     <div>
       <Header
@@ -67,39 +79,45 @@ function App() {
         isStale={isStale}
         isOffline={isOffline}
       />
-      <DateNavigator
-        selectedDate={selectedDate}
-        onDateChange={setSelectedDate}
-        viewMode={viewMode}
-      />
-      <AccuracyStrip />
-      <AboutModels />
-      <NewPredictionsBanner
-        visible={hasNewPredictions}
-        onRefresh={handleRefresh}
-      />
-      {(viewMode === 'tomorrow' || viewMode === 'future') && games.length > 0 && (
-        <FutureDateBanner viewMode={viewMode} />
-      )}
-      <main>
-        {isLoading && !data ? (
-          <div className={styles.skeletonGrid}>
-            {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
-              <SkeletonCard key={i} />
-            ))}
-          </div>
-        ) : isError && !data ? (
-          <ErrorState lastSuccessfulTimestamp={lastSuccessTimestamp} />
-        ) : games.length === 0 ? (
-          <EmptyState viewMode={viewMode ?? null} selectedDate={selectedDate} />
-        ) : (
-          <GameCardGrid
-            games={games}
-            isStale={isStale || isOffline}
+      {isHistoryPage ? (
+        <HistoryPage />
+      ) : (
+        <>
+          <DateNavigator
+            selectedDate={selectedDate}
+            onDateChange={setSelectedDate}
             viewMode={viewMode}
           />
-        )}
-      </main>
+          <AccuracyStrip />
+          <AboutModels />
+          <NewPredictionsBanner
+            visible={hasNewPredictions}
+            onRefresh={handleRefresh}
+          />
+          {(viewMode === 'tomorrow' || viewMode === 'future') && games.length > 0 && (
+            <FutureDateBanner viewMode={viewMode} />
+          )}
+          <main>
+            {isLoading && !data ? (
+              <div className={styles.skeletonGrid}>
+                {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
+                  <SkeletonCard key={i} />
+                ))}
+              </div>
+            ) : isError && !data ? (
+              <ErrorState lastSuccessfulTimestamp={lastSuccessTimestamp} />
+            ) : games.length === 0 ? (
+              <EmptyState viewMode={viewMode ?? null} selectedDate={selectedDate} />
+            ) : (
+              <GameCardGrid
+                games={games}
+                isStale={isStale || isOffline}
+                viewMode={viewMode}
+              />
+            )}
+          </main>
+        </>
+      )}
     </div>
   );
 }

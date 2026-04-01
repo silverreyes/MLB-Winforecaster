@@ -55,3 +55,22 @@
   font-size: 12px;
   user-select: none;
 }
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.historyLink {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-accent);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.historyLink:hover {
+  text-decoration: underline;
+}

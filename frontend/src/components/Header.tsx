@@ -33,7 +33,9 @@ export function Header({ lastUpdated, isStale, isOffline }: HeaderProps) {
     <header className={styles.header}>
       <div className={styles.topRow}>
         <div className={styles.left}>
-          <h1 className={styles.title}>MLB Win Forecaster</h1>
+          <h1 className={styles.title}>
+            <a href="#/" className={styles.titleLink}>MLB Win Forecaster</a>
+          </h1>
           <p className={styles.subtitle}>
             Model-ensemble win probabilities vs. Kalshi market prices
           </p>

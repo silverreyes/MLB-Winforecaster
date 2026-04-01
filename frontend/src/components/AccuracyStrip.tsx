@@ -17,14 +17,19 @@ export function AccuracyStrip() {
         <span className={styles.heading}>
           Model Accuracy (Brier Score, lower is better)
         </span>
-        <div className={styles.scores}>
-          {ACCURACY_SCORES.map((score, i) => (
-            <span key={score.label} className={styles.scoreItem}>
-              {i > 0 && <span className={styles.divider}>|</span>}
-              <span className={styles.label}>{score.label}</span>
-              <span className={styles.value}>{score.value}</span>
-            </span>
-          ))}
+        <div className={styles.row}>
+          <div className={styles.scores}>
+            {ACCURACY_SCORES.map((score, i) => (
+              <span key={score.label} className={styles.scoreItem}>
+                {i > 0 && <span className={styles.divider}>|</span>}
+                <span className={styles.label}>{score.label}</span>
+                <span className={styles.value}>{score.value}</span>
+              </span>
+            ))}
+          </div>
+          <a href="#/history" className={styles.historyLink}>
+            View History &rarr;
+          </a>
         </div>
       </div>
     </div>
