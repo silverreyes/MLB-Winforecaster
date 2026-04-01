@@ -146,12 +146,12 @@ def get_today_predictions(request: Request):
 # DO NOT REORDER: /latest-timestamp must precede /{date} to prevent path parameter capture
 @router.get("/predictions/latest-timestamp", response_model=LatestTimestampResponse)
 def get_latest_timestamp(request: Request):
-    """Return the most recent prediction timestamp for today (API-03)."""
+    """Return the most recent prediction timestamp across all dates (API-03)."""
     pool = request.app.state.pool
     sql = """
         SELECT MAX(created_at) as latest
         FROM predictions
-        WHERE game_date = CURRENT_DATE AND is_latest = TRUE
+        WHERE is_latest = TRUE
     """
     with pool.connection() as conn:
         with conn.cursor(row_factory=dict_row) as cur:
