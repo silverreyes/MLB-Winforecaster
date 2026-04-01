@@ -1,9 +1,9 @@
 ---
 phase: 17
 slug: final-outcomes-and-nightly-reconciliation
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: complete
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-03-31
 ---
 
@@ -38,11 +38,11 @@ created: 2026-03-31
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 17-01-01 | 01 | 1 | FINL-04 | unit | `python -m pytest tests/test_pipeline/test_reconciliation.py -x -q` | ❌ W0 | ⬜ pending |
-| 17-01-02 | 01 | 1 | FINL-04 | unit | `python -m pytest tests/test_pipeline/test_reconciliation.py::TestIdempotency -x -q` | ❌ W0 | ⬜ pending |
-| 17-02-01 | 02 | 2 | FINL-01 | unit | `python -m pytest tests/test_api/test_games_final.py::TestFinalScoreDisplay -x -q` | ❌ W0 | ⬜ pending |
-| 17-02-02 | 02 | 2 | FINL-02 | unit | `python -m pytest tests/test_api/test_games_final.py::TestFinalPredictionDisplay -x -q` | ❌ W0 | ⬜ pending |
-| 17-02-03 | 02 | 2 | FINL-03 | unit | `python -m pytest tests/test_api/test_games_final.py::TestOutcomeMarker -x -q` | ❌ W0 | ⬜ pending |
+| 17-01-01 | 01 | 1 | FINL-04 | unit | `python -m pytest tests/test_pipeline/test_reconciliation.py -x -q` | YES | green |
+| 17-01-02 | 01 | 1 | FINL-04 | unit | `python -m pytest tests/test_pipeline/test_reconciliation.py::TestIdempotency -x -q` | YES | green |
+| 17-02-01 | 02 | 2 | FINL-01 | unit | `python -m pytest tests/test_api/test_games_final.py::TestFinalScoreDisplay -x -q` | YES | green |
+| 17-02-02 | 02 | 2 | FINL-02 | unit | `python -m pytest tests/test_api/test_games_final.py::TestFinalPredictionDisplay -x -q` | YES | green |
+| 17-02-03 | 02 | 2 | FINL-03 | unit | `python -m pytest tests/test_api/test_games_final.py::TestOutcomeMarker -x -q` | YES | green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -50,8 +50,8 @@ created: 2026-03-31
 
 ## Wave 0 Requirements
 
-- [ ] `tests/test_pipeline/test_reconciliation.py` — stubs for FINL-04 (reconcile_outcomes function, nightly job, idempotency)
-- [ ] `tests/test_api/test_games_final.py` — stubs for FINL-01, FINL-02, FINL-03 (GameResponse with final scores, outcome marker)
+- [x] `tests/test_pipeline/test_reconciliation.py` — stubs for FINL-04 (reconcile_outcomes function, nightly job, idempotency)
+- [x] `tests/test_api/test_games_final.py` — stubs for FINL-01, FINL-02, FINL-03 (GameResponse with final scores, outcome marker)
 
 *Existing test infrastructure covers the framework; only new test files are needed.*
 
@@ -67,11 +67,11 @@ created: 2026-03-31
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 30s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 30s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved
