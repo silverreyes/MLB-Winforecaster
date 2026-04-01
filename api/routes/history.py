@@ -6,7 +6,14 @@ and per-model accuracy for a date range.
 Sync def handler (not async) following existing FastAPI pattern.
 """
 
-from api.models import ModelAccuracy
+from datetime import datetime
+
+from fastapi import APIRouter, HTTPException, Query, Request
+
+from api.models import HistoryResponse, HistoryRow, ModelAccuracy
+from src.pipeline.db import get_history
+
+router = APIRouter(tags=["history"])
 
 
 def _compute_accuracy(rows: list[dict]) -> dict[str, ModelAccuracy]:
@@ -56,3 +63,52 @@ def _compute_accuracy(rows: list[dict]) -> dict[str, ModelAccuracy]:
         result[key] = ModelAccuracy(correct=correct, total=total, pct=pct)
 
     return result
+
+
+@router.get("/history", response_model=HistoryResponse)
+def get_history_route(
+    request: Request,
+    start: str = Query(..., description="Start date YYYY-MM-DD"),
+    end: str = Query(..., description="End date YYYY-MM-DD"),
+):
+    """Return past predictions with outcomes and per-model accuracy.
+
+    Only returns games where prediction_correct IS NOT NULL.
+    Prefers post_lineup prediction; falls back to pre_lineup.
+    """
+    # Validate date formats
+    for label, val in [("start", start), ("end", end)]:
+        try:
+            datetime.strptime(val, "%Y-%m-%d")
+        except ValueError:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid {label} date format. Use YYYY-MM-DD.",
+            )
+
+    pool = request.app.state.pool
+    rows = get_history(pool, start, end)
+
+    games = [
+        HistoryRow(
+            game_date=r["game_date"],
+            home_team=r["home_team"],
+            away_team=r["away_team"],
+            home_score=r.get("home_score"),
+            away_score=r.get("away_score"),
+            lr_prob=r.get("lr_prob"),
+            rf_prob=r.get("rf_prob"),
+            xgb_prob=r.get("xgb_prob"),
+            prediction_correct=r["prediction_correct"],
+        )
+        for r in rows
+    ]
+
+    accuracy = _compute_accuracy(rows)
+
+    return HistoryResponse(
+        games=games,
+        accuracy=accuracy,
+        start_date=start,
+        end_date=end,
+    )

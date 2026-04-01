@@ -203,3 +203,96 @@ class TestAccuracyComputation:
         assert result["lr"].pct == 66.7
         assert result["rf"].correct == 2
         assert result["xgb"].correct == 2
+
+    def test_empty_rows_returns_zero_totals(self):
+        """_compute_accuracy with empty list -> all models have total=0, pct=0.0."""
+        from api.routes.history import _compute_accuracy
+
+        result = _compute_accuracy([])
+        for key in ("lr", "rf", "xgb"):
+            assert result[key].total == 0
+            assert result[key].correct == 0
+            assert result[key].pct == 0.0
+
+    def test_lr_disagrees_with_ensemble(self):
+        """_compute_accuracy: lr_prob=0.48 but ensemble >= 0.5 and pc=True.
+
+        ensemble = (0.48 + 0.55 + 0.58) / 3 = 0.5367 >= 0.5
+        pc=True => home_won=True
+        lr predicted away (0.48 < 0.5) but home won => lr incorrect
+        rf predicted home (0.55 >= 0.5) and home won => rf correct
+        xgb predicted home (0.58 >= 0.5) and home won => xgb correct
+        """
+        from api.routes.history import _compute_accuracy
+
+        rows = [
+            {"lr_prob": 0.48, "rf_prob": 0.55, "xgb_prob": 0.58, "prediction_correct": True},
+        ]
+        result = _compute_accuracy(rows)
+        assert result["lr"].correct == 0
+        assert result["lr"].total == 1
+        assert result["rf"].correct == 1
+        assert result["xgb"].correct == 1
+
+
+# ---------------------------------------------------------------------------
+# Route-level tests
+# ---------------------------------------------------------------------------
+
+class TestHistoryRoute:
+    """Tests for the GET /history route handler.
+
+    Uses the `client` fixture from conftest.py which provides a TestClient
+    with mocked DB pool and model artifacts.
+    """
+
+    def test_invalid_start_date_returns_400(self, client):
+        """Route returns 400 on invalid start date format."""
+        resp = client.get("/api/v1/history?start=not-a-date&end=2026-03-30")
+        assert resp.status_code == 400
+        assert "start" in resp.json()["detail"].lower()
+
+    def test_invalid_end_date_returns_400(self, client):
+        """Route returns 400 on invalid end date format."""
+        resp = client.get("/api/v1/history?start=2026-03-20&end=bad-date")
+        assert resp.status_code == 400
+        assert "end" in resp.json()["detail"].lower()
+
+    @patch("api.routes.history.get_history")
+    def test_route_returns_valid_response(self, mock_get_history, client):
+        """Route returns HistoryResponse with games and accuracy when given valid dates."""
+        mock_get_history.return_value = [
+            {
+                "game_date": date(2026, 3, 25),
+                "home_team": "NYY",
+                "away_team": "BOS",
+                "home_score": 5,
+                "away_score": 3,
+                "lr_prob": 0.6,
+                "rf_prob": 0.55,
+                "xgb_prob": 0.58,
+                "prediction_correct": True,
+            },
+        ]
+
+        resp = client.get("/api/v1/history?start=2026-03-20&end=2026-03-30")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "games" in data
+        assert "accuracy" in data
+        assert len(data["games"]) == 1
+        assert data["games"][0]["home_team"] == "NYY"
+        assert data["start_date"] == "2026-03-20"
+        assert data["end_date"] == "2026-03-30"
+
+    @patch("api.routes.history.get_history")
+    def test_route_empty_history(self, mock_get_history, client):
+        """Route returns empty games list and zero-accuracy for date range with no data."""
+        mock_get_history.return_value = []
+
+        resp = client.get("/api/v1/history?start=2026-03-20&end=2026-03-30")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["games"] == []
+        for model_key in ("lr", "rf", "xgb"):
+            assert data["accuracy"][model_key]["total"] == 0
