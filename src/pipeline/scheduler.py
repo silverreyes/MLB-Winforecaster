@@ -21,7 +21,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 
 from src.data.mlb_schedule import get_schedule_cached
 from src.data.team_mappings import normalize_team
-from src.pipeline.db import reconcile_outcomes, write_game_outcome
+from src.pipeline.db import batch_insert_game_logs, reconcile_outcomes, sync_game_logs, write_game_outcome
 from src.pipeline.runner import run_pipeline
 
 logger = logging.getLogger(__name__)
@@ -135,6 +135,26 @@ def live_poller_job(pool) -> None:
         except Exception as exc:
             logger.error("Live poller: DB write failed for game %s: %s", game_id, exc)
 
+        # Persist to game_logs so the API can display final scores
+        winning_team = home_team if home_score > away_score else away_team
+        losing_team = away_team if home_score > away_score else home_team
+        try:
+            batch_insert_game_logs(pool, [{
+                "game_id": str(game_id),
+                "game_date": today_str,
+                "home_team": home_team,
+                "away_team": away_team,
+                "home_score": home_score,
+                "away_score": away_score,
+                "winning_team": winning_team,
+                "losing_team": losing_team,
+                "home_probable_pitcher": game.get("home_probable_pitcher") or None,
+                "away_probable_pitcher": game.get("away_probable_pitcher") or None,
+                "season": int(today_str[:4]),
+            }])
+        except Exception as exc:
+            logger.error("Live poller: game_log write failed for game %s: %s", game_id, exc)
+
 
 def nightly_reconciliation_job(pool) -> None:
     """Reconcile outcomes for yesterday's Final games not caught by live poller.
@@ -147,6 +167,12 @@ def nightly_reconciliation_job(pool) -> None:
     """
     from datetime import date, timedelta
     yesterday = (date.today() - timedelta(days=1)).isoformat()
+    try:
+        synced = sync_game_logs(pool)
+        if synced > 0:
+            logger.info("Nightly reconciliation: synced %d new game_log rows", synced)
+    except Exception as exc:
+        logger.error("Nightly reconciliation: sync_game_logs failed: %s", exc)
     try:
         count = reconcile_outcomes(pool, yesterday)
         if count > 0:
