@@ -198,8 +198,8 @@ export function GameCard({ game, viewMode }: GameCardProps) {
       {hasPrediction && primary && viewMode !== 'future' && (
         <KalshiSection
           price={primary.kalshi_yes_price}
-          edgeSignal={game_status === 'PRE_GAME' ? primary.edge_signal : null}
-          edgeMagnitude={game_status === 'PRE_GAME' ? primary.edge_magnitude : null}
+          edgeSignal={primary.edge_signal}
+          edgeMagnitude={primary.edge_magnitude}
         />
       )}
     </div>
