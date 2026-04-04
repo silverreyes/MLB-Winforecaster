@@ -4,6 +4,42 @@
   padding: var(--space-sm) var(--space-md);
 }
 
+.pnlRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-xs);
+}
+
+.pnlGroup {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-xs);
+}
+
+.pnlLabel {
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  line-height: 1.3;
+}
+
+.pnlValue {
+  font-family: var(--font-data);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-accent);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+}
+
+.pnlDivider {
+  color: var(--color-border);
+  font-size: 15px;
+  user-select: none;
+}
+
 .inner {
   max-width: 1200px;
   margin: 0 auto;

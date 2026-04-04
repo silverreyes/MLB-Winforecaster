@@ -88,7 +88,7 @@ function App() {
             onDateChange={setSelectedDate}
             viewMode={viewMode}
           />
-          <AccuracyStrip />
+          <AccuracyStrip viewedDate={selectedDate} />
           <AboutModels />
           <NewPredictionsBanner
             visible={hasNewPredictions}

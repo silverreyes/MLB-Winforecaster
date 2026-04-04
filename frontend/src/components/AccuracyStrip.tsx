@@ -21,17 +21,56 @@ function rollingDates(): { start: string; end: string } {
   return { start: fmt(start), end: fmt(end) };
 }
 
-export function AccuracyStrip() {
-  const { start, end } = rollingDates();
-  const { pnl } = useHistory(start, end);
+function formatPnL(total: number, wins: number, losses: number): string {
+  return `${total >= 0 ? '+' : ''}${total.toFixed(1)}u (${wins}-${losses})`;
+}
 
-  const pnlDisplay = pnl !== null
-    ? `${pnl.total >= 0 ? '+' : ''}${pnl.total.toFixed(1)}u (${pnl.wins}-${pnl.losses})`
+interface AccuracyStripProps {
+  viewedDate: string;
+}
+
+export function AccuracyStrip({ viewedDate }: AccuracyStripProps) {
+  const { start, end } = rollingDates();
+  const { pnl: rollingPnl } = useHistory(start, end);
+
+  // Daily P&L: only fetch for historical dates (before today)
+  const isHistorical = viewedDate < new Date().toISOString().slice(0, 10);
+  const { pnl: dailyPnl } = useHistory(
+    isHistorical ? viewedDate : '',
+    isHistorical ? viewedDate : '',
+  );
+
+  const rollingDisplay = rollingPnl !== null
+    ? formatPnL(rollingPnl.total, rollingPnl.wins, rollingPnl.losses)
     : '\u2014';
+
+  // Only show daily P&L if historical and there were buy signals that day
+  const showDaily = isHistorical && dailyPnl !== null && (dailyPnl.wins + dailyPnl.losses) > 0;
+  const dailyDisplay = showDaily
+    ? formatPnL(dailyPnl!.total, dailyPnl!.wins, dailyPnl!.losses)
+    : null;
+
+  const [year, month, day] = viewedDate.split('-');
+  const dailyLabel = `${parseInt(month)}/${parseInt(day)} P&L:`;
 
   return (
     <div className={styles.strip}>
       <div className={styles.inner}>
+        <div className={styles.pnlRow}>
+          <div className={styles.pnlGroup}>
+            <span className={styles.pnlLabel}>14d P&amp;L:</span>
+            <span className={styles.pnlValue}>{rollingDisplay}</span>
+          </div>
+          {showDaily && (
+            <>
+              <span className={styles.pnlDivider}>|</span>
+              <div className={styles.pnlGroup}>
+                <span className={styles.pnlLabel}>{dailyLabel}</span>
+                <span className={styles.pnlValue}>{dailyDisplay}</span>
+              </div>
+            </>
+          )}
+        </div>
         <span className={styles.heading}>
           Model Accuracy (Brier Score, lower is better)
         </span>
@@ -44,11 +83,6 @@ export function AccuracyStrip() {
                 <span className={styles.value}>{score.value}</span>
               </span>
             ))}
-            <span className={styles.scoreItem}>
-              <span className={styles.divider}>|</span>
-              <span className={styles.label}>14d P&amp;L:</span>
-              <span className={styles.value}>{pnlDisplay}</span>
-            </span>
           </div>
           <a href="#/history" className={styles.historyLink}>
             View History &rarr;
