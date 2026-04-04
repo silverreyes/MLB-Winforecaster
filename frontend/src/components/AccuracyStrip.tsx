@@ -50,7 +50,7 @@ export function AccuracyStrip({ viewedDate }: AccuracyStripProps) {
     ? formatPnL(dailyPnl!.total, dailyPnl!.wins, dailyPnl!.losses)
     : null;
 
-  const [year, month, day] = viewedDate.split('-');
+  const [, month, day] = viewedDate.split('-');
   const dailyLabel = `${parseInt(month)}/${parseInt(day)} P&L:`;
 
   return (
